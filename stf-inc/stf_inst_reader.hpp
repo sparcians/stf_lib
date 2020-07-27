@@ -35,7 +35,7 @@
 namespace stf {
 
     /**
-     * \class STFInstReader
+     * \class STFInstReaderBase
      * \brief The STF instruction reader provides an iterator to the instruction stream
      * that hides the details of the trace format
      *
@@ -43,13 +43,13 @@ namespace stf {
      * easy to use format.
      *
      */
-    class STFInstReader: public STFReader {
+    template<typename FilterType>
+    class STFInstReaderBase: public STFReader {
         private:
             static constexpr size_t DEFAULT_BUFFER_SIZE_ = 1024;
 
             const bool only_user_mode_ = false; // skips non-user-mode instructions if true
             const bool filter_mode_change_events_ = false; // Filters out all mode change events if true
-            const bool enable_ignored_records_ = false;
             const size_t buffer_size_; // buffer size;
             const size_t buffer_mask_;
 
@@ -79,7 +79,7 @@ namespace stf {
             bool pending_user_syscall_ = false; // If true, the instruction that is currently being processed is a user syscall
             size_t num_skipped_instructions_ = 0; // Counts number of skipped instructions so that instruction indices can be adjusted
 
-            std::bitset<descriptors::internal::NUM_DESCRIPTORS> ignored_records_;
+            FilterType filter_;
 
             /**
              * \brief Helper function to read records in the separated PTE file.
@@ -264,7 +264,175 @@ namespace stf {
             }
 
             // read STF records to construction a STFInst instance
-            void readNextInst_(STFInst &inst);
+            __attribute__((hot, always_inline))
+            inline void readNextInst_(STFInst &inst) {
+                inst.reset_();
+                bool ended = false;
+#ifdef STF_INST_HAS_IEM
+                bool iem_changed = initial_iem_;
+                initial_iem_ = false;
+#endif
+
+                bool event_valid = false;
+                if(STF_EXPECT_FALSE(disable_skipping_on_next_inst_)) {
+                    skipping_enabled_ = false;
+                    disable_skipping_on_next_inst_ = false;
+                }
+                pending_user_syscall_ = false;
+
+                while(!ended) {
+                    static_assert(enums::to_int(INST_MEM_ACCESS::READ) == 1, "Assumed INST_MEM_ACCESS::READ value has changed");
+                    static_assert(enums::to_int(INST_MEM_ACCESS::WRITE) == 2, "Assumed INST_MEM_ACCESS::WRITE value has changed");
+
+                    static constexpr std::array<STFInst::INSTFLAGS, 3> MEM_ACCESS_FLAGS {STFInst::INST_INIT_FLAGS,
+                                                                                         STFInst::INST_IS_LOAD,
+                                                                                         STFInst::INST_IS_STORE};
+
+                    static_assert(enums::to_int(EXECUTION_MODE::USER_MODE) == 0, "Assumed EXECUTION_MODE::USER_MODE value has changed");
+                    static_assert(enums::to_int(EXECUTION_MODE::SUPERVISOR_MODE) == 1, "Assumed EXECUTION_MODE::SUPERVISOR_MODE value has changed");
+                    static_assert(enums::to_int(EXECUTION_MODE::HYPERVISOR_MODE) == 2, "Assumed EXECUTION_MODE::HYPERVISOR_MODE value has changed");
+                    static_assert(enums::to_int(EXECUTION_MODE::MACHINE_MODE) == 3, "Assumed EXECUTION_MODE::MACHINE_MODE value has changed");
+
+                    static constexpr std::array<STFInst::INSTFLAGS, 4> MODE_CHANGE_FLAGS {STFInst::INST_CHANGE_TO_USER,
+                                                                                          STFInst::INST_CHANGE_FROM_USER,
+                                                                                          STFInst::INST_CHANGE_FROM_USER,
+                                                                                          STFInst::INST_CHANGE_FROM_USER};
+
+                    const auto rec = readRecord_(inst);
+                    const auto desc = rec->getDescriptor();
+
+                    if(!rec) {
+                        event_valid = false;
+                        continue;
+                    }
+
+                    stf_assert(desc != descriptors::internal::Descriptor::STF_INST_MEM_CONTENT,
+                               "Saw MemContentRecord without accompanying MemAccessRecord");
+
+                    // These are the most common records - moving them outside of the switch statement
+                    // eliminates a hard to predict indirect branch and improves performance
+                    if(STF_EXPECT_TRUE(desc == descriptors::internal::Descriptor::STF_INST_REG)) {
+                        const auto& reg_rec = rec->template as<InstRegRecord>();
+                        const Registers::STF_REG_OPERAND_TYPE type = reg_rec.getOperandType();
+                        inst.getOperandVector_(type).emplace_back(&reg_rec);
+                        // Set FP flag if we have an FP source or dest register
+                        math_utils::conditionalSet(inst.inst_flags_,
+                                                   STFInst::INST_IS_FP,
+                                                   stf::Registers::isFPR(reg_rec.getReg()));
+                    }
+                    else if(STF_EXPECT_TRUE(desc == descriptors::internal::Descriptor::STF_INST_OPCODE16)) {
+                        finalizeInst_<InstOpcode16Record>(inst, rec);
+                        break;
+                    }
+                    else if(STF_EXPECT_TRUE(desc == descriptors::internal::Descriptor::STF_INST_OPCODE32)) {
+                        finalizeInst_<InstOpcode32Record>(inst, rec);
+                        break;
+                    }
+                    else if(STF_EXPECT_TRUE(desc == descriptors::internal::Descriptor::STF_INST_MEM_ACCESS)) {
+                        // Assume in the trace, INST_MEM_CONTENT always appear right
+                        // after INST_MEM_ACCESS of the same memory access
+                        const auto content_rec = readRecord_(inst);
+                        stf_assert(content_rec->getDescriptor() == descriptors::internal::Descriptor::STF_INST_MEM_CONTENT,
+                                   "Invalid trace: memory access must be followed by memory content");
+
+                        const auto access_type = rec->template as<InstMemAccessRecord>().getType();
+                        inst.setInstFlag_(MEM_ACCESS_FLAGS[enums::to_int(access_type)]);
+
+                        inst.getMemAccessVector_(access_type).emplace_back(rec, content_rec);
+                    }
+                    // These are the least common records
+                    else {
+                        switch(desc) {
+                            case descriptors::internal::Descriptor::STF_INST_REG:
+                            case descriptors::internal::Descriptor::STF_INST_OPCODE16:
+                            case descriptors::internal::Descriptor::STF_INST_OPCODE32:
+                            case descriptors::internal::Descriptor::STF_INST_MEM_ACCESS:
+                            case descriptors::internal::Descriptor::STF_INST_MEM_CONTENT:
+                                break;
+
+                            case descriptors::internal::Descriptor::STF_INST_PC_TARGET:
+                                inst.inst_flags_ |= STFInst::INST_TAKEN_BRANCH;
+                                inst.branch_target_ = rec->template as<InstPCTargetRecord>().getAddr();
+                                break;
+
+                            case descriptors::internal::Descriptor::STF_EVENT:
+                                event_valid = true;
+                                {
+                                    const auto& event = rec->template as<EventRecord>();
+                                    const bool is_syscall = event.isSyscall();
+                                    bool is_mode_change = false;
+
+                                    inst.setInstFlag_(math_utils::conditionalValue(
+                                        is_syscall, STFInst::INST_IS_SYSCALL,
+                                        !is_syscall && (is_mode_change = event.isModeChange()), MODE_CHANGE_FLAGS[event.getData().front()]
+                                    ));
+
+                                    if(STF_EXPECT_FALSE(is_mode_change && only_user_mode_)) {
+                                        const bool is_change_to_user = inst.isChangeToUserMode();
+                                        const bool is_change_from_user = !is_change_to_user;
+                                        disable_skipping_on_next_inst_ |= is_change_to_user;
+                                        skipping_enabled_ |= is_change_from_user;
+                                    }
+
+                                    if(STF_EXPECT_FALSE(only_user_mode_ && is_syscall && (event.getEvent() == EventRecord::TYPE::USER_ECALL))) {
+                                        pending_user_syscall_ = true;
+                                    }
+
+                                    if(STF_EXPECT_FALSE((only_user_mode_ || filter_mode_change_events_) && is_mode_change)) {
+                                        // Filter out mode change events when mode skipping or if it is explicitly required
+                                        break;
+                                    }
+
+                                    inst.events_.emplace_back(rec);
+                                }
+                                break;
+
+                            case descriptors::internal::Descriptor::STF_EVENT_PC_TARGET:
+                                stf_assert(event_valid, "Saw EventPCTargetRecord without accompanying EventRecord");
+                                inst.events_.back().setTarget(rec);
+                                event_valid = false;
+                                break;
+
+                            case descriptors::internal::Descriptor::STF_FORCE_PC:
+                                inst.inst_flags_ |= STFInst::INST_COF;
+                                break;
+
+                            case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
+                                {
+                                    const auto& process_id = rec->template as<ProcessIDExtRecord>();
+                                    asid_ = process_id.getASID();
+                                    tid_ = process_id.getTID();
+                                    tgid_ = process_id.getTGID();
+                                }
+                                break;
+
+                            case descriptors::internal::Descriptor::STF_INST_IEM:
+#ifdef STF_INST_HAS_IEM
+                                iem_changed = (last_iem_ != rec->as<InstIEMRecord>().getMode());
+                                stf_assert(!iem_changed || iem_changes_allowed_,
+                                           "IEM changed even though IEM changes are not allowed in ISA " << getISA());
+                                last_iem_ = rec->as<InstIEMRecord>().getMode();
+                                break;
+#endif
+                            case descriptors::internal::Descriptor::STF_COMMENT:
+                            case descriptors::internal::Descriptor::STF_INST_MICROOP:
+                            case descriptors::internal::Descriptor::STF_INST_READY_REG:
+                            case descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK:
+                            case descriptors::internal::Descriptor::STF_TRACE_INFO:
+                            case descriptors::internal::Descriptor::STF_RESERVED:
+                            case descriptors::internal::Descriptor::STF_IDENTIFIER:
+                            case descriptors::internal::Descriptor::STF_VERSION:
+                            case descriptors::internal::Descriptor::STF_ISA:
+                            case descriptors::internal::Descriptor::STF_TRACE_INFO_FEATURE:
+                            case descriptors::internal::Descriptor::STF_END_HEADER:
+                            case descriptors::internal::Descriptor::STF_BUS_MASTER_ACCESS:
+                            case descriptors::internal::Descriptor::STF_BUS_MASTER_CONTENT:
+                            case descriptors::internal::Descriptor::STF_RESERVED_END:
+                                break;
+                        };
+                    }
+                }
+            }
 
             /**
              * \brief Helper function to open the separated PTE file.
@@ -320,7 +488,7 @@ namespace stf {
                 STFRecord::UniqueHandle urec;
                 operator>>(urec);
 
-                if(STF_EXPECT_FALSE(enable_ignored_records_ && ignored_records_.test(enums::to_int(urec->getDescriptor())))) {
+                if(STF_EXPECT_FALSE(filter_.isFiltered(urec->getDescriptor()))) {
                     return nullptr;
                 }
 
@@ -376,15 +544,14 @@ namespace stf {
              * \param buffer_size The size of the instruction sliding window
              *
              */
-            template<typename StrType, bool enable_ignored_records = false>
-            explicit STFInstReader(const StrType& filename,
-                                   const bool only_user_mode = false,
-                                   const bool check_stf_pte = false,
-                                   const bool filter_mode_change_events = false,
-                                   const size_t buffer_size = DEFAULT_BUFFER_SIZE_) :
+            template<typename StrType>
+            explicit STFInstReaderBase(const StrType& filename,
+                                       const bool only_user_mode = false,
+                                       const bool check_stf_pte = false,
+                                       const bool filter_mode_change_events = false,
+                                       const size_t buffer_size = DEFAULT_BUFFER_SIZE_) :
                 only_user_mode_(only_user_mode),
                 filter_mode_change_events_(filter_mode_change_events),
-                enable_ignored_records_(enable_ignored_records),
                 buffer_size_(buffer_size),
                 buffer_mask_(buffer_size_ - 1)
             {
@@ -400,7 +567,7 @@ namespace stf {
              */
             class pte_iterator {
                 private:
-                    STFInstReader *sir_ = nullptr;        // the instruction reader
+                    STFInstReaderBase *sir_ = nullptr;        // the instruction reader
                     bool end_ = true;                  // whether this is an end iterator
                     ConstUniqueRecordHandle<PageTableWalkRecord> pte_; // store the current PTE content
                     size_t index_ = 0;            // index to the PTEs
@@ -448,7 +615,7 @@ namespace stf {
                      * \param end Whether this is an end iterator
                      *
                      */
-                    explicit pte_iterator(STFInstReader *sir, bool end = false) :
+                    explicit pte_iterator(STFInstReaderBase *sir, bool end = false) :
                         sir_(sir),
                         index_(1)
                     {
@@ -540,7 +707,7 @@ namespace stf {
              */
             class iterator {
                 private:
-                    STFInstReader *sir_ = nullptr;  // the instruction reader
+                    STFInstReaderBase *sir_ = nullptr;  // the instruction reader
                     uint64_t index_ = 1;            // index to the instruction stream
                     size_t loc_ = 0;                // location in the sliding window buffer;
                                                     // keep it to speed up casting;
@@ -589,7 +756,7 @@ namespace stf {
                      * \param end Whether this is an end iterator
                      *
                      */
-                    explicit iterator(STFInstReader *sir, bool end = false) :
+                    explicit iterator(STFInstReaderBase *sir, bool end = false) :
                         sir_(sir),
                         end_(end)
                     {
@@ -734,12 +901,38 @@ namespace stf {
             /**
              * \brief Opens a file
              */
-            void open(std::string_view filename, bool check_stf_pte = false);
+            void open(std::string_view filename, bool check_stf_pte = false) {
+                STFReader::open(filename);
+                filename_ = filename;
+                asid_ = 0;
+                tid_ = 0;
+                tgid_ = 0;
+                pte_end_ = false;
+                last_iem_ = getInitialIEM();
+                iem_changes_allowed_ = (getISA() != ISA::RISCV);
+
+                //open pte file;
+                if (!openPTE_(filename.data())) {
+                    pte_end_ = true;
+                    stf_assert(!check_stf_pte, "Check for stf-pte file was enabled but no stf-pte was found for " << filename);
+                }
+
+                inst_buf_.reset();
+                inst_head_ = 0;
+                inst_tail_ = 0;
+            }
 
             /**
              * \brief Closes the file
              */
-            int close();
+            int close() {
+                last_iem_ = INST_IEM::STF_INST_IEM_INVALID;
+                inst_buf_.reset();
+                inst_head_ = 0;
+                inst_tail_ = 0;
+                pte_reader_.close();
+                return STFReader::close();
+            }
 
             /**
              * \brief Seeks by the given number of instructions
@@ -774,10 +967,53 @@ namespace stf {
             }
 
             /**
+             * Gets the filter object for this reader
+             */
+            FilterType& getFilter() {
+                return filter_;
+            }
+    };
+
+    /**
+     * \class DummyFilter
+     * \brief Filter that doesn't filter anything - used to implement the basic STFInstReader
+     */
+    class DummyFilter {
+        public:
+            /**
+             * Always returns false so that no records are filtered - ensures that the filter code
+             * is optimized out in the implementation of STFInstReader
+             * \param descriptor Descriptor type to check
+             */
+            __attribute__((always_inline))
+            static inline bool isFiltered(const descriptors::internal::Descriptor descriptor) {
+                (void)descriptor;
+                return false;
+            }
+    };
+
+    /**
+     * \class RecordFilter
+     * \brief Filter that allows exclusion based on descriptor value
+     */
+    class RecordFilter {
+        private:
+            std::bitset<descriptors::internal::NUM_DESCRIPTORS> ignored_records_;
+
+        public:
+            /**
+             * Returns whether the descriptor should be excluded filtered
+             * \param descriptor Descriptor type to check
+             */
+            __attribute__((always_inline))
+            inline bool isFiltered(const descriptors::internal::Descriptor descriptor) {
+                return ignored_records_.test(enums::to_int(descriptor));
+            }
+
+            /**
              * Sets all record types to be ignored, except for instruction opcode records
              */
             void ignoreAllRecords() {
-                stf_assert(enable_ignored_records_, "STFInstReader must be constructed with enable_ignored_records set to true");
                 ignored_records_.set();
                 keepRecordType(descriptors::internal::Descriptor::STF_INST_OPCODE16);
                 keepRecordType(descriptors::internal::Descriptor::STF_INST_OPCODE32);
@@ -785,9 +1021,9 @@ namespace stf {
 
             /**
              * Sets the specified record type to be ignored
+             * \param type Descriptor type to ignore
              */
             void ignoreRecordType(const descriptors::internal::Descriptor type) {
-                stf_assert(enable_ignored_records_, "STFInstReader must be constructed with enable_ignored_records set to true");
                 stf_assert(type != descriptors::internal::Descriptor::STF_INST_OPCODE16 &&
                            type != descriptors::internal::Descriptor::STF_INST_OPCODE32,
                            "STFInstReader can't ignore instruction opcode records");
@@ -796,12 +1032,24 @@ namespace stf {
 
             /**
              * Sets the specified record type to be kept
+             * \param type Descriptor type to keep
              */
             void keepRecordType(const descriptors::internal::Descriptor type) {
-                stf_assert(enable_ignored_records_, "STFInstReader must be constructed with enable_ignored_records set to true");
                 ignored_records_.reset(enums::to_int(type));
             }
     };
+
+    /**
+     * \typedef STFInstReader
+     * \brief Basic STFInst reader with no filtering
+     */
+    using STFInstReader = STFInstReaderBase<DummyFilter>;
+
+    /**
+     * \typedef FilteredInstReader
+     * \brief STFInst reader with descriptor-based filtering
+     */
+    using FilteredInstReader = STFInstReaderBase<RecordFilter>;
 
 } //end namespace stf
 

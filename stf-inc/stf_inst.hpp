@@ -751,7 +751,8 @@ namespace stf {
             /**
              * \brief Only STFInstReader can modify the content of STFInst
              */
-            friend class STFInstReader;
+            template<typename FilterType>
+            friend class STFInstReaderBase;
             friend class STFInstWriter;
 
             /**

@@ -112,11 +112,13 @@ namespace stf {
 
             /**
              * Converts an STF_REG to its corresponding index
+             * \param regno STF_REG value to convert
              */
             static STF_REG_packed_int getArchRegIndex(STF_REG regno);
 
             /**
              * Checks whether a register is a CSR
+             * \param regno STF_REG value to check
              */
             static inline constexpr bool isCSR(const STF_REG regno) {
                 return Registers::Codec::getRegType(regno) == Registers::STF_REG_TYPE::CSR;
@@ -124,6 +126,7 @@ namespace stf {
 
             /**
              * Checks whether a register is an FPR
+             * \param regno STF_REG value to check
              */
             static inline constexpr bool isFPR(const STF_REG regno) {
                 return Registers::Codec::getRegType(regno) == Registers::STF_REG_TYPE::FLOATING_POINT;
@@ -131,11 +134,17 @@ namespace stf {
 
             /**
              * Checks whether a register is a GPR
+             * \param regno STF_REG value to check
              */
             static inline constexpr bool isGPR(const STF_REG regno) {
                 return Registers::Codec::getRegType(regno) == Registers::STF_REG_TYPE::INTEGER;
             }
 
+            /**
+             * Formats an STF_REG value into a stream
+             * \param os stream to format into
+             * \param regno STF_REG value to format
+             */
             static void format(std::ostream& os, const STF_REG regno);
 
             /**
