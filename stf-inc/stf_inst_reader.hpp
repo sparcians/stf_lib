@@ -332,13 +332,15 @@ namespace stf {
                         // Assume in the trace, INST_MEM_CONTENT always appear right
                         // after INST_MEM_ACCESS of the same memory access
                         const auto content_rec = readRecord_(inst);
-                        stf_assert(content_rec->getDescriptor() == descriptors::internal::Descriptor::STF_INST_MEM_CONTENT,
-                                   "Invalid trace: memory access must be followed by memory content");
+                        if(STF_EXPECT_TRUE(content_rec != nullptr)) {
+                            stf_assert(content_rec->getDescriptor() == descriptors::internal::Descriptor::STF_INST_MEM_CONTENT,
+                                       "Invalid trace: memory access must be followed by memory content");
 
-                        const auto access_type = rec->template as<InstMemAccessRecord>().getType();
-                        inst.setInstFlag_(MEM_ACCESS_FLAGS[enums::to_int(access_type)]);
+                            const auto access_type = rec->template as<InstMemAccessRecord>().getType();
+                            inst.setInstFlag_(MEM_ACCESS_FLAGS[enums::to_int(access_type)]);
 
-                        inst.getMemAccessVector_(access_type).emplace_back(rec, content_rec);
+                            inst.getMemAccessVector_(access_type).emplace_back(rec, content_rec);
+                        }
                     }
                     // These are the least common records
                     else {
