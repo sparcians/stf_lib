@@ -54,13 +54,13 @@ namespace stf {
             static constexpr int DATA_WIDTH = 16; /**< Width of raw data, in hex*/
             static constexpr int OPCODE_WIDTH = 8; /**< Width of an opcode, in hex*/
             static constexpr int OPCODE_FIELD_WIDTH = 21; /**< Total width of the opcode field*/
-            static constexpr int MEM_ACCESS_FIELD_WIDTH = 8; /**< Total width of the MEM_ATTR field*/
+            static constexpr int MEM_ACCESS_FIELD_WIDTH = 13; /**< Total width of the MEM_ATTR field*/
             static constexpr int OPERAND_LABEL_LEFT_PADDING = LABEL_WIDTH + VA_WIDTH + 1; /**< Left padding used for operand label*/
             static constexpr int OPERAND_LABEL_RIGHT_PADDING = 4; /**< Right padding used for operand label*/
             static constexpr int OPERAND_LABEL_WIDTH = OPERAND_LABEL_LEFT_PADDING + OPERAND_LABEL_RIGHT_PADDING; /**< Total width of operand field*/
             static constexpr int TID_WIDTH = 8; /**< Width of a TID/PID/ASID, in hex*/
-            static constexpr int REGISTER_NAME_WIDTH = 17; /**< Width of the register name field*/
-            static constexpr int EVENT_WIDTH = 28; /**< Width of an event code string representation */
+            static constexpr int REGISTER_NAME_WIDTH = 22; /**< Width of the register name field*/
+            static constexpr int EVENT_WIDTH = 22; /**< Width of an event code string representation */
             static constexpr int EVENT_DATA_WIDTH = 8; /**< Width of event data, in hex*/
             static constexpr int ESCAPE_WIDTH = 4; /**< Width of an escape record, in decimal*/
             static constexpr int PTE_ACCESS_INDEX_WIDTH = 16; /**< Width of a PTE access index, in decimal*/

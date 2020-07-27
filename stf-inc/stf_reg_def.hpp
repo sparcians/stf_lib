@@ -111,21 +111,6 @@ namespace stf {
             };
 
             /**
-             * Converts a GPR into its corresponding string representation
-             */
-            static void formatGPR(std::ostream& os, Registers::STF_REG regno);
-
-            /**
-             * Converts an FPR into its corresponding string representation
-             */
-            static void formatFPR(std::ostream& os, Registers::STF_REG regno);
-
-            /**
-             * Converts a CSR into its corresponding string representation
-             */
-            static void formatCSR(std::ostream& os, Registers::STF_REG regno);
-
-            /**
              * Converts an STF_REG to its corresponding index
              */
             static STF_REG_packed_int getArchRegIndex(STF_REG regno);
@@ -150,6 +135,8 @@ namespace stf {
             static inline constexpr bool isGPR(const STF_REG regno) {
                 return Registers::Codec::getRegType(regno) == Registers::STF_REG_TYPE::INTEGER;
             }
+
+            static void format(std::ostream& os, const STF_REG regno);
 
             /**
              * \class Codec
@@ -203,6 +190,23 @@ namespace stf {
                         return static_cast<STF_REG_TYPE>(enums::to_int(reg) >> TYPE_SHIFT_AMT_);
                     }
             };
+
+        private:
+            /**
+             * Converts a GPR into its corresponding string representation
+             */
+            static void formatGPR_(std::ostream& os, Registers::STF_REG regno);
+
+            /**
+             * Converts an FPR into its corresponding string representation
+             */
+            static void formatFPR_(std::ostream& os, Registers::STF_REG regno);
+
+            /**
+             * Converts a CSR into its corresponding string representation
+             */
+            static void formatCSR_(std::ostream& os, Registers::STF_REG regno);
+
     };
 
     enum class Registers::STF_REG : Registers::STF_REG_int {

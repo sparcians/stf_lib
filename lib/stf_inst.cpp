@@ -29,7 +29,7 @@ namespace stf {
             os << ":";
             format_utils::formatPA(os, access.paddr_);
         }*/
-        format_utils::formatSpaces(os, 1);
+        format_utils::formatSpaces(os, 5);
         format_utils::formatData(os, access.getData());
 
         return os;
@@ -38,11 +38,11 @@ namespace stf {
     std::string_view Operand::getLabel() const {
         switch(rec_->getOperandType()) {
             case Registers::STF_REG_OPERAND_TYPE::REG_DEST:
-                return dest_label_;
+                return DEST_LABEL_;
             case Registers::STF_REG_OPERAND_TYPE::REG_SOURCE:
-                return src_label_;
+                return SRC_LABEL_;
             case Registers::STF_REG_OPERAND_TYPE::REG_STATE:
-                return state_label_;
+                return STATE_LABEL_;
             case Registers::STF_REG_OPERAND_TYPE::REG_RESERVED:
                 break;
         }
@@ -71,7 +71,7 @@ namespace stf {
             format_utils::formatOperandLabel(os, "MODE ");
             const auto& data = event.getData();
             stf_assert(!data.empty(), "Attempted to print mode change event without accompanying EventContentRecord");
-            os << static_cast<EXECUTION_MODE>(data.front()) << std::endl;
+            os << static_cast<EXECUTION_MODE>(data.front());
         }
         else {
             if(event.isSyscall()) {

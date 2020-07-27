@@ -121,9 +121,9 @@ namespace stf {
      */
     class Operand {
         private:
-            static constexpr std::string_view state_label_ = "reg state: ";
-            static constexpr std::string_view dest_label_ = "dst ";
-            static constexpr std::string_view src_label_ = "src ";
+            static constexpr std::string_view STATE_LABEL_ = "state ";
+            static constexpr std::string_view DEST_LABEL_ = "dst ";
+            static constexpr std::string_view SRC_LABEL_ = "src ";
 
             const InstRegRecord* rec_;
 
@@ -778,7 +778,7 @@ namespace stf {
 
             /**
              * \typedef ExtraRecordQueue
-             * Queue that holds additional records, sorted by their encoded descriptor 
+             * Queue that holds additional records, sorted by their encoded descriptor
              */
             using ExtraRecordQueue = std::priority_queue<const STFRecord*,
                                                          std::vector<const STFRecord*>,
