@@ -227,7 +227,14 @@ namespace stf {
                 if(it == map_.end()) {
                     return 0;
                 }
-                return it->second.size();
+
+                const auto& vec = it->second;
+                const auto vec_size = vec.size();
+                if(vec_size == 1 && !vec.front()) {
+                    return 0;
+                }
+
+                return vec_size;
             }
 
         public:
