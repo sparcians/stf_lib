@@ -118,6 +118,6 @@ namespace stf {
     const boost::container::flat_set<descriptors::internal::Descriptor> STFInst::SKIPPED_PAIRED_RECORDS_ {
         descriptors::internal::Descriptor::STF_INST_MEM_CONTENT,
         descriptors::internal::Descriptor::STF_BUS_MASTER_CONTENT,
-        //descriptors::internal::Descriptor::STF_EVENT_PC_TARGET
+        descriptors::internal::Descriptor::STF_EVENT_PC_TARGET
     };
 } // end namespace stf

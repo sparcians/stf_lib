@@ -36,6 +36,16 @@ namespace stf {
         return true ;
     }
 
+    STFRegState& STFRegState::operator=(const STFRegState& rhs) {
+        regbank = rhs.regbank;
+        regstate.clear();
+        for(const auto& p: rhs.regstate) {
+            regstate.emplace(p.first, p.second);
+        }
+
+        return *this;
+    }
+
     void STFRegState::getRegValue(Registers::STF_REG regno, uint64_t &data) const {
         Registers::STF_REG mapped_reg;
 

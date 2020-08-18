@@ -141,6 +141,14 @@ namespace stf {
             }
 
             /**
+             * Checks whether a register is a vector register
+             * \param regno STF_REG value to check
+             */
+            static inline constexpr bool isVector(const STF_REG regno) {
+                return Registers::Codec::getRegType(regno) == Registers::STF_REG_TYPE::VECTOR;
+            }
+
+            /**
              * Formats an STF_REG value into a stream
              * \param os stream to format into
              * \param regno STF_REG value to format
@@ -212,6 +220,11 @@ namespace stf {
             static void formatFPR_(std::ostream& os, Registers::STF_REG regno);
 
             /**
+             * Converts a vector register into its corresponding string representation
+             */
+            static void formatVector_(std::ostream& os, Registers::STF_REG regno);
+
+            /**
              * Converts a CSR into its corresponding string representation
              */
             static void formatCSR_(std::ostream& os, Registers::STF_REG regno);
@@ -253,7 +266,7 @@ namespace stf {
         STF_REG_X30              = Codec::combineRegType(0x001E, STF_REG_TYPE::INTEGER),
         STF_REG_X31              = Codec::combineRegType(0x001F, STF_REG_TYPE::INTEGER),
 
-        // 32 floating point  registers
+        // 32 floating point registers
         STF_REG_F0               = Codec::combineRegType(0x0000, STF_REG_TYPE::FLOATING_POINT),
         STF_REG_F1               = Codec::combineRegType(0x0001, STF_REG_TYPE::FLOATING_POINT),
         STF_REG_F2               = Codec::combineRegType(0x0002, STF_REG_TYPE::FLOATING_POINT),
@@ -286,6 +299,40 @@ namespace stf {
         STF_REG_F29              = Codec::combineRegType(0x001D, STF_REG_TYPE::FLOATING_POINT),
         STF_REG_F30              = Codec::combineRegType(0x001E, STF_REG_TYPE::FLOATING_POINT),
         STF_REG_F31              = Codec::combineRegType(0x001F, STF_REG_TYPE::FLOATING_POINT),
+
+        // 32 vector registers
+        STF_REG_V0               = Codec::combineRegType(0x0000, STF_REG_TYPE::VECTOR),
+        STF_REG_V1               = Codec::combineRegType(0x0001, STF_REG_TYPE::VECTOR),
+        STF_REG_V2               = Codec::combineRegType(0x0002, STF_REG_TYPE::VECTOR),
+        STF_REG_V3               = Codec::combineRegType(0x0003, STF_REG_TYPE::VECTOR),
+        STF_REG_V4               = Codec::combineRegType(0x0004, STF_REG_TYPE::VECTOR),
+        STF_REG_V5               = Codec::combineRegType(0x0005, STF_REG_TYPE::VECTOR),
+        STF_REG_V6               = Codec::combineRegType(0x0006, STF_REG_TYPE::VECTOR),
+        STF_REG_V7               = Codec::combineRegType(0x0007, STF_REG_TYPE::VECTOR),
+        STF_REG_V8               = Codec::combineRegType(0x0008, STF_REG_TYPE::VECTOR),
+        STF_REG_V9               = Codec::combineRegType(0x0009, STF_REG_TYPE::VECTOR),
+        STF_REG_V10              = Codec::combineRegType(0x000A, STF_REG_TYPE::VECTOR),
+        STF_REG_V11              = Codec::combineRegType(0x000B, STF_REG_TYPE::VECTOR),
+        STF_REG_V12              = Codec::combineRegType(0x000C, STF_REG_TYPE::VECTOR),
+        STF_REG_V13              = Codec::combineRegType(0x000D, STF_REG_TYPE::VECTOR),
+        STF_REG_V14              = Codec::combineRegType(0x000E, STF_REG_TYPE::VECTOR),
+        STF_REG_V15              = Codec::combineRegType(0x000F, STF_REG_TYPE::VECTOR),
+        STF_REG_V16              = Codec::combineRegType(0x0010, STF_REG_TYPE::VECTOR),
+        STF_REG_V17              = Codec::combineRegType(0x0011, STF_REG_TYPE::VECTOR),
+        STF_REG_V18              = Codec::combineRegType(0x0012, STF_REG_TYPE::VECTOR),
+        STF_REG_V19              = Codec::combineRegType(0x0013, STF_REG_TYPE::VECTOR),
+        STF_REG_V20              = Codec::combineRegType(0x0014, STF_REG_TYPE::VECTOR),
+        STF_REG_V21              = Codec::combineRegType(0x0015, STF_REG_TYPE::VECTOR),
+        STF_REG_V22              = Codec::combineRegType(0x0016, STF_REG_TYPE::VECTOR),
+        STF_REG_V23              = Codec::combineRegType(0x0017, STF_REG_TYPE::VECTOR),
+        STF_REG_V24              = Codec::combineRegType(0x0018, STF_REG_TYPE::VECTOR),
+        STF_REG_V25              = Codec::combineRegType(0x0019, STF_REG_TYPE::VECTOR),
+        STF_REG_V26              = Codec::combineRegType(0x001A, STF_REG_TYPE::VECTOR),
+        STF_REG_V27              = Codec::combineRegType(0x001B, STF_REG_TYPE::VECTOR),
+        STF_REG_V28              = Codec::combineRegType(0x001C, STF_REG_TYPE::VECTOR),
+        STF_REG_V29              = Codec::combineRegType(0x001D, STF_REG_TYPE::VECTOR),
+        STF_REG_V30              = Codec::combineRegType(0x001E, STF_REG_TYPE::VECTOR),
+        STF_REG_V31              = Codec::combineRegType(0x001F, STF_REG_TYPE::VECTOR),
 
         // Control and status registers
         // User
