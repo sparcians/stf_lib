@@ -42,11 +42,165 @@ namespace stf {
 
         public:
             /**
-             * \typedef VecType
-             * Vector type used as values in the underlying map
+             * \class SmallVector
+             * Wraps a boost::small_vector. Optimizes the common case for STF records (most instructions have
+             * at most one of any particular record type) by always having one record slot available (optimizes out some
+             * branch mispredicts in the boost::small_vector::emplace_back method).
              */
-            using VecType = boost::container::small_vector<STFRecord::UniqueHandle,
-                                                           DEFAULT_VEC_SIZE_>;
+            class SmallVector {
+                private:
+                    using vec_type = boost::container::small_vector<STFRecord::UniqueHandle,
+                                                                    DEFAULT_VEC_SIZE_>;
+                    vec_type data_;
+
+                public:
+                    /**
+                     * \typedef iterator
+                     * iterator to the underlying vector
+                     */
+                    using iterator = vec_type::iterator;
+
+                    /**
+                     * \typedef const_iterator
+                     * const_iterator to the underlying vector
+                     */
+                    using const_iterator = vec_type::const_iterator;
+
+                    SmallVector() :
+                        data_(1)
+                    {
+                    }
+
+                    /**
+                     * Gets an iterator to the beginning of the vector
+                     */
+                    inline iterator begin() {
+                        if(STF_EXPECT_TRUE(data_.size() == 1)) {
+                            if(!data_.front()) {
+                                return data_.end();
+                            }
+                        }
+                        return data_.begin();
+                    }
+
+                    /**
+                     * Gets a const_iterator to the beginning of the vector
+                     */
+                    inline const_iterator begin() const {
+                        if(STF_EXPECT_TRUE(data_.size() == 1)) {
+                            if(!data_.front()) {
+                                return data_.end();
+                            }
+                        }
+                        return data_.begin();
+                    }
+
+                    /**
+                     * Gets a const_iterator to the beginning of the vector
+                     */
+                    inline const_iterator cbegin() const {
+                        if(STF_EXPECT_TRUE(data_.size() == 1)) {
+                            if(!data_.front()) {
+                                return data_.cend();
+                            }
+                        }
+                        return data_.cbegin();
+                    }
+
+                    /**
+                     * Gets an iterator to the end of the vector
+                     */
+                    inline iterator end() {
+                        return data_.end();
+                    }
+
+                    /**
+                     * Gets a const_iterator to the end of the vector
+                     */
+                    inline const_iterator end() const {
+                        return data_.end();
+                    }
+
+                    /**
+                     * Gets a const_iterator to the end of the vector
+                     */
+                    inline const_iterator cend() const {
+                        return data_.cend();
+                    }
+
+                    /**
+                     * Clears the vector
+                     */
+                    inline void clear() {
+                        if(STF_EXPECT_TRUE(!data_.empty())) {
+                            // Instead of really clearing the vector, just reduce it to one invalid entry
+                            data_.resize(1);
+                            data_.front().reset();
+                        }
+                    }
+
+                    /**
+                     * Appends a new element to the back of the vector
+                     * \param rec New record to append
+                     */
+                    inline const STFRecord* emplace_back(STFRecord::UniqueHandle&& rec) {
+                        // Replace the dummy entry if we have one
+                        if(STF_EXPECT_TRUE(data_.size() == 1)) {
+                            if(auto& entry = data_.front(); STF_EXPECT_TRUE(!entry)) {
+                                entry = std::move(rec);
+                                return entry.get();
+                            }
+                        }
+
+                        return data_.emplace_back(std::move(rec)).get();
+                    }
+
+                    /**
+                     * Returns whether the vector is empty
+                     */
+                    inline bool empty() const {
+                        return size() == 0;
+                    }
+
+                    /**
+                     * Returns the size of the vector
+                     */
+                    inline size_t size() const {
+                        const auto actual_size = data_.size();
+                        if(STF_EXPECT_TRUE(actual_size == 1)) {
+                            if(!data_.front()) {
+                                return 0;
+                            }
+                        }
+
+                        return actual_size;
+                    }
+
+                    /**
+                     * Gets the element at the specified index
+                     * \param idx Index of the desired element
+                     */
+                    inline const STFRecord::UniqueHandle& at(const size_t idx) const {
+                        return data_.at(idx);
+                    }
+
+                    /**
+                     * Gets the element at the specified index
+                     * \param idx Index of the desired element
+                     */
+                    inline STFRecord::UniqueHandle& operator[](const size_t idx) {
+                        return data_[idx];
+                    }
+
+                    /**
+                     * Gets the element at the specified index
+                     * \param idx Index of the desired element
+                     */
+                    inline const STFRecord::UniqueHandle& operator[](const size_t idx) const {
+                        return data_[idx];
+                    }
+            };
+
         private:
             /**
              * \class ArrayMap
@@ -55,7 +209,7 @@ namespace stf {
              */
             class ArrayMap {
                 public:
-                    using value_type = std::pair<descriptors::internal::Descriptor, VecType>;
+                    using value_type = std::pair<descriptors::internal::Descriptor, SmallVector>;
 
                 private:
                     class StaticVector {
@@ -112,11 +266,7 @@ namespace stf {
 
                             inline void clear() {
                                 for(size_t i = 0; i < size_; ++i) {
-                                    auto& vec = arr_[i].second;
-                                    if(STF_EXPECT_TRUE(!vec.empty())) {
-                                        vec.resize(1);
-                                        vec.front().reset();
-                                    }
+                                    arr_[i].second.clear();
                                 }
                                 size_ = 0;
                             }
@@ -158,14 +308,7 @@ namespace stf {
                     }
 
                     inline const STFRecord* emplace(STFRecord::UniqueHandle&& rec) {
-                        auto& vec = vec_array_[static_cast<key_type>(rec->getDescriptor())].second;
-                        if(STF_EXPECT_TRUE(vec.size() == 1)) {
-                            if(auto& entry = vec.front(); STF_EXPECT_TRUE(!entry)) {
-                                entry = std::move(rec);
-                                return entry.get();
-                            }
-                        }
-                        return vec.emplace_back(std::move(rec)).get();
+                        return vec_array_[static_cast<key_type>(rec->getDescriptor())].second.emplace_back(std::move(rec));
                     }
 
                     inline auto& operator[](const key_type key) {
@@ -227,14 +370,7 @@ namespace stf {
                 if(it == map_.end()) {
                     return 0;
                 }
-
-                const auto& vec = it->second;
-                const auto vec_size = vec.size();
-                if(vec_size == 1 && !vec.front()) {
-                    return 0;
-                }
-
-                return vec_size;
+                return it->second.size();
             }
 
         public:
@@ -406,7 +542,7 @@ namespace stf {
              *
              * Vector const iterator type
              */
-            using const_rec_iterator = VecType::const_iterator;
+            using const_rec_iterator = SmallVector::const_iterator;
 
             /**
              * Emplaces a record in the map, returning a reference to the record
@@ -421,7 +557,7 @@ namespace stf {
              * Gets the vector of records for the specified STF descriptor
              * \param desc STF descriptor
              */
-            inline const VecType& at(const descriptors::internal::Descriptor desc) const {
+            inline const SmallVector& at(const descriptors::internal::Descriptor desc) const {
                 return at(enums::to_int(desc));
             }
 
@@ -429,7 +565,7 @@ namespace stf {
              * Gets the vector of records for the specified key
              * \param key Key
              */
-            inline const VecType& at(const key_type key) const {
+            inline const SmallVector& at(const key_type key) const {
                 return map_[key];
             }
 

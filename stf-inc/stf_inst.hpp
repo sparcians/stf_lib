@@ -324,6 +324,7 @@ namespace stf {
                 INST_IS_FP              = 1 << 8,   /**< inst is FP */
                 INST_CHANGE_TO_USER     = 1 << 9,   /**< inst changes to user mode */
                 INST_CHANGE_FROM_USER   = 1 << 10,  /**< inst changes from user mode */
+                INST_IS_FAULT           = 1 << 11,  /**< instruction is a fault */
             };
 
             uint64_t branch_target_ = 0; /**< branch target PC */
@@ -577,7 +578,7 @@ namespace stf {
              */
             inline void writeRecordPairs_(STFWriter& stf_writer,
                                           const descriptors::internal::Descriptor first_desc,
-                                          const RecordMap::VecType& first_record_vec,
+                                          const RecordMap::SmallVector& first_record_vec,
                                           const descriptors::internal::Descriptor second_desc) const {
                 const auto& second_vec = orig_records_.at(second_desc);
                 const bool is_event = first_desc == descriptors::internal::Descriptor::STF_EVENT;
@@ -872,6 +873,12 @@ namespace stf {
              * \return True if syscall
              */
             bool isSyscall() const { return inst_flags_ & INST_IS_SYSCALL; }
+
+            /**
+             * \brief Fault or not
+             * \return True if fault
+             */
+            bool isFault() const { return inst_flags_ & INST_IS_FAULT; }
 
             /**
              * \brief FP or not

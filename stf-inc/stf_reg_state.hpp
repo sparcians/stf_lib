@@ -128,6 +128,10 @@ namespace stf {
             };
 
             STFRegState() = default;
+            STFRegState(const STFRegState&) = default;
+            STFRegState(STFRegState&&) = default;
+            STFRegState& operator=(STFRegState&& rhs) = default;
+            STFRegState& operator=(const STFRegState& rhs);
 
             /**
              * Constructs and initializes an STFRegState

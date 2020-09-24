@@ -299,13 +299,13 @@ namespace stf {
                                                                                           STFInst::INST_CHANGE_FROM_USER};
 
                     const auto rec = readRecord_(inst);
-                    const auto desc = rec->getDescriptor();
 
                     if(!rec) {
                         event_valid = false;
                         continue;
                     }
 
+                    const auto desc = rec->getDescriptor();
                     stf_assert(desc != descriptors::internal::Descriptor::STF_INST_MEM_CONTENT,
                                "Saw MemContentRecord without accompanying MemAccessRecord");
 
@@ -366,6 +366,7 @@ namespace stf {
 
                                     inst.setInstFlag_(math_utils::conditionalValue(
                                         is_syscall, STFInst::INST_IS_SYSCALL,
+                                        event.isFault(), STFInst::INST_IS_FAULT,
                                         !is_syscall && (is_mode_change = event.isModeChange()), MODE_CHANGE_FLAGS[event.getData().front()]
                                     ));
 

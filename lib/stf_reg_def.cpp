@@ -392,6 +392,11 @@ namespace stf {
         os << "REG_" + std::to_string(Registers::getArchRegIndex(regno));
     }
 
+    void Registers::formatVector_(std::ostream& os, const Registers::STF_REG regno) {
+        stf_assert(isVector(regno), "Attempted to format a non-vector register: " << std::hex << enums::to_int(regno));
+        os << "REG_V" + std::to_string(Registers::getArchRegIndex(regno));
+    }
+
     Registers::STF_REG_packed_int Registers::getArchRegIndex(const Registers::STF_REG regno) {
         return Codec::packRegNum(regno);
     }
@@ -407,6 +412,9 @@ namespace stf {
         }
         else if (Registers::isGPR(regno)) {
             Registers::formatGPR_(os, regno);
+        }
+        else if (Registers::isVector(regno)) {
+            Registers::formatVector_(os, regno);
         }
         else {
             stf_throw("Invalid STF_REG_TYPE: " << Registers::Codec::getRegType(regno));
