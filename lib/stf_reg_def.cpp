@@ -36,6 +36,9 @@ namespace stf {
             case STF_REG::STF_REG_CSR_VXRM:
                 os << "REG_CSR_VXRM";
                 break;
+            case STF_REG::STF_REG_CSR_VCSR:
+                os << "REG_CSR_VCSR";
+                break;
             case STF_REG::STF_REG_CSR_USCRATCH:
                 os << "REG_CSR_USCRATCH";
                 break;
@@ -281,6 +284,15 @@ namespace stf {
                 break;
             case STF_REG::STF_REG_CSR_INSTRET:
                 os << "REG_CSR_INSTRET";
+                break;
+            case STF_REG::STF_REG_CSR_VL:
+                os << "REG_CSR_VL";
+                break;
+            case STF_REG::STF_REG_CSR_VTYPE:
+                os << "REG_CSR_VTYPE";
+                break;
+            case STF_REG::STF_REG_CSR_VLENB:
+                os << "REG_CSR_VLENB";
                 break;
             case STF_REG::STF_REG_CSR_CYCLEH:
                 os << "REG_CSR_CYCLEH";

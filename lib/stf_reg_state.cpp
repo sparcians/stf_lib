@@ -247,6 +247,10 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TIME);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_INSTRET);
 
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VL);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VTYPE);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VLENB);
+
                 if(iem == INST_IEM::STF_INST_IEM_RV32) {
                     insertMappedRegister_(Registers::STF_REG::STF_REG_CSR_MCYCLEH,
                                           Registers::STF_REG::STF_REG_CSR_MCYCLE,
@@ -296,6 +300,7 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VSTART);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VXSAT);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VXRM);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VCSR);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_UNXTI);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_UINTSTATUS);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_USCRATCHCSW);

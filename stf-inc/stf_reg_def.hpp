@@ -346,6 +346,7 @@ namespace stf {
         STF_REG_CSR_VSTART       = Codec::combineRegType(0x008, STF_REG_TYPE::CSR),
         STF_REG_CSR_VXSAT        = Codec::combineRegType(0x009, STF_REG_TYPE::CSR),
         STF_REG_CSR_VXRM         = Codec::combineRegType(0x00a, STF_REG_TYPE::CSR),
+        STF_REG_CSR_VCSR         = Codec::combineRegType(0x00f, STF_REG_TYPE::CSR),
         STF_REG_CSR_USCRATCH     = Codec::combineRegType(0x040, STF_REG_TYPE::CSR),
         STF_REG_CSR_UEPC         = Codec::combineRegType(0x041, STF_REG_TYPE::CSR),
         STF_REG_CSR_UCAUSE       = Codec::combineRegType(0x042, STF_REG_TYPE::CSR),
@@ -444,6 +445,11 @@ namespace stf {
         STF_REG_CSR_CYCLE        = Codec::combineRegType(0xc00, STF_REG_TYPE::CSR),
         STF_REG_CSR_TIME         = Codec::combineRegType(0xc01, STF_REG_TYPE::CSR),
         STF_REG_CSR_INSTRET      = Codec::combineRegType(0xc02, STF_REG_TYPE::CSR),
+
+        // Vector
+        STF_REG_CSR_VL           = Codec::combineRegType(0xc20, STF_REG_TYPE::CSR),
+        STF_REG_CSR_VTYPE        = Codec::combineRegType(0xc21, STF_REG_TYPE::CSR),
+        STF_REG_CSR_VLENB        = Codec::combineRegType(0xc22, STF_REG_TYPE::CSR),
 
         // Basica User Performance Monitoring Counters
         STF_REG_CSR_CYCLEH       = Codec::combineRegType(0xc80, STF_REG_TYPE::CSR),
