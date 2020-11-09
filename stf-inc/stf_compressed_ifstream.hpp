@@ -106,7 +106,7 @@ namespace stf {
             }
 
             /**
-             * Reads an std::pair directly from the underlying file without decompressing the data
+             * Reads a ChunkOffset directly from the underlying file without decompressing the data
              * \param data Buffer to read data into
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
@@ -459,10 +459,10 @@ namespace stf {
              */
             inline void seek(size_t num_instructions) final {
                 // If the seek point comes before the next chunk boundary, just seek normally within the chunk
-                if(num_insts_ + num_instructions < next_chunk_end_) {
-                    STFIFstream::seek(num_instructions);
-                }
-                else {
+                if(num_insts_ + num_instructions >= next_chunk_end_) {
+                    // Throw away what's currently in the buffer since we're moving to a new chunk
+                    out_buf_.consume();
+
                     // Otherwise, seek to the next chunk
                     if(STF_EXPECT_TRUE(decompression_in_progress_)) {
                         // Wait for decompressor to finish
@@ -473,26 +473,30 @@ namespace stf {
 
                     in_buf_.reset();
                     endChunk_();
+
+                    const auto chunk_idx = (num_insts_ + num_instructions) / inst_chunk_size_;
+                    if(STF_EXPECT_FALSE(chunk_idx >= chunk_indices_.size())) {
+                        stf_throw("Attempted to seek past the end of the trace");
+                    }
+
+                    num_instructions = (num_insts_ + num_instructions) % inst_chunk_size_;
+                    next_chunk_index_it_ = std::next(chunk_indices_.begin(), static_cast<ssize_t>(chunk_idx));
+                    num_insts_ = chunk_idx * inst_chunk_size_;
+                    next_chunk_end_ = num_insts_ + inst_chunk_size_;
+
                     fseek(stream_, next_chunk_index_it_->getOffset(), SEEK_SET);
+                    last_read_pos_ = next_chunk_index_it_->getOffset();
                     pc_tracker_.forcePC(next_chunk_index_it_->getStartPC());
-
-                    // Recursively seek for the remaining number of instructions
-                    num_instructions -= next_chunk_end_ - num_insts_;
-                    num_insts_ = next_chunk_end_;
-                    next_chunk_end_ += inst_chunk_size_;
-
                     const auto current_chunk = next_chunk_index_it_;
                     if(STF_EXPECT_TRUE(next_chunk_index_it_ != chunk_indices_.end())) {
                         ++next_chunk_index_it_;
                     }
-                    if(num_insts_ + num_instructions < next_chunk_end_) {
-                        readChunk_(next_chunk_index_it_, current_chunk->getUncompressedChunkSize(), out_buf_);
-                        readNextChunk_();
-                    }
-                    if(num_instructions) {
-                        seek(num_instructions);
-                    }
+
+                    readChunk_(next_chunk_index_it_, current_chunk->getUncompressedChunkSize(), out_buf_);
+                    readNextChunk_();
                 }
+
+                STFIFstream::seek(num_instructions);
             }
 
             /**

@@ -121,11 +121,11 @@ namespace stf {
                 return num;
             }
 
-            void compressChunkAsync_() {
+            void compressChunkAsync_(const uint64_t next_chunk_pc) {
                 const size_t num_bytes = compression_chunk_buf_.end();
                 compressor_.compress(out_buf_, compression_chunk_buf_);
                 bytes_written_ += num_bytes;
-                endChunk_();
+                endChunk_(next_chunk_pc);
             }
 
             void compressChunk_() {
@@ -137,8 +137,11 @@ namespace stf {
                     pending_chunk_ = false;
                     compression_in_progress_ = true;
                     std::swap(cur_chunk_buf_, compression_chunk_buf_);
+
+                    // Grab the next chunk's PC now since compression is happening asynchronously
+                    const uint64_t next_chunk_pc = pc_tracker_.getNextPC();
                     compression_done_ = std::move(std::async(std::launch::async,
-                                                             [this](){ this->compressChunkAsync_(); }));
+                                                             [this, next_chunk_pc](){ this->compressChunkAsync_(next_chunk_pc); }));
                 }
             }
 
@@ -156,7 +159,7 @@ namespace stf {
             /**
              * Ends the current compressed chunk and flushes it to the file
              */
-            void endChunk_() {
+            void endChunk_(const uint64_t next_chunk_pc) {
                 // Empty the buffer if it's full
                 if(out_buf_.full()) {
                     writeChunk_();
@@ -169,7 +172,7 @@ namespace stf {
                 chunk_indices_.back().setUncompressedChunkSize(bytes_written_);
                 bytes_written_ = 0;
                 // Start a new chunk
-                chunk_indices_.emplace_back(ftell(stream_), pc_tracker_.getNextPC(), 0);
+                chunk_indices_.emplace_back(ftell(stream_), next_chunk_pc, 0);
             }
 
         public:
@@ -287,7 +290,6 @@ namespace stf {
 
                 // If we've crossed the chunk boundary, close the current chunk and start a new one
                 if(STF_EXPECT_FALSE(num_insts_ >= next_chunk_end_)) {
-                    //endChunk_();
                     compressChunk_();
                     next_chunk_end_ += inst_chunk_size_;
                 }

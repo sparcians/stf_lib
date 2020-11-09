@@ -78,6 +78,7 @@ namespace stf {
             bool disable_skipping_on_next_inst_ = false; // If true, disables skipping when the next instruction is read
             bool pending_user_syscall_ = false; // If true, the instruction that is currently being processed is a user syscall
             size_t num_skipped_instructions_ = 0; // Counts number of skipped instructions so that instruction indices can be adjusted
+            bool buffer_is_empty_ = true; // True if the buffer contains no instructions
 
             FilterType filter_;
 
@@ -156,10 +157,12 @@ namespace stf {
                 }
 
                 // no instruction in the file;
-                if (inst_tail_ == 0) {
+                if (STF_EXPECT_FALSE(inst_tail_ == 0)) {
+                    buffer_is_empty_ = true;
                     return false;
                 }
 
+                buffer_is_empty_ = false;
                 --inst_tail_; // Make inst_tail_ point to the last instruction read instead of one past the last instruction
                 inst_head_ = 0;
                 return true;
@@ -769,6 +772,9 @@ namespace stf {
                                     end_ = true;
                                 }
                                 loc_ = 0;
+                            }
+                            else {
+                                end_ = sir_->buffer_is_empty_;
                             }
 
                             index_ = sir_->getFirstIndex_();
