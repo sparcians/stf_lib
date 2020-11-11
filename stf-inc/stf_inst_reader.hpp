@@ -78,6 +78,7 @@ namespace stf {
             bool disable_skipping_on_next_inst_ = false; // If true, disables skipping when the next instruction is read
             bool pending_user_syscall_ = false; // If true, the instruction that is currently being processed is a user syscall
             size_t num_skipped_instructions_ = 0; // Counts number of skipped instructions so that instruction indices can be adjusted
+            size_t num_insts_read_ = 0; // Counts number of instructions read from the buffer
             bool buffer_is_empty_ = true; // True if the buffer contains no instructions
 
             FilterType filter_;
@@ -171,7 +172,7 @@ namespace stf {
             // Internal function to validate instruction by index;
             //  to prevent instruction iterator runs out put circular
             //  buffer range;
-            inline void validateInstIndex_(uint64_t index) {
+            inline void validateInstIndex_(const uint64_t index) {
                 const auto& tail_inst = inst_buf_[inst_tail_];
                 stf_assert(index >= inst_buf_[inst_head_].index() && (tail_inst.skipped_ || index <= tail_inst.index()),
                            "sliding window index out of range");
@@ -179,13 +180,13 @@ namespace stf {
 
             // get instruciton based on index/location
             // Since index and loc are paired; skip location calculation to speed up;
-            inline STFInst* getInst_(uint64_t index, size_t loc) {
+            inline STFInst* getInst_(const uint64_t index, const size_t loc) {
                 validateInstIndex_(index);
                 return &inst_buf_[loc];
             }
 
             // Check if the intruction index is the last;
-            inline bool isLastInst_(uint64_t index, size_t loc) {
+            inline bool isLastInst_(const uint64_t index, const size_t loc) {
                 validateInstIndex_(index);
 
                 if(STF_EXPECT_TRUE(!last_inst_read_)) {
@@ -233,15 +234,23 @@ namespace stf {
                 }
                 while(skip_instruction);
 
+                num_insts_read_ = index;
                 return true;
+            }
+
+            /**
+             * Returns the number of instructions read so far with filtering
+             */
+            inline size_t numInstsReadFromReader_() const {
+                return rawNumInstsRead() - num_skipped_instructions_;
             }
 
             // Fill instruction into the half of the circular buffer;
             size_t fillHalfInstBuffer_() {
                 size_t pos = inst_tail_;
-                const size_t init_inst_cnt = numInstsRead();
+                const size_t init_inst_cnt = numInstsReadFromReader_();
                 const size_t max_inst_cnt = init_inst_cnt + (buffer_size_ / 2);
-                while(numInstsRead() < max_inst_cnt) {
+                while(numInstsReadFromReader_() < max_inst_cnt) {
                     pos = (pos + 1) & buffer_mask_;
 
                     try {
@@ -256,7 +265,7 @@ namespace stf {
                     }
                 }
 
-                const size_t inst_cnt = numInstsRead() - init_inst_cnt;
+                const size_t inst_cnt = numInstsReadFromReader_() - init_inst_cnt;
                 // adjust head and tail;
                 if (STF_EXPECT_TRUE(inst_cnt != 0)) {
                     inst_tail_ = (inst_tail_ + inst_cnt) & buffer_mask_;
@@ -531,7 +540,7 @@ namespace stf {
                     pending_user_syscall_ = false;
                 }
 
-                inst.index_ = numInstsRead();
+                inst.index_ = numInstsReadFromReader_();
 
                 inst.asid_ = asid_;
                 inst.tid_ = tid_;
@@ -563,8 +572,6 @@ namespace stf {
             {
                 open(filename, check_stf_pte);
             }
-
-            friend class pte_iterator;
 
             /**
              * \class pte_iterator
@@ -698,9 +705,6 @@ namespace stf {
                     pointer operator->() const { return current().get(); }
             };
 
-            // Nested iterator class
-            friend class iterator;
-
             /**
              * \class iterator
              * \brief iterator of the instruction stream that hides the sliding window.
@@ -712,6 +716,8 @@ namespace stf {
              *
              */
             class iterator {
+                friend class STFInstReaderBase;
+
                 private:
                     STFInstReaderBase *sir_ = nullptr;  // the instruction reader
                     uint64_t index_ = 1;            // index to the instruction stream
@@ -944,14 +950,40 @@ namespace stf {
             }
 
             /**
-             * \brief Seeks by the given number of instructions
+             * Seeks the reader by the specified number of instructions and returns an iterator to that point
+             * \note Intended for seeking the reader prior to reading any instructions. For seeking in a reader that
+             * has already been iterated over, use the seek() method.
+             */
+            inline iterator seekFromBeginning(size_t num_instructions) {
+                auto it = begin();
+                seek(it, num_instructions);
+                return it;
+            }
+
+            /**
+             * \brief Seeks an iterator by the given number of instructions
+             * \param it Iterator to seek
              * \param num_instructions Number of instructions to seek by
              */
-            inline void seek(size_t num_instructions) {
-                STFReader::seek(num_instructions);
-                inst_head_ = 0;
-                inst_tail_ = 0;
-                initInstBuffer_();
+            inline void seek(iterator& it, size_t num_instructions) {
+                const size_t num_buffered = inst_tail_ - it.loc_ + 1;
+                // If the instructions are already buffered or we skipping mode is enabled,
+                // we have to seek the slow way
+                if(only_user_mode_ || num_instructions <= num_buffered) {
+                    const auto end_it = end();
+                    for(size_t i = 0; i < num_instructions && it != end_it; ++i) {
+                        ++it;
+                    }
+                }
+                else {
+                    // We don't need to seek the reader past instructions we've already read
+                    const size_t num_to_skip = num_instructions - num_buffered;
+                    STFReader::seek(num_to_skip);
+                    inst_head_ = 0;
+                    inst_tail_ = 0;
+                    initInstBuffer_();
+                    it = begin();
+                }
             }
 
             /**
@@ -965,7 +997,7 @@ namespace stf {
              * Returns the number of instructions read so far with filtering
              */
             inline size_t numInstsRead() const {
-                return rawNumInstsRead() - num_skipped_instructions_;
+                return num_insts_read_;
             }
 
             /**
