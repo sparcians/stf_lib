@@ -386,7 +386,7 @@ namespace stf {
             static inline typename std::enable_if<std::is_floating_point<T>::value>::type
             formatPercent(OStream&& os, const T val, const int width = 0, const int precision = -1) {
                 formatFloat(os, 100.0*val, width, precision);
-                os << "%";
+                os << '%';
             }
 
             /**

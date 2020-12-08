@@ -150,7 +150,7 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << major_ << "." << minor_;
+                os << major_ << '.' << minor_;
             }
     };
 
@@ -872,7 +872,7 @@ namespace stf {
 
     // Have to define this after declaring the EventRecord::TYPE ostream operator
     inline void EventRecord::format_impl(std::ostream& os) const {
-        os << event_ << " " << content_;
+        os << event_ << ' ' << content_;
     }
 
     /**
@@ -1031,7 +1031,7 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << operand_type_ << " " << reg_ << " ";
+                os << operand_type_ << ' ' << reg_ << ' ';
                 format_utils::formatHex(os, data_);
             }
     };
@@ -1184,11 +1184,11 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << type_ << " ";
+                os << type_ << ' ';
                 format_utils::formatHex(os, address_);
-                os << " ";
+                os << ' ';
                 format_utils::formatHex(os, attr_);
-                os << " " << size_;
+                os << ' ' << size_;
             }
     };
 
@@ -1313,7 +1313,7 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << size_ << " ";
+                os << size_ << ' ';
                 format_utils::formatHex(os, microop_);
             }
     };
@@ -1423,9 +1423,9 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << access_type_ << " ";
+                os << access_type_ << ' ';
                 format_utils::formatHex(os, address_);
-                os << " " << src_type_ << src_idx_ << " " << size_ << " ";
+                os << ' ' << src_type_ << src_idx_ << ' ' << size_ << ' ';
                 format_utils::formatHex(os, attr_);
             }
     };
@@ -1476,6 +1476,7 @@ namespace stf {
             uint8_t minor_version_;                                  /**< The minor version of the generator */
             uint8_t minor_minor_version_;                            /**< The minor minor version of the generator */
             SerializableString<uint16_t> comment_;                   /**< Additional comments */
+            mutable std::string version_str_;                        /**< Cached version string */
 
             /**
              * \struct VersionReader
@@ -1541,10 +1542,18 @@ namespace stf {
             /**
              * Returns a formatted version string
              */
-            std::string getVersionString() const {
-                return std::to_string(major_version_) + "." +
-                       std::to_string(minor_version_) + "." +
-                       std::to_string(minor_minor_version_);
+            const std::string& getVersionString() const {
+                if(STF_EXPECT_FALSE(version_str_.empty())) {
+                    std::stringstream ss;
+                    ss << static_cast<uint16_t>(major_version_)
+                       << '.'
+                       << static_cast<uint16_t>(minor_version_)
+                       << '.'
+                       << static_cast<uint16_t>(minor_minor_version_);
+                    version_str_ = ss.str();
+                }
+
+                return version_str_;
             }
 
             /**
@@ -1567,6 +1576,8 @@ namespace stf {
              * \param ver_str Version string to parse
              */
             void setVersion(const std::string_view ver_str) {
+                version_str_.clear();
+
                 std::stringstream ss(ver_str.data());
                 ss.imbue(std::locale(std::locale(), new VersionReader()));
 
@@ -1597,6 +1608,7 @@ namespace stf {
              * \param ver version number to set
              */
             void setMajorVersion(const uint8_t ver) {
+                version_str_.clear();
                 major_version_ = ver;
             }
 
@@ -1612,6 +1624,7 @@ namespace stf {
              * \param ver version number to set
              */
             void setMinorVersion(const uint8_t ver) {
+                version_str_.clear();
                 minor_version_ = ver;
             }
 
@@ -1627,6 +1640,7 @@ namespace stf {
              * \param ver version number to set
              */
             void setMinorMinorVersion(const uint8_t ver) {
+                version_str_.clear();
                 minor_minor_version_ = ver;
             }
 
@@ -1693,11 +1707,7 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << generator_ << " "
-                   << static_cast<uint16_t>(major_version_) << "."
-                   << static_cast<uint16_t>(minor_version_) << "."
-                   << static_cast<uint16_t>(minor_minor_version_) << " "
-                   << comment_;
+                os << generator_ << ' ' << getVersionString() << ' ' << comment_;
             }
     };
 

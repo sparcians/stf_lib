@@ -53,7 +53,7 @@ namespace stf {
              * \param os ostream to use
              */
             void format(std::ostream& os) const final {
-                os << getDescriptor() << " ";
+                os << getDescriptor() << ' ';
                 static_cast<const T*>(this)->format_impl(os);
             }
     };

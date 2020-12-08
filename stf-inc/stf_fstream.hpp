@@ -119,7 +119,7 @@ namespace stf {
             inline void openWithProcess(const std::string_view cmd, const std::string_view filename, const char* rw_mode) {
                 stream_ = popen_cmd_(cmd, filename, rw_mode);
                 used_popen_ = true;
-                stf_assert(stream_, "Failed to run command: " << cmd << " " << filename);
+                stf_assert(stream_, "Failed to run command: " << cmd << ' ' << filename);
                 registerExitHandler_();
             }
 

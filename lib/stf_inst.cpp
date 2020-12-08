@@ -26,7 +26,7 @@ namespace stf {
 
         /* TODO: Figure out physical address support
         if (format_utils::showPhys()) {
-            os << ":";
+            os << ':';
             format_utils::formatPA(os, access.paddr_);
         }*/
         format_utils::formatSpaces(os, 5);

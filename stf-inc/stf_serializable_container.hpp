@@ -195,7 +195,7 @@ namespace stf {
              * \param vec SerializableVector to format
              */
             friend std::ostream& operator<<(std::ostream& os, const SerializableVector& vec) {
-                os << "[";
+                os << '[';
                 bool first = true;
                 for(const auto v: vec) {
                     if(STF_EXPECT_TRUE(!first)) {
@@ -206,7 +206,7 @@ namespace stf {
                     }
                     SerializableVector::formatElement_(os, v);
                 }
-                os << "]";
+                os << ']';
 
                 return os;
             }

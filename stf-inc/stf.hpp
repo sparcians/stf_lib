@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <iostream>
 
+#include "format_utils.hpp"
 #include "stf_exception.hpp"
 #include "stf_git_version.hpp"
 
@@ -39,13 +40,13 @@ namespace stf {
      * \param os ostream to format into
      */
     static inline void formatVersion(std::ostream& os) {
-        os << "Built with STF version "
-           << std::dec << STF_CUR_VERSION_MAJOR
-           << "." << STF_CUR_VERSION_MINOR
-           << ", STF_TOOL version 0x"
-           << std::hex << STF_TOOL_VERSION
-           << ", stf_lib commit SHA " << STF_GIT_VERSION
-           << std::endl;
+        os << "Built with STF version ";
+        format_utils::formatDec(os, STF_CUR_VERSION_MAJOR);
+        os << '.';
+        format_utils::formatDec(os, STF_CUR_VERSION_MINOR);
+        os << ", STF_TOOL version 0x";
+        format_utils::formatHex(os, STF_TOOL_VERSION, 0);
+        os << ", stf_lib commit SHA " << STF_GIT_VERSION << std::endl;
     }
 
     /**
@@ -60,7 +61,7 @@ namespace stf {
         stf_assert(((major <= STF_CUR_VERSION_MAJOR) ||
                     ((major <= STF_CUR_VERSION_MAJOR) && (minor <= STF_CUR_VERSION_MINOR))) &&
                    (major > STF_OLDEST_SUPPORTED_VERSION_MAJOR || minor >= STF_OLDEST_SUPPORTED_VERSION_MINOR),
-                   "ERROR: trace STF version " << std::dec << major << "." << minor << " is incompatible with the tool's version " << STF_CUR_VERSION_MAJOR << "." << STF_CUR_VERSION_MINOR << "!");
+                   "ERROR: trace STF version " << std::dec << major << '.' << minor << " is incompatible with the tool's version " << STF_CUR_VERSION_MAJOR << '.' << STF_CUR_VERSION_MINOR << '!');
     }
 } // end namespace stf
 // __STF_HPP__
