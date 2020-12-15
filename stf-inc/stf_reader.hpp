@@ -40,6 +40,7 @@ namespace stf {
     class ISARecord;
     class InstIEMRecord;
     class ForcePCRecord;
+    class ProcessIDExtRecord;
     class TraceInfoRecord;
     class TraceInfoFeatureRecord;
     class STFWriter;
@@ -59,6 +60,7 @@ namespace stf {
             ConstUniqueRecordHandle<ISARecord> isa_;
             ConstUniqueRecordHandle<InstIEMRecord> initial_iem_;
             ConstUniqueRecordHandle<ForcePCRecord> initial_pc_;
+            ConstUniqueRecordHandle<ProcessIDExtRecord> initial_process_id_;
             std::vector<ConstUniqueRecordHandle<TraceInfoRecord>> trace_info_records_;
             ConstUniqueRecordHandle<TraceInfoFeatureRecord> trace_features_;
 
@@ -88,8 +90,9 @@ namespace stf {
             /**
              * Constructs an STFReader and opens the specified file
              * \param filename file to open
+             * \param force_single_threaded_stream If true, forces single threaded mode
              */
-            explicit STFReader(std::string_view filename);
+            explicit STFReader(std::string_view filename, bool force_single_threaded_stream = false);
 
             /**
              * \brief Check STF and trace versions for compatibility
@@ -103,7 +106,7 @@ namespace stf {
             /**
              * \brief Open the trace reader
              */
-            void open(std::string_view filename);
+            void open(std::string_view filename, bool force_single_threaded_stream = false);
 
             /**
              * Get major version
@@ -129,6 +132,21 @@ namespace stf {
              * Gets the ISA
              */
             ISA getISA() const;
+
+            /**
+             * Gets the initial TGID
+             */
+            uint32_t getInitialTGID() const;
+
+            /**
+             * Gets the initial TID
+             */
+            uint32_t getInitialTID() const;
+
+            /**
+             * Gets the initial ASID
+             */
+            uint32_t getInitialASID() const;
 
             /**
              * Closes the file
@@ -164,6 +182,11 @@ namespace stf {
             const std::vector<ConstUniqueRecordHandle<TraceInfoRecord>>& getTraceInfo() const {
                 return trace_info_records_;
             }
+
+            /**
+             * Gets the latest trace info record
+             */
+            const TraceInfoRecord& getLatestTraceInfo() const;
 
             /**
              * Gets the trace feature record
@@ -204,6 +227,13 @@ namespace stf {
              * \param os ostream to use
              */
             void dumpHeader(std::ostream& os) const;
+
+            /**
+             * Gets the vlen parameter for the trace
+             */
+            vlen_t getVLen() const {
+                return stream_->getVLen();
+            }
     };
 } // end namespace stf
 // __STF_READER_HPP__

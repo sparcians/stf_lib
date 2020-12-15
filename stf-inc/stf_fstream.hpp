@@ -12,6 +12,7 @@
 
 #include "stf_exception.hpp"
 #include "stf_pc_tracker.hpp"
+#include "stf_vlen.hpp"
 
 namespace stf {
     /**
@@ -26,6 +27,8 @@ namespace stf {
             static bool lock_open_streams_; /**< Flag used to indicate whether close() methods should also remove STFFstreams from open_streams_ */
             static std::set<STFFstream*> open_streams_; /**< Set containing all streams that need to be closed in the atexit handler */
             static bool atexit_handler_registered_; /**< Flag used to indicate whether atexit handler has already been registered */
+            vlen_t vlen_ = 0; /**< Vector vlen parameter - if 0, the parameter has not been set and
+                                   attempting to read/write a vector register record will cause an error */
 
         protected:
             FILE* stream_ = nullptr; /**< Underlying file stream */
@@ -224,6 +227,19 @@ namespace stf {
              */
             size_t getNumInsts() const {
                 return num_insts_;
+            }
+
+            /**
+             * Sets the vlen parameter
+             * \param vlen Vlen value to set
+             */
+            void setVLen(vlen_t vlen);
+
+            /**
+             * Gets the vlen parameter
+             */
+            vlen_t getVLen() const {
+                return vlen_;
             }
     };
 } // end namespace stf

@@ -41,7 +41,17 @@ namespace stf {
 
         public:
             STFReaderWriterBase(const STFReaderWriterBase&) = delete;
-            void operator=(const STFReaderWriterBase&) = delete;
+            STFReaderWriterBase& operator=(const STFReaderWriterBase&) = delete;
+
+            /**
+             * Move constructor
+             */
+            STFReaderWriterBase(STFReaderWriterBase&&) = default;
+
+            /**
+             * Move assignment operator
+             */
+            STFReaderWriterBase& operator=(STFReaderWriterBase&&) = default;
 
             /**
              * Gets the file type

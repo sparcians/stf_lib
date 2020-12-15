@@ -5,12 +5,13 @@
 #include <map>
 #include <numeric>
 #include <queue>
+#include <set>
 #include <type_traits>
 #include <vector>
 
-#include <boost/container/small_vector.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
+#include "boost_small_vector.hpp"
 
 #include "stf_enums.hpp"
 #include "stf_record.hpp"
@@ -164,8 +165,8 @@ namespace stf {
             /**
              * Gets the operand value
              */
-            uint64_t getValue() const {
-                return rec_->getData();
+            uint64_t getScalarValue() const {
+                return rec_->getScalarData();
             }
 
             /**
@@ -180,6 +181,27 @@ namespace stf {
              */
             Registers::STF_REG_OPERAND_TYPE getType() const {
                 return rec_->getOperandType();
+            }
+
+            /**
+             * Gets whether this is a vector operand
+             */
+            bool isVector() const {
+                return rec_->isVector();
+            }
+
+            /**
+             * Gets the vector operand value
+             */
+            const InstRegRecord::VectorType& getVectorValue() const {
+                return rec_->getVectorData();
+            }
+
+            /**
+             * Gets the vlen parameter that was set when the record was read
+             */
+            vlen_t getVLen() const {
+                return rec_->getVLen();
             }
     };
 
@@ -325,6 +347,7 @@ namespace stf {
                 INST_CHANGE_TO_USER     = 1 << 9,   /**< inst changes to user mode */
                 INST_CHANGE_FROM_USER   = 1 << 10,  /**< inst changes from user mode */
                 INST_IS_FAULT           = 1 << 11,  /**< instruction is a fault */
+                INST_IS_VECTOR          = 1 << 12,  /**< instruction is vector */
             };
 
             uint64_t branch_target_ = 0; /**< branch target PC */
@@ -779,6 +802,33 @@ namespace stf {
             }
 
             /**
+             * \brief Write all records in this instruction to STFWriter, filtering out specified record types
+             */
+            inline void write(STFWriter& stf_writer,
+                              const std::set<stf::descriptors::internal::Descriptor>& filtered_recs) const {
+                for (const auto& vec_pair: orig_records_.sorted()) {
+                    if(filtered_recs.count(vec_pair.first)) {
+                        continue;
+                    }
+
+                    if(const auto pair_it = PAIRED_RECORDS_.find(vec_pair.first); STF_EXPECT_FALSE(pair_it != PAIRED_RECORDS_.end())) {
+                        writeRecordPairs_(stf_writer,
+                                          vec_pair.first,
+                                          vec_pair.second,
+                                          pair_it->second);
+                    }
+                    else if(STF_EXPECT_FALSE(SKIPPED_PAIRED_RECORDS_.count(vec_pair.first) != 0)) {
+                        continue;
+                    }
+                    else {
+                        for(const auto& record: vec_pair.second) {
+                            stf_writer << *record;
+                        }
+                    }
+                }
+            }
+
+            /**
              * \typedef ExtraRecordQueue
              * Queue that holds additional records, sorted by their encoded descriptor
              */
@@ -813,7 +863,8 @@ namespace stf {
                             stf_writer << *extra_recs.top();
                     }
 
-                    if(const auto pair_it = PAIRED_RECORDS_.find(vec_pair.first); STF_EXPECT_FALSE(pair_it != PAIRED_RECORDS_.end())) {
+                    if(const auto pair_it = PAIRED_RECORDS_.find(vec_pair.first);
+                       STF_EXPECT_FALSE(pair_it != PAIRED_RECORDS_.end())) {
                         writeRecordPairs_(stf_writer,
                                           vec_pair.first,
                                           vec_pair.second,
@@ -882,9 +933,15 @@ namespace stf {
 
             /**
              * \brief FP or not
-             * \return True if instruction if floating point
+             * \return True if instruction is floating point
              */
             bool isFP() const { return inst_flags_ & INST_IS_FP; }
+
+            /**
+             * \brief Vector or not
+             * \return True if instruction is vector
+             */
+            bool isVector() const { return inst_flags_ & INST_IS_VECTOR; }
 
             /**
              * \brief Instruction is change from user mode

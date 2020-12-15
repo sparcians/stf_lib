@@ -2,6 +2,8 @@
 #include <string>
 #include <string_view>
 #include "stf_compressed_ifstream.hpp"
+#include "stf_compressed_ifstream_single_threaded.hpp"
+#include "stf_env_var.hpp"
 #include "stf_exception.hpp"
 #include "stf_reader.hpp"
 #include "stf_record.hpp"
@@ -10,8 +12,8 @@
 #include "zstd/stf_zstd_decompressor.hpp"
 
 namespace stf {
-    STFReader::STFReader(const std::string_view filename) {
-        open(filename);
+    STFReader::STFReader(const std::string_view filename, const bool force_single_threaded_stream) {
+        open(filename, force_single_threaded_stream);
     }
 
     void STFReader::initSimpleStreamAndOpen_(const std::string_view filename) {
@@ -24,13 +26,18 @@ namespace stf {
         stream_->openWithProcess(cmd, filename);
     }
 
-    void STFReader::open(const std::string_view filename)
+    void STFReader::open(const std::string_view filename, const bool force_single_threaded_stream)
     {
         stf_assert(!operator bool(), "Attempted to open STFReader that was already open");
 
         switch(getFileType_(filename)) {
             case STF_FILE_TYPE::ZSTF:
-                stream_ = std::make_unique<STFCompressedIFstream<ZSTDDecompressor>>(filename);
+                if(force_single_threaded_stream || STFBooleanEnvVar("STF_SINGLE_THREADED")) {
+                    stream_ = std::make_unique<STFCompressedIFstreamSingleThreaded<ZSTDDecompressor>>(filename);
+                }
+                else {
+                    stream_ = std::make_unique<STFCompressedIFstream<ZSTDDecompressor>>(filename);
+                }
                 break;
             case STF_FILE_TYPE::STF_GZ:
                 initSimpleStreamAndOpenProcess_("gzip -dc ", filename);
@@ -103,13 +110,18 @@ namespace stf {
                         stf_assert(!trace_features_, "Header has multiple TRACE_INFO_FEATURE records");
                         grabRecordOwnership(trace_features_, rec);
                         break;
+                    case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
+                        stf_assert(!initial_process_id_, "Header has multiple PROCESS_ID_EXT records");
+                        grabRecordOwnership(initial_process_id_, rec);
+                        break;
+                    case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
+                        // This record is handled internally by the STFIFstream
+                        break;
                     case descriptors::internal::Descriptor::STF_END_HEADER:
                         complete_header = true;
                         break;
-                    case descriptors::internal::Descriptor::STF_RESERVED:
                     case descriptors::internal::Descriptor::STF_IDENTIFIER:
                     case descriptors::internal::Descriptor::STF_VERSION:
-                    case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
                     case descriptors::internal::Descriptor::STF_INST_OPCODE32:
                     case descriptors::internal::Descriptor::STF_INST_OPCODE16:
                     case descriptors::internal::Descriptor::STF_INST_REG:
@@ -123,9 +135,12 @@ namespace stf {
                     case descriptors::internal::Descriptor::STF_BUS_MASTER_CONTENT:
                     case descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK:
                     case descriptors::internal::Descriptor::STF_INST_MICROOP:
-                    case descriptors::internal::Descriptor::STF_RESERVED_END:
                         stf_throw("Encountered unexpected STF record in header: " << rec->getDescriptor());
                         break;
+                    // These records can't be constructed
+                    case descriptors::internal::Descriptor::STF_RESERVED:
+                    case descriptors::internal::Descriptor::STF_RESERVED_END:
+                        __builtin_unreachable();
                 }
             }
             while(!complete_header);
@@ -163,6 +178,22 @@ namespace stf {
         return isa_->getISA();
     }
 
+    uint32_t STFReader::getInitialTGID() const {
+        return initial_process_id_ ? initial_process_id_->getTGID() : 0;
+    }
+
+    uint32_t STFReader::getInitialTID() const {
+        return initial_process_id_ ? initial_process_id_->getTID() : 0;
+    }
+
+    uint32_t STFReader::getInitialASID() const {
+        return initial_process_id_ ? initial_process_id_->getASID() : 0;
+    }
+
+    const TraceInfoRecord& STFReader::getLatestTraceInfo() const {
+        return *trace_info_records_.back();
+    }
+
     int STFReader::close() {
         version_.reset();
         header_comments_.clear();
@@ -181,6 +212,10 @@ namespace stf {
         stf_writer.setHeaderPC(initial_pc_->getAddr());
         stf_writer.addTraceInfoRecords(trace_info_records_);
         stf_writer.setTraceFeature(trace_features_->getFeatures());
+
+        if(const vlen_t vlen = getVLen()) {
+            stf_writer.setVLen(vlen);
+        }
     }
 
     void STFReader::dumpHeader(std::ostream& os) const {

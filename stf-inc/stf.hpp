@@ -25,15 +25,12 @@ namespace stf {
     /// Current STF library major version
     static constexpr uint32_t STF_CUR_VERSION_MAJOR = 1;
     /// Current STF library minor version
-    static constexpr uint32_t STF_CUR_VERSION_MINOR = 3;
+    static constexpr uint32_t STF_CUR_VERSION_MINOR = 4;
 
     /// Current STF library major version
     static constexpr uint32_t STF_OLDEST_SUPPORTED_VERSION_MAJOR = 0;
     /// Current STF library minor version
     static constexpr uint32_t STF_OLDEST_SUPPORTED_VERSION_MINOR = 8;
-
-    /// Current STF library version
-    static constexpr uint32_t STF_TOOL_VERSION = 83;
 
     /**
      * \brief Format the STF library version as a string
@@ -44,8 +41,6 @@ namespace stf {
         format_utils::formatDec(os, STF_CUR_VERSION_MAJOR);
         os << '.';
         format_utils::formatDec(os, STF_CUR_VERSION_MINOR);
-        os << ", STF_TOOL version 0x";
-        format_utils::formatHex(os, STF_TOOL_VERSION, 0);
         os << ", stf_lib commit SHA " << STF_GIT_VERSION << std::endl;
     }
 

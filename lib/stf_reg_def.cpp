@@ -8,313 +8,313 @@ namespace stf {
         switch(regno) {
             case STF_REG::STF_REG_CSR_USTATUS:
                 os << "REG_CSR_USTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_FFLAGS:
                 os << "REG_CSR_FFLAGS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_FRM:
                 os << "REG_CSR_FRM";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_FCSR:
                 os << "REG_CSR_FCSR";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UIE:
                 os << "REG_CSR_UIE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UTVEC:
                 os << "REG_CSR_UTVEC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UTVT:
                 os << "REG_CSR_UTVT";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSTART:
                 os << "REG_CSR_VSTART";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VXSAT:
                 os << "REG_CSR_VXSAT";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VXRM:
                 os << "REG_CSR_VXRM";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VCSR:
                 os << "REG_CSR_VCSR";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_USCRATCH:
                 os << "REG_CSR_USCRATCH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UEPC:
                 os << "REG_CSR_UEPC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UCAUSE:
                 os << "REG_CSR_UCAUSE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UTVAL:
                 os << "REG_CSR_UTVAL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UIP:
                 os << "REG_CSR_UIP";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UNXTI:
                 os << "REG_CSR_UNXTI";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_UINTSTATUS:
                 os << "REG_CSR_UINTSTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_USCRATCHCSW:
                 os << "REG_CSR_USCRATCHCSW";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_USCRATCHCSWL:
                 os << "REG_CSR_USCRATCHCSWL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SSTATUS:
                 os << "REG_CSR_SSTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SIE:
                 os << "REG_CSR_SIE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_STVEC:
                 os << "REG_CSR_STVEC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SCOUNTEREN:
                 os << "REG_CSR_SCOUNTEREN";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_STVT:
                 os << "REG_CSR_STVT";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SSCRATCH:
                 os << "REG_CSR_SSCRATCH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SEPC:
                 os << "REG_CSR_SEPC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SCAUSE:
                 os << "REG_CSR_SCAUSE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_STVAL:
                 os << "REG_CSR_STVAL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SIP:
                 os << "REG_CSR_SIP";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SNXTI:
                 os << "REG_CSR_SNXTI";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SINTSTATUS:
                 os << "REG_CSR_SINTSTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SSCRATCHCSW:
                 os << "REG_CSR_SSCRATCHCSW";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SSCRATCHCSWL:
                 os << "REG_CSR_SSCRATCHCSWL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_SATP:
                 os << "REG_CSR_SATP";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSSTATUS:
                 os << "REG_CSR_VSSTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSIE:
                 os << "REG_CSR_VSIE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSTVEC:
                 os << "REG_CSR_VSTVEC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSSCRATCH:
                 os << "REG_CSR_VSSCRATCH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSEPC:
                 os << "REG_CSR_VSEPC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSCAUSE:
                 os << "REG_CSR_VSCAUSE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSTVAL:
                 os << "REG_CSR_VSTVAL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSIP:
                 os << "REG_CSR_VSIP";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VSATP:
                 os << "REG_CSR_VSATP";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MSTATUS:
                 os << "REG_CSR_MSTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MISA:
                 os << "REG_CSR_MISA";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MEDELEG:
                 os << "REG_CSR_MEDELEG";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MIDELEG:
                 os << "REG_CSR_MIDELEG";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MIE:
                 os << "REG_CSR_MIE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MTVEC:
                 os << "REG_CSR_MTVEC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MCOUNTEREN:
                 os << "REG_CSR_MCOUNTEREN";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MTVT:
                 os << "REG_CSR_MTVT";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MSCRATCH:
                 os << "REG_CSR_MSCRATCH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MEPC:
                 os << "REG_CSR_MEPC";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MCAUSE:
                 os << "REG_CSR_MCAUSE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MTVAL:
                 os << "REG_CSR_MTVAL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MIP:
                 os << "REG_CSR_MIP";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MNXTI:
                 os << "REG_CSR_MNXTI";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MINTSTATUS:
                 os << "REG_CSR_MINTSTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MSCRATCHCSW:
                 os << "REG_CSR_MSCRATCHCSW";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MSCRATCHCSWL:
                 os << "REG_CSR_MSCRATCHCSWL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPCFG0:
                 os << "REG_CSR_PMPCFG0";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPCFG1:
                 os << "REG_CSR_PMPCFG1";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPCFG2:
                 os << "REG_CSR_PMPCFG2";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPCFG3:
                 os << "REG_CSR_PMPCFG3";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR0:
                 os << "REG_CSR_PMPADDR0";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR1:
                 os << "REG_CSR_PMPADDR1";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR2:
                 os << "REG_CSR_PMPADDR2";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR3:
                 os << "REG_CSR_PMPADDR3";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR4:
                 os << "REG_CSR_PMPADDR4";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR5:
                 os << "REG_CSR_PMPADDR5";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR6:
                 os << "REG_CSR_PMPADDR6";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR7:
                 os << "REG_CSR_PMPADDR7";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR8:
                 os << "REG_CSR_PMPADDR8";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR9:
                 os << "REG_CSR_PMPADDR9";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR10:
                 os << "REG_CSR_PMPADDR10";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR11:
                 os << "REG_CSR_PMPADDR11";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR12:
                 os << "REG_CSR_PMPADDR12";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR13:
                 os << "REG_CSR_PMPADDR13";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR14:
                 os << "REG_CSR_PMPADDR14";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_PMPADDR15:
                 os << "REG_CSR_PMPADDR15";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_HSTATUS:
                 os << "REG_CSR_HSTATUS";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_HEDELEG:
                 os << "REG_CSR_HEDELEG";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_HIDELEG:
                 os << "REG_CSR_HIDELEG";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_HCOUNTEREN:
                 os << "REG_CSR_HCOUNTEREN";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_HGATP:
                 os << "REG_CSR_HGATP";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MCYCLE:
                 os << "REG_CSR_MCYCLE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MINSTRET:
                 os << "REG_CSR_MINSTRET";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MCYCLEH:
                 os << "REG_CSR_MCYCLEH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MINSTRETH:
                 os << "REG_CSR_MINSTRETH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_CYCLE:
                 os << "REG_CSR_CYCLE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_TIME:
                 os << "REG_CSR_TIME";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_INSTRET:
                 os << "REG_CSR_INSTRET";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VL:
                 os << "REG_CSR_VL";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VTYPE:
                 os << "REG_CSR_VTYPE";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_VLENB:
                 os << "REG_CSR_VLENB";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_CYCLEH:
                 os << "REG_CSR_CYCLEH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_TIMEH:
                 os << "REG_CSR_TIMEH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_INSTRETH:
                 os << "REG_CSR_INSTRETH";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MVENDORID:
                 os << "REG_CSR_MVENDORID";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MARCHID:
                 os << "REG_CSR_MARCHID";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MIMPID:
                 os << "REG_CSR_MIMPID";
-                break;
+                return;
             case STF_REG::STF_REG_CSR_MHARTID:
                 os << "REG_CSR_MHARTID";
-                break;
+                return;
             case STF_REG::STF_REG_X0:
             case STF_REG::STF_REG_X1:
             case STF_REG::STF_REG_X2:
@@ -379,19 +379,47 @@ namespace stf {
             case STF_REG::STF_REG_F29:
             case STF_REG::STF_REG_F30:
             case STF_REG::STF_REG_F31:
+            case STF_REG::STF_REG_V0:
+            case STF_REG::STF_REG_V1:
+            case STF_REG::STF_REG_V2:
+            case STF_REG::STF_REG_V3:
+            case STF_REG::STF_REG_V4:
+            case STF_REG::STF_REG_V5:
+            case STF_REG::STF_REG_V6:
+            case STF_REG::STF_REG_V7:
+            case STF_REG::STF_REG_V8:
+            case STF_REG::STF_REG_V9:
+            case STF_REG::STF_REG_V10:
+            case STF_REG::STF_REG_V11:
+            case STF_REG::STF_REG_V12:
+            case STF_REG::STF_REG_V13:
+            case STF_REG::STF_REG_V14:
+            case STF_REG::STF_REG_V15:
+            case STF_REG::STF_REG_V16:
+            case STF_REG::STF_REG_V17:
+            case STF_REG::STF_REG_V18:
+            case STF_REG::STF_REG_V19:
+            case STF_REG::STF_REG_V20:
+            case STF_REG::STF_REG_V21:
+            case STF_REG::STF_REG_V22:
+            case STF_REG::STF_REG_V23:
+            case STF_REG::STF_REG_V24:
+            case STF_REG::STF_REG_V25:
+            case STF_REG::STF_REG_V26:
+            case STF_REG::STF_REG_V27:
+            case STF_REG::STF_REG_V28:
+            case STF_REG::STF_REG_V29:
+            case STF_REG::STF_REG_V30:
+            case STF_REG::STF_REG_V31:
             case STF_REG::STF_REG_END_DEF:
             case STF_REG::STF_REG_INVALID:
                 stf_throw("Attempted to format a non-CSR register: " << std::hex << enums::to_int(regno));
-                break;
-            default:
-                {
-                    // An unknown (to us) but likely valid CSR register number
-                    std::ostringstream ss;
-                    ss << "REG_CSR_UNK_" << std::hex << std::left << enums::to_int(regno);
-                    os << ss.str();
-                }
-                break;
         }
+
+        // An unknown (to us) but likely valid CSR register number
+        std::ostringstream ss;
+        ss << "REG_CSR_UNK_" << std::hex << std::left << enums::to_int(regno);
+        os << ss.str();
     }
 
     void Registers::formatFPR_(std::ostream& os, const Registers::STF_REG regno) {

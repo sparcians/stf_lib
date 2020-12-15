@@ -29,6 +29,7 @@ namespace stf::descriptors {
             STF_TRACE_INFO_FEATURE          = 7,            /**< Trace features */
             STF_PROCESS_ID_EXT              = 8,            /**< Process ID EXTENSION */
             STF_FORCE_PC                    = 9,            /**< Initial PC and trace stitching */
+            STF_VLEN_CONFIG                 = 10,           /**< Sets the vector vlen parameter */
 
             STF_END_HEADER                  = 19,           /**< End of header record */
 
@@ -94,6 +95,7 @@ namespace stf::descriptors {
             STF_TRACE_INFO,
             STF_TRACE_INFO_FEATURE,
             STF_VERSION,
+            STF_VLEN_CONFIG,
             STF_END_HEADER,
             STF_RESERVED,
             STF_RESERVED_END // MUST ALWAYS BE AT THE END
@@ -159,6 +161,7 @@ namespace stf::descriptors {
                             INIT_DESC_ARRAY(STF_TRACE_INFO_FEATURE)
                             INIT_DESC_ARRAY(STF_PROCESS_ID_EXT)
                             INIT_DESC_ARRAY(STF_FORCE_PC)
+                            INIT_DESC_ARRAY(STF_VLEN_CONFIG)
                             INIT_DESC_ARRAY(STF_END_HEADER)
                             INIT_DESC_ARRAY(STF_INST_PC_TARGET)
                             INIT_DESC_ARRAY(STF_INST_REG)

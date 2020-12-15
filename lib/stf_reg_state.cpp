@@ -8,10 +8,14 @@
 
 namespace stf {
     bool STFRegState::regStateUpdate(const InstRegRecord& rec) {
-        return regStateUpdate(rec.getReg(), rec.getData());
+        if(rec.isVector()) {
+            return regStateVectorUpdate(rec.getReg(), rec.getVectorData());
+        }
+
+        return regStateScalarUpdate(rec.getReg(), rec.getScalarData());
     }
 
-    bool STFRegState::regStateUpdate(Registers::STF_REG regno, uint64_t data) {
+    bool STFRegState::regStateScalarUpdate(const Registers::STF_REG regno, const uint64_t data) {
         const auto rbit = regbank.find(regno);
         if (rbit == regbank.end()) {
             return false;
@@ -31,7 +35,30 @@ namespace stf {
             it = insert_result.first;
         }
 
-        it->second.setData((it->second.getData() & ~(mask<<shift)) | ((data & mask) << shift));
+        it->second.setScalarData((it->second.getScalarData() & ~(mask<<shift)) | ((data & mask) << shift));
+
+        return true ;
+    }
+
+    bool STFRegState::regStateVectorUpdate(const Registers::STF_REG regno, const InstRegRecord::VectorType& data) {
+        const auto rbit = regbank.find(regno);
+        if (rbit == regbank.end()) {
+            return false;
+        }
+
+        const Registers::STF_REG mapped_reg = rbit->second.getMappedReg();
+
+        auto it = regstate.find(mapped_reg);
+        if (it == regstate.end()) {
+            regstate.emplace(std::piecewise_construct,
+                             std::forward_as_tuple(mapped_reg),
+                             std::forward_as_tuple(mapped_reg,
+                                                   Registers::STF_REG_OPERAND_TYPE::REG_STATE,
+                                                   data));
+        }
+        else {
+            it->second.setVectorData(data);
+        }
 
         return true ;
     }
@@ -46,7 +73,7 @@ namespace stf {
         return *this;
     }
 
-    void STFRegState::getRegValue(Registers::STF_REG regno, uint64_t &data) const {
+    uint64_t STFRegState::getRegScalarValue(const Registers::STF_REG regno) const {
         Registers::STF_REG mapped_reg;
 
         const auto rbit = regbank.find(regno);
@@ -60,7 +87,24 @@ namespace stf {
             throw RegNotFoundException();
         }
 
-        data = ((it->second.getData() >> rbit->second.getShiftBits()) & rbit->second.getMask());
+        return (it->second.getScalarData() >> rbit->second.getShiftBits()) & rbit->second.getMask();
+    }
+
+    const InstRegRecord::VectorType& STFRegState::getRegVectorValue(const Registers::STF_REG regno) const {
+        Registers::STF_REG mapped_reg;
+
+        const auto rbit = regbank.find(regno);
+        if (rbit == regbank.end()) {
+            throw RegNotFoundException();
+        }
+        mapped_reg = rbit->second.getMappedReg();
+
+        const auto it = regstate.find(mapped_reg);
+        if (it == regstate.end()) {
+            throw RegNotFoundException();
+        }
+
+        return it->second.getVectorData();
     }
 
     void STFRegState::writeRegState(STFWriter& stf_writer) const {
@@ -89,6 +133,7 @@ namespace stf {
 
         uint64_t machine_length_mask = RegMapInfo::MASK64;
         uint64_t fp_length_mask = RegMapInfo::MASK64;
+        static constexpr uint64_t vec_length_mask = RegMapInfo::MASK64;
 
         switch(isa) {
             case ISA::RISCV:
@@ -324,6 +369,41 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MINTSTATUS);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MSCRATCHCSW);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MSCRATCHCSWL);
+
+                // init vector registers
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V0, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V1, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V2, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V3, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V4, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V5, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V6, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V7, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V8, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V9, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V10, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V11, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V12, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V13, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V14, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V15, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V16, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V17, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V18, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V19, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V20, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V21, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V22, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V23, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V24, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V25, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V26, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V27, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V28, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V29, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V30, vec_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_V31, vec_length_mask);
+
                 break;
             case ISA::ARM:
             case ISA::POWER:

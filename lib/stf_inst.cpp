@@ -50,15 +50,23 @@ namespace stf {
     }
 
     std::ostream& operator<<(std::ostream& os, const Operand& reg) {
-        if (format_utils::showPhys()) {
+        if(format_utils::showPhys()) {
             format_utils::formatSpaces(os, format_utils::PA_WIDTH + 1);
         }
         format_utils::formatOperandLabel(os, reg.getLabel());
         format_utils::formatRegisterName(os, reg.rec_->getReg());
-        if (format_utils::showPhys()) {
+        if(format_utils::showPhys()) {
             format_utils::formatSpaces(os, format_utils::PA_WIDTH + 1);
         }
-        format_utils::formatData(os, reg.rec_->getData());
+        if(STF_EXPECT_FALSE(reg.rec_->isVector())) {
+            const size_t INDENT = format_utils::OPERAND_LABEL_WIDTH +
+                                  format_utils::REGISTER_NAME_WIDTH +
+                                  (format_utils::showPhys() ? 2*(format_utils::PA_WIDTH + 1) : 0);
+            format_utils::formatVector(os, reg.rec_->getVectorData(), reg.rec_->getVLen(), INDENT, false);
+        }
+        else {
+            format_utils::formatData(os, reg.rec_->getScalarData());
+        }
 
         return os;
     }

@@ -41,7 +41,7 @@ namespace stf {
              * \param reg register number
              * \param mask mask
              */
-            explicit RegMapInfo(Registers::STF_REG reg, uint64_t mask = MASK64) :
+            explicit RegMapInfo(const Registers::STF_REG reg, const uint64_t mask = MASK64) :
                 RegMapInfo(reg, reg, mask)
             {
             }
@@ -53,10 +53,10 @@ namespace stf {
              * \param mask mask
              * \param shift shift amount (amount to shift value by when mapping onto mapped register)
              */
-            RegMapInfo(Registers::STF_REG reg,
-                       Registers::STF_REG mapped_reg,
-                       uint64_t mask = MASK64,
-                       uint32_t shift = 0):
+            RegMapInfo(const Registers::STF_REG reg,
+                       const Registers::STF_REG mapped_reg,
+                       const uint64_t mask = MASK64,
+                       const uint32_t shift = 0):
                 reg_(reg),
                 mapped_reg_(mapped_reg),
                 mask_(mask),
@@ -122,15 +122,31 @@ namespace stf {
             /**
              * \class RegNotFoundException
              *
-             * Exception type thrown by getRegValue if a register is not found
+             * Exception type thrown by getRegScalarValue/getRegVectorValue if a register is not found
              */
             class RegNotFoundException : public std::exception {
             };
 
             STFRegState() = default;
+
+            /**
+             * Copy constructor
+             */
             STFRegState(const STFRegState&) = default;
+
+            /**
+             * Move constructor
+             */
             STFRegState(STFRegState&&) = default;
+
+            /**
+             * Move assignment operator
+             */
             STFRegState& operator=(STFRegState&& rhs) = default;
+
+            /**
+             * Copy assignment operator
+             */
             STFRegState& operator=(const STFRegState& rhs);
 
             /**
@@ -138,7 +154,7 @@ namespace stf {
              * \param isa ISA
              * \param iem Instruction encoding
              */
-            STFRegState(ISA isa, INST_IEM iem) {
+            STFRegState(const ISA isa, const INST_IEM iem) {
                 initRegBank(isa, iem);
             }
 
@@ -147,7 +163,7 @@ namespace stf {
              * \param isa ISA
              * \param iem Instruction encoding
              */
-            void resetArch(ISA isa, INST_IEM iem) {
+            void resetArch(const ISA isa, const INST_IEM iem) {
                 regStateClear();
                 initRegBank(isa, iem);
             }
@@ -175,12 +191,22 @@ namespace stf {
             /**
              * Updates register state
              */
-            bool regStateUpdate(Registers::STF_REG regno, uint64_t data);
+            bool regStateScalarUpdate(Registers::STF_REG regno, uint64_t data);
+
+            /**
+             * Updates register state
+             */
+            bool regStateVectorUpdate(Registers::STF_REG regno, const InstRegRecord::VectorType& data);
 
             /**
              * Gets register value
              */
-            void getRegValue(Registers::STF_REG regno, uint64_t &data) const;
+            uint64_t getRegScalarValue(Registers::STF_REG regno) const;
+
+            /**
+             * Gets register value
+             */
+            const InstRegRecord::VectorType& getRegVectorValue(Registers::STF_REG regno) const;
 
             /**
              * Writes register state to STFWriter

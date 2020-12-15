@@ -1,5 +1,5 @@
-#ifndef __STF_COMPRESSED_IFSTREAM_HPP__
-#define __STF_COMPRESSED_IFSTREAM_HPP__
+#ifndef __STF_COMPRESSED_IFSTREAM_SINGLE_THREADED_HPP__
+#define __STF_COMPRESSED_IFSTREAM_SINGLE_THREADED_HPP__
 
 #include <algorithm>
 #include <cstddef>
@@ -14,17 +14,16 @@
 
 namespace stf {
     /**
-     * \class STFCompressedIFstream
+     * \class STFCompressedIFstreamSingleThreaded
      *
-     * Provides transparent on-the-fly decompression of a compressed STF file
+     * Provides transparent on-the-fly decompression of a compressed STF file. Single-threaded implementation.
      */
     template<typename Decompressor>
-    class STFCompressedIFstream : public STFIFstream, public STFCompressedChunkedBase {
+    class STFCompressedIFstreamSingleThreaded : public STFIFstream, public STFCompressedChunkedBase {
         private:
             Decompressor decompressor_; /**< Decompressor object */
             STFCompressionBuffer in_buf_; /**< Input data buffer - holds compressed data read from the file */
             STFCompressionBuffer out_buf_; /**< Output data pointer */
-            STFCompressionBuffer decompressed_buf_; /**< Decompressed data pointer */
             std::future<void> decompress_result_; /**< Future used to indicate when the next chunk has been decompressed */
             bool decompression_in_progress_ = false; /**< Flag indicating whether a chunk is currently being decompressed */
             std::vector<ChunkOffset>::iterator next_chunk_index_it_ = chunk_indices_.end(); /**< Iterator to next chunk offset */
@@ -43,7 +42,7 @@ namespace stf {
              * Returns true if all data has been consumed from the file and decompression buffers
              */
             inline bool allInputConsumed_() const {
-                return reachedEndOfChunks_() && out_buf_.consumed() && decompressed_buf_.consumed();
+                return reachedEndOfChunks_() && out_buf_.consumed();
             }
 
             /**
@@ -217,20 +216,12 @@ namespace stf {
             void readNextChunk_() {
                 // Make sure there are still chunks left to read
                 if(STF_EXPECT_FALSE(next_chunk_index_it_ == chunk_indices_.end())) {
-                    decompressed_buf_.consume();
                     return;
                 }
                 const size_t uncompressed_chunk_size = next_chunk_index_it_->getUncompressedChunkSize();
                 const auto chunk_it = ++next_chunk_index_it_;
 
-                // Decompress the chunk in a separate thread
-                decompression_in_progress_ = true;
-                decompress_result_ = std::move(std::async(std::launch::async,
-                                                          [this, chunk_it, uncompressed_chunk_size]() {
-                                                            this->readChunk_(chunk_it,
-                                                                             uncompressed_chunk_size,
-                                                                             this->decompressed_buf_);
-                                                          }));
+                readChunk_(chunk_it, uncompressed_chunk_size, out_buf_);
             }
 
             /**
@@ -391,24 +382,17 @@ namespace stf {
             }
 
         public:
-            STFCompressedIFstream() = default;
+            STFCompressedIFstreamSingleThreaded() = default;
 
             /**
-             * Constructs an STFCompressedIFstream
+             * Constructs an STFCompressedIFstreamSingleThreaded
              *
              * \param filename Filename to open
              */
-            explicit STFCompressedIFstream(const std::string_view filename) :
-                STFCompressedIFstream()
+            explicit STFCompressedIFstreamSingleThreaded(const std::string_view filename) :
+                STFCompressedIFstreamSingleThreaded()
             {
                 open(filename);
-            }
-
-            // Have to override the base class destructor to ensure that *our* close method gets called before destruction
-            ~STFCompressedIFstream() override {
-                if(stream_) {
-                    close();
-                }
             }
 
             /**
@@ -443,7 +427,6 @@ namespace stf {
                 const size_t block_size = getFSBlockSize_();
                 in_buf_.initSize(block_size);
                 out_buf_.initSize(block_size);
-                decompressed_buf_.initSize(block_size);
 
                 next_chunk_end_ = inst_chunk_size_;
                 if(chunk_indices_.empty()) {
@@ -455,24 +438,6 @@ namespace stf {
 
                 // Read the first chunk synchronously so we can actually do some work
                 readChunk_(next_chunk_index_it_, chunk_indices_.front().getUncompressedChunkSize(), out_buf_);
-
-                // Read the next chunk
-                readNextChunk_();
-            }
-
-            /**
-             * Closes the file
-             */
-            int close() override {
-                if(!stream_) {
-                    return 0;
-                }
-
-                if(decompression_in_progress_) {
-                    decompress_result_.get();
-                }
-
-                return STFIFstream::close();
             }
 
             /**
@@ -484,14 +449,6 @@ namespace stf {
                 if(num_insts_ + num_instructions >= next_chunk_end_) {
                     // Throw away what's currently in the buffer since we're moving to a new chunk
                     out_buf_.consume();
-
-                    // Otherwise, seek to the next chunk
-                    if(STF_EXPECT_TRUE(decompression_in_progress_)) {
-                        // Wait for decompressor to finish
-                        decompress_result_.get();
-                        decompression_in_progress_ = false;
-                        std::swap(out_buf_, decompressed_buf_);
-                    }
 
                     in_buf_.reset();
                     endChunk_();
@@ -515,7 +472,6 @@ namespace stf {
                     }
 
                     readChunk_(next_chunk_index_it_, current_chunk->getUncompressedChunkSize(), out_buf_);
-                    readNextChunk_();
                 }
 
                 STFIFstream::seek(num_instructions);
@@ -537,14 +493,6 @@ namespace stf {
                 // If we cross a chunk boundary, move on to the next chunk
                 if(STF_EXPECT_FALSE(num_insts_ >= next_chunk_end_)) {
                     next_chunk_end_ += inst_chunk_size_;
-
-                    // There should be a decompressed chunk ready to go
-                    if(STF_EXPECT_TRUE(decompression_in_progress_)) {
-                        // Wait for decompressor to finish
-                        decompress_result_.get();
-                        decompression_in_progress_ = false;
-                        std::swap(out_buf_, decompressed_buf_);
-                    }
 
                     // Start decompressing the next chunk
                     readNextChunk_();

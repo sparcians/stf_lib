@@ -114,6 +114,22 @@ namespace stf {
         trace_info_records_.emplace_back(rec);
     }
 
+    void STFWriter::addTraceInfo(TraceInfoRecord&& rec) {
+        trace_info_records_.emplace_back(std::move(rec));
+    }
+
+    void STFWriter::addTraceInfo(const STF_GEN generator,
+                                 const uint8_t major_version,
+                                 const uint8_t minor_version,
+                                 const uint8_t minor_minor_version,
+                                 const std::string& comment) {
+        addTraceInfo(TraceInfoRecord(generator,
+                                     major_version,
+                                     minor_version,
+                                     minor_minor_version,
+                                     comment));
+    }
+
     void STFWriter::addTraceInfoRecords(const std::vector<ConstUniqueRecordHandle<TraceInfoRecord>>& records) {
         for(const auto& rec: records) {
             addTraceInfo(*rec);
@@ -131,6 +147,10 @@ namespace stf {
 
     void STFWriter::setTraceFeature(TRACE_FEATURES trace_feature) {
         setTraceFeature(enums::to_int(trace_feature));
+    }
+
+    void STFWriter::setVLen(const vlen_t vlen) {
+        vlen_config_ = STFRecordPool::make<VLenConfigRecord>(vlen);
     }
 
     void STFWriter::flushHeader() {
@@ -190,6 +210,11 @@ namespace stf {
             *this << *initial_pc_;
             initial_pc_written_ = true;
         }
+
+        if(!vlen_config_written_ && vlen_config_) {
+            *this << *vlen_config_;
+            vlen_config_written_ = true;
+        }
     }
 
     void STFWriter::finalizeHeader() {
@@ -200,7 +225,13 @@ namespace stf {
 
         stf_assert(header_started_, "Attempted to finalize the header before anything has been written to it");
 
-        if(!(header_comments_written_ && isa_written_ && initial_iem_written_ && initial_pc_written_ && trace_info_records_written_ && trace_features_written_)) {
+        if(!(header_comments_written_ &&
+             isa_written_ &&
+             initial_iem_written_ &&
+             initial_pc_written_ &&
+             trace_info_records_written_ &&
+             trace_features_written_ &&
+             (vlen_config_written_ || !vlen_config_))) { // VLenConfigRecord is optional
             flushHeader();
         }
 
@@ -256,7 +287,8 @@ namespace stf {
                    (wrote_bus_memory_access_content_pair_ && desc == descriptors::internal::Descriptor::STF_BUS_MASTER_ACCESS) ||
                    (wrote_event_record_group_ && desc == descriptors::internal::Descriptor::STF_EVENT) ||
                    ((wrote_page_table_walk_ || wrote_reg_) && desc == descriptors::internal::Descriptor::STF_INST_PC_TARGET) ||
-                   (wrote_page_table_walk_ && desc == descriptors::internal::Descriptor::STF_INST_REG),
+                   (wrote_page_table_walk_ && desc == descriptors::internal::Descriptor::STF_INST_REG) ||
+                   (desc == descriptors::internal::Descriptor::STF_COMMENT),
                    "Attempted out of order write. " << desc << " should come before " << last_desc_);
         switch(desc) {
             case descriptors::internal::Descriptor::STF_IDENTIFIER:
@@ -269,13 +301,14 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_ISA:
             case descriptors::internal::Descriptor::STF_TRACE_INFO:
             case descriptors::internal::Descriptor::STF_TRACE_INFO_FEATURE:
+            case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
+            case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
             case descriptors::internal::Descriptor::STF_END_HEADER:
                 stf_assert(!headerFinalized(), "Attempted to write " << desc << " record outside of the header"); //FALLTHRU
             case descriptors::internal::Descriptor::STF_INST_IEM:
             case descriptors::internal::Descriptor::STF_FORCE_PC:
                 stf_assert(headerStarted(), "Attempted to write " << desc << " before the header has started");
                 break;
-            case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
             case descriptors::internal::Descriptor::STF_INST_OPCODE32:
             case descriptors::internal::Descriptor::STF_INST_OPCODE16:
             case descriptors::internal::Descriptor::STF_INST_REG:

@@ -14,6 +14,9 @@
 #include <exception>
 #include <sstream>
 #include <string>
+#include <string_view>
+
+#include "type_utils.hpp"
 
 namespace stf
 {
@@ -74,9 +77,52 @@ namespace stf
              * but it's not as pretty.
              */
             template<class T>
-            STFException & operator<<(const T & msg) {
-                std::stringstream str;
+            typename std::enable_if<std::is_same<T, std::string>::value ||
+                                    std::is_same<T, std::string_view>::value ||
+                                    !type_utils::is_iterable<T>::value, STFException&>::type
+            operator<<(const T & msg) {
+                std::ostringstream str;
                 str << msg;
+                reason_ += str.str();
+                return *this;
+            }
+
+            /**
+             * \brief Append additional information in an iterable container to the message.
+             * \param msg_vec The container to add
+             * \return This exception object
+             *
+             * Usage:
+             * \code
+             * int bad_company = 4;
+             * stf::STFException e("Oh uh");
+             * e << ": this is bad: " << bad_company;
+             * \endcode
+             * or you can do this:
+             * \code
+             * int bad_company = 4;
+             * throw stf::STFException e("Oh uh") << ": this is bad: " << bad_company;
+             * \endcode
+             * but it's not as pretty.
+             */
+            template<typename Vector>
+            typename std::enable_if<!std::is_same<Vector, std::string>::value &&
+                                    !std::is_same<Vector, std::string_view>::value &&
+                                    type_utils::is_iterable<Vector>::value, STFException&>::type
+            operator<<(const Vector& msg_vec) {
+                std::ostringstream str;
+                bool first = true;
+                str << "[";
+                for(const auto& msg: msg_vec) {
+                    if(!first) {
+                        str << ",";
+                    }
+                    else {
+                        first = false;
+                    }
+                    str << msg;
+                }
+                str << "]";
                 reason_ += str.str();
                 return *this;
             }

@@ -12,6 +12,7 @@
 #include "stf_packed_container.hpp"
 #include "stf_record_pointers.hpp"
 #include "stf_record_pool.hpp"
+#include "stf_vector_view.hpp"
 
 namespace stf {
     class STFRecord;
@@ -277,6 +278,30 @@ namespace stf {
              */
             template<typename T>
             inline STFIFstream& operator>>(std::vector<T>& data) {
+                readIntoPtr_(data.data(), data.size());
+                return *this;
+            }
+
+            /**
+             * Reads a VectorView from an STFIFstream
+             * \attention The vector must already be sized to fit the incoming data!
+             * Use SerializableVector to handle this automatically.
+             * \param data Vector is read into this variable
+             */
+            template<typename T>
+            inline STFIFstream& operator>>(VectorView<T>& data) {
+                readIntoPtr_(data.data(), data.size());
+                return *this;
+            }
+
+            /**
+             * Reads a VectorView from an STFIFstream
+             * \attention The vector must already be sized to fit the incoming data!
+             * Use SerializableVector to handle this automatically.
+             * \param data Vector is read into this variable
+             */
+            template<typename T>
+            inline STFIFstream& operator>>(VectorView<T>&& data) {
                 readIntoPtr_(data.data(), data.size());
                 return *this;
             }

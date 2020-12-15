@@ -54,6 +54,8 @@ namespace stf {
 
     REGISTER_RECORD(STF_FORCE_PC, ForcePCRecord)
 
+    REGISTER_RECORD(STF_VLEN_CONFIG, VLenConfigRecord)
+
     REGISTER_RECORD(STF_END_HEADER, EndOfHeaderRecord)
 
     STFOFstream& operator<<(STFOFstream& writer, const PageTableWalkRecord::PTE& rec) {

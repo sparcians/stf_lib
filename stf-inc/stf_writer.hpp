@@ -21,6 +21,7 @@
 
 #include "stf.hpp"
 #include "stf_enums.hpp"
+#include "stf_generator.hpp"
 #include "stf_exception.hpp"
 #include "stf_ofstream.hpp"
 #include "stf_reader_writer_base.hpp"
@@ -38,6 +39,7 @@ namespace stf {
     class ForcePCRecord;
     class TraceInfoRecord;
     class TraceInfoFeatureRecord;
+    class VLenConfigRecord;
 
     /**
      * \class STFWriter
@@ -75,6 +77,9 @@ namespace stf {
             UniqueRecordHandle<TraceInfoFeatureRecord> trace_features_;
             bool trace_features_written_ = false;
 
+            UniqueRecordHandle<VLenConfigRecord> vlen_config_;
+            bool vlen_config_written_ = false;
+
             bool header_started_ = false;
             bool header_finalized_ = false;
             bool wrote_inst_memory_access_content_pair_ = false;
@@ -82,21 +87,6 @@ namespace stf {
             bool wrote_event_record_group_ = false;
             bool wrote_page_table_walk_ = false;
             bool wrote_reg_ = false;
-
-            void updateInitFlags_ (const descriptors::internal::Descriptor desc) {
-                if (inst_count_ == 0) {
-                    init_flags_ |= (1 << enums::to_int(desc));
-                }
-            }
-
-            void checkFlagsInitialized_ () const {
-                // currently, the following records are required before 1st instruction;
-                stf_assert((init_flags_ & (1 << enums::to_int(descriptors::internal::Descriptor::STF_VERSION))) > 0, "Version missing");
-                //stf_assert((init_flags_ & (1 << enums::to_int(descriptors::internal::Descriptor::STF_COMMENT))) > 0, "Comment missing");
-                stf_assert((init_flags_ & (1 << enums::to_int(descriptors::internal::Descriptor::STF_INST_IEM))) > 0, "IEM missing");
-                stf_assert((init_flags_ & (1 << enums::to_int(descriptors::internal::Descriptor::STF_FORCE_PC))) > 0, "Initial PC missing");
-                stf_assert((init_flags_ & (1 << enums::to_int(descriptors::internal::Descriptor::STF_TRACE_INFO))) > 0, "Trace info missing");
-            }
 
             /**
              * Opens the specified file with an STFOFstream
@@ -158,25 +148,45 @@ namespace stf {
              * Sets header ISA
              * \param isa ISA to set
              */
-            void setISA(ISA isa);
+            void setISA(const ISA isa);
 
             /**
              * Sets header IEM
              * \param iem IEM to set
              */
-            void setHeaderIEM(INST_IEM iem);
+            void setHeaderIEM(const INST_IEM iem);
 
             /**
              * Sets header PC
              * \param pc PC to set
              */
-            void setHeaderPC(uint64_t pc);
+            void setHeaderPC(const uint64_t pc);
 
             /**
              * Adds trace info to header
              * \param rec trace info to add
              */
             void addTraceInfo(const TraceInfoRecord& rec);
+
+            /**
+             * Adds trace info to header
+             * \param rec trace info to add
+             */
+            void addTraceInfo(TraceInfoRecord&& rec);
+
+            /**
+             * Adds trace info to header
+             * \param generator trace generator
+             * \param major_version generator major version
+             * \param minor_version generator minor version
+             * \param minor_minor_version generator minor-minor version
+             * \param comment additional comment
+             */
+            void addTraceInfo(const STF_GEN generator,
+                              const uint8_t major_version,
+                              const uint8_t minor_version,
+                              const uint8_t minor_minor_version,
+                              const std::string& comment);
 
             /**
              * Adds trace info records to header
@@ -195,6 +205,12 @@ namespace stf {
              * \param trace_feature feature to add
              */
             void setTraceFeature(TRACE_FEATURES trace_feature);
+
+            /**
+             * Sets the vlen parameter
+             * \param vlen vlen value to set
+             */
+            void setVLen(vlen_t vlen);
 
             /**
              * Flushes header

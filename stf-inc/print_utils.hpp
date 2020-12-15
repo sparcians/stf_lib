@@ -151,43 +151,6 @@ namespace stf {
         printPercent(const T val, const int width = 0, const int precision = -1) {
             format_utils::formatPercent(std::cout, val, width, precision);
         }
-
-        /**
-         * Prints an opcode along with its disassembly
-         * \param dis disassembler to use
-         * \param inst_set instruction set to use
-         * \param opcode instruction opcode
-         * \param pc instruction PC
-         */
-        template<typename DisassemblerT, typename InstSetT>
-        static inline void printOpcodeWithDisassembly(DisassemblerT& dis,
-                                                      const InstSetT inst_set,
-                                                      const uint32_t opcode,
-                                                      const uint64_t pc)
-        {
-            static constexpr int OPCODE_PADDING = format_utils::OPCODE_FIELD_WIDTH - format_utils::OPCODE_WIDTH - 1;
-
-            dis.printOpcode(inst_set, opcode);
-
-            printSpaces(OPCODE_PADDING); // pad out the rest of the opcode field with spaces
-
-            dis.printDisassembly(pc, inst_set, opcode);
-            // if (show_annotation)
-            // {
-            //     // Retrieve symbol information from symbol table hash map
-            //     symInfo = annoSt->getSymbol(dism_pc);
-            //     if (match_symbol_opcode)
-            //     {
-            //         if(symInfo.opcode != inst.opcode())
-            //             std::cout << " | " << " [ " << symInfo.libName << ", " << symInfo.symName << ", OPCODE_MISMATCH: " << std::hex  << symInfo.opcode << " ] ";
-            //         else
-            //             std::cout << " | " << " [ " << symInfo.libName << ", " << symInfo.symName << ", OPCODE_CROSSCHECKED"  << " ] ";
-            //     }
-            //     else
-            //         std::cout << " | " << " [ " << symInfo.libName << ", " << symInfo.symName << " ] ";
-            // }
-            std::cout << std::endl;
-        }
     };
 } // end namespace stf
 

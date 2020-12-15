@@ -9,6 +9,9 @@
 #include <string>
 #include <type_traits>
 
+#include "stf_exception.hpp"
+#include "util.hpp"
+
 namespace stf {
     /**
      * \class format_utils
@@ -158,8 +161,16 @@ namespace stf {
             template<typename T>
             static constexpr int numHexDigits()
             {
+                return numHexDigits(sizeof(T));
+            }
+
+            /**
+             * Gets the number of hex digits required to represent the given width
+             */
+            static constexpr int numHexDigits(const size_t length)
+            {
                 constexpr int HEX_DIGITS_PER_BYTE = 2; // Number of digits in the hex representation of a byte
-                return HEX_DIGITS_PER_BYTE * sizeof(T);
+                return static_cast<int>(HEX_DIGITS_PER_BYTE * length);
             }
 
             /**
@@ -399,6 +410,94 @@ namespace stf {
                 FlagSaver flags(os);
                 os << std::left << std::setw(EVENT_WIDTH) << std::setfill(' ') << event_type;
             }
+
+            /**
+             * Formats a vector type, padding with spaces if necessary. Intended for use with vector InstRegRecords.
+             * \param os ostream to write result to
+             * \param vec Vector to format
+             * \param vlen Vlen to use to format vector data
+             * \param indent Number of characters to indent the line
+             * \param indent_first_line If false, first line will not be indented
+             */
+            template<typename OStream, typename VectorT>
+            static inline void formatVector(OStream&& os,
+                                            const VectorT& vec,
+                                            const size_t vlen,
+                                            const size_t indent = 0,
+                                            const bool indent_first_line = true) {
+                static constexpr size_t VECTOR_ELEMENT_WIDTH = byte_utils::bitSize<typename VectorT::value_type>();
+                FlagSaver flags(os);
+                bool first_line = true;
+                if(vlen < VECTOR_ELEMENT_WIDTH) {
+                    stf_assert(VECTOR_ELEMENT_WIDTH % vlen == 0,
+                               "The vlen parameter ("
+                               << vlen
+                               << ") must evenly divide the vector element size ("
+                               << VECTOR_ELEMENT_WIDTH
+                               << ")");
+
+                    const typename VectorT::value_type mask = (1 << vlen) - 1;
+                    const int vlen_digits = numHexDigits(vlen);
+
+                    for(auto it = vec.rbegin(); it != vec.rend(); ++it) {
+                        for(auto i = static_cast<ssize_t>(VECTOR_ELEMENT_WIDTH - vlen); i >= 0; i -= vlen) {
+                            if(!first_line) {
+                                os << std::endl;
+                            }
+                            if(!first_line || indent_first_line) {
+                                formatSpaces(os, indent);
+                            }
+                            formatHex(os, (*it >> i) & mask, vlen_digits);
+                            if(first_line) {
+                                first_line = false;
+                            }
+                        }
+                    }
+                }
+                else if(vlen > VECTOR_ELEMENT_WIDTH) {
+                    stf_assert(vlen % VECTOR_ELEMENT_WIDTH == 0,
+                               "The vector element size ("
+                               << VECTOR_ELEMENT_WIDTH
+                               << ") must evenly divide the vlen parameter ("
+                               << vlen
+                               << ")");
+                    const size_t elements_per_vlen = vlen / VECTOR_ELEMENT_WIDTH;
+                    stf_assert(vec.size() % elements_per_vlen == 0,
+                               "The number of vector elements must be a multiple of the number of elements per vlen");
+                    auto it = vec.rbegin();
+                    while(it != vec.rend()) {
+                        if(!first_line) {
+                            os << std::endl;
+                        }
+                        if(!first_line || indent_first_line) {
+                            formatSpaces(os, indent);
+                        }
+                        for(size_t i = 0; i < elements_per_vlen; ++i) {
+                            formatHex(os, *it);
+                            ++it;
+                        }
+                        if(first_line) {
+                            first_line = false;
+                        }
+                    }
+                }
+                else {
+                    for(auto it = vec.rbegin(); it != vec.rend(); ++it) {
+                        if(!first_line) {
+                            os << std::endl;
+                        }
+                        if(!first_line || indent_first_line) {
+                            formatSpaces(os, indent);
+                        }
+                        formatSpaces(os, indent);
+                        formatHex(os, *it);
+                        if(first_line) {
+                            first_line = false;
+                        }
+                    }
+                }
+            }
+
     };
 } // end namespace stf
 

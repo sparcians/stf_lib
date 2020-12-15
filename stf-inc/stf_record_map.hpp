@@ -11,7 +11,7 @@
 #include "boost_pool.hpp"
 
 #define BOOST_POOL_NO_MT
-#include <boost/container/small_vector.hpp>
+#include "boost_small_vector.hpp"
 #undef BOOST_POOL_NO_MT
 
 #include "stf_enums.hpp"
@@ -402,6 +402,8 @@ namespace stf {
              * \param rhs RecordMap that is being copied
              */
             RecordMap& operator=(const RecordMap& rhs) {
+                clear();
+
                 for(const auto& p: rhs.map_) {
                     auto& vec = map_[p.first];
                     for(const auto& r: p.second) {

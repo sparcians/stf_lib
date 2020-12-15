@@ -10,6 +10,7 @@
 #include "stf_ofstream.hpp"
 #include "stf_packed_container.hpp"
 #include "stf_record_pointers.hpp"
+#include "stf_vector_view.hpp"
 #include "util.hpp"
 
 namespace stf {
@@ -69,6 +70,26 @@ namespace stf {
             }
 
             /**
+             * Writes a ConstVectorView to an STFOFstream
+             * \param writer STFOFstream to use
+             * \param data Data to write
+             */
+            template<typename T>
+            static inline void write_(STFOFstream& writer, const ConstVectorView<T>& data) {
+                writer << data;
+            }
+
+            /**
+             * Writes a ConstVectorView to an STFOFstream
+             * \param writer STFOFstream to use
+             * \param data Data to write
+             */
+            template<typename T>
+            static inline void write_(STFOFstream& writer, ConstVectorView<T>&& data) {
+                writer << data;
+            }
+
+            /**
              * Reads an enum data type from an STFIFstream
              * \param reader STFIFstream to use
              * \param data Data to write
@@ -103,6 +124,28 @@ namespace stf {
             static inline typename std::enable_if<!type_utils::are_trivially_copyable<Ts...>::value>::type
             read_(STFIFstream& reader, Ts&&... data) {
                 (reader >> ... >> data);
+            }
+
+            /**
+             * Reads a VectorView from an STFIFstream
+             * \param reader STFIFstream to use
+             * \param data Data to read
+             */
+            template<typename T>
+            __attribute__((always_inline))
+            static inline void read_(STFIFstream& reader, VectorView<T>& data) {
+                reader >> data;
+            }
+
+            /**
+             * Reads a VectorView from an STFIFstream
+             * \param reader STFIFstream to use
+             * \param data Data to read
+             */
+            template<typename T>
+            __attribute__((always_inline))
+            static inline void read_(STFIFstream& reader, VectorView<T>&& data) {
+                reader >> data;
             }
 
         public:

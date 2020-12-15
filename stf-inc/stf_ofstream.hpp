@@ -5,9 +5,11 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#include "boost_small_vector.hpp"
 
 #include "stf_enum_utils.hpp"
 #include "stf_fstream.hpp"
+#include "stf_vector_view.hpp"
 
 namespace stf {
     class STFRecord;
@@ -109,6 +111,30 @@ namespace stf {
              */
             template<typename T>
             STFOFstream& operator<<(const std::vector<T>& data) {
+                writeFromPtr_(data.data(), data.size());
+                return *this;
+            }
+
+            /**
+             * Writes a boost::container::small_vector to an STFOFstream
+             * \attention The vector size must be written first!
+             * Use SerializableVector to handle this automatically.
+             * \param data Data to write
+             */
+            template<typename T, size_t N>
+            STFOFstream& operator<<(const boost::container::small_vector<T, N>& data) {
+                writeFromPtr_(data.data(), data.size());
+                return *this;
+            }
+
+            /**
+             * Reads a VectorView from an STFIFstream
+             * \attention The vector must already be sized to fit the incoming data!
+             * Use SerializableVector to handle this automatically.
+             * \param data Vector is read into this variable
+             */
+            template<typename T>
+            inline STFOFstream& operator<<(const ConstVectorView<T>& data) {
                 writeFromPtr_(data.data(), data.size());
                 return *this;
             }

@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "boost_small_vector.hpp"
 #include "format_utils.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_record.hpp"
@@ -14,7 +15,10 @@
 #include "stf_record_interfaces.hpp"
 #include "stf_serializable_container.hpp"
 #include "stf_enums.hpp"
+#include "stf_generator.hpp"
 #include "stf_reg_def.hpp"
+#include "stf_vector_view.hpp"
+#include "stf_vlen.hpp"
 #include "util.hpp"
 
 namespace stf {
@@ -311,6 +315,59 @@ namespace stf {
                 GenericPCTargetRecord(addr)
             {
             }
+    };
+
+    /**
+     * \class VLenConfigRecord
+     *
+     * Sets vlen parameter for a trace
+     */
+    class VLenConfigRecord : public GenericSingleDataRecord<VLenConfigRecord, vlen_t> {
+        public:
+            VLenConfigRecord() = default;
+
+            /**
+             * Constructs VLenConfigRecord
+             * \param strm STFIFstream to read from
+             */
+            explicit VLenConfigRecord(STFIFstream& strm) {
+                unpack_impl(strm);
+                stf_assert(getVLen(), "Attempted to read an invalid VLenConfigRecord");
+            }
+
+            /**
+             * Constructs a VLenConfigRecord
+             * \param vlen vlen parameter value
+             */
+            explicit VLenConfigRecord(vlen_t vlen) :
+                GenericSingleDataRecord(vlen)
+            {
+                stf_assert(getVLen(), "Attempted to create an invalid VLenConfigRecord");
+            }
+
+            /**
+             * Packs the record into an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            inline void pack_impl(STFOFstream& writer) const {
+                writer.setVLen(getVLen());
+                GenericSingleDataRecord::pack_impl(writer);
+            }
+
+            /**
+             * Unpacks the record from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            __attribute__((always_inline))
+            inline void unpack_impl(STFIFstream& reader) {
+                GenericSingleDataRecord::unpack_impl(reader);
+                reader.setVLen(getVLen());
+            }
+
+            /**
+             * Gets the vlen
+             */
+            vlen_t getVLen() const { return GenericSingleDataRecord::getData_(); }
     };
 
     /**
@@ -939,10 +996,28 @@ namespace stf {
      *
      */
     class InstRegRecord : public TypeAwareSTFRecord<InstRegRecord> {
+        public:
+            /**
+             * \typedef ValueType
+             * Underlying data type used in the vector
+             */
+            using ValueType = uint64_t;
+
+            /**
+             * \typedef VectorType
+             * Vector type used to store register data
+             */
+            using VectorType = boost::container::small_vector<ValueType, 1>;
+
         private:
             Registers::STF_REG reg_ = Registers::STF_REG::STF_REG_INVALID;         /**< operand register number */
             Registers::STF_REG_OPERAND_TYPE operand_type_ = Registers::STF_REG_OPERAND_TYPE::REG_RESERVED; /**< Whether this is a state, source, or dest */
-            uint64_t data_;                                                        /**< operand register number */
+            VectorType data_ = VectorType(1); /**< Register record data */
+            mutable vlen_t vlen_ = 0;
+
+            inline size_t calcVectorLen_() const {
+                return calcVectorLen(vlen_);
+            }
 
         public:
             InstRegRecord() = default;
@@ -959,12 +1034,50 @@ namespace stf {
              * Constructs an InstRegRecord
              * \param reg register number
              * \param operand_type register operand type
-             * \param data register data
+             * \param data vector register data
              */
-            InstRegRecord(const Registers::STF_REG reg, const Registers::STF_REG_OPERAND_TYPE operand_type, const uint64_t data) :
+            InstRegRecord(const Registers::STF_REG reg,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type,
+                          VectorType&& data) :
+                reg_(reg),
+                operand_type_(operand_type),
+                data_(std::move(data))
+            {
+                const auto data_size = data_.size();
+                stf_assert(data_size, "Attempted to construct a register record without any data");
+                stf_assert(isVector() || data_size == 1,
+                           "Attempted to construct a scalar register record with vector register data");
+            }
+
+            /**
+             * Constructs an InstRegRecord
+             * \param reg register number
+             * \param operand_type register operand type
+             * \param data vector register data
+             */
+            InstRegRecord(const Registers::STF_REG reg,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type,
+                          const VectorType& data) :
                 reg_(reg),
                 operand_type_(operand_type),
                 data_(data)
+            {
+                const auto data_size = data_.size();
+                stf_assert(data_size, "Attempted to construct a register record without any data");
+                stf_assert(isVector() || data_size == 1,
+                           "Attempted to construct a scalar register record with vector register data");
+            }
+
+            /**
+             * Constructs an InstRegRecord
+             * \param reg register number
+             * \param operand_type register operand type
+             * \param data register data
+             */
+            InstRegRecord(const Registers::STF_REG reg,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type,
+                          const ValueType data) :
+                InstRegRecord(reg, operand_type, VectorType(1, data))
             {
             }
 
@@ -978,9 +1091,92 @@ namespace stf {
             InstRegRecord(const Registers::STF_REG_packed_int reg,
                           const Registers::STF_REG_TYPE reg_type,
                           const Registers::STF_REG_OPERAND_TYPE operand_type,
-                          const uint64_t data) :
-                InstRegRecord(static_cast<Registers::STF_REG>(Registers::Codec::combineRegType(reg, reg_type)), operand_type, data)
+                          const ValueType data) :
+                InstRegRecord(reg,
+                              reg_type,
+                              operand_type,
+                              VectorType(1, data))
             {
+            }
+
+            /**
+             * Constructs an InstRegRecord
+             * \param reg register number
+             * \param reg_type register type
+             * \param operand_type register operand type
+             * \param data vector register data
+             */
+            InstRegRecord(const Registers::STF_REG_packed_int reg,
+                          const Registers::STF_REG_TYPE reg_type,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type,
+                          VectorType&& data) :
+                InstRegRecord(static_cast<Registers::STF_REG>(Registers::Codec::combineRegType(reg, reg_type)),
+                              operand_type,
+                              std::move(data))
+            {
+            }
+
+            /**
+             * Constructs an InstRegRecord
+             * \param reg register number
+             * \param reg_type register type
+             * \param operand_type register operand type
+             * \param data vector register data
+             */
+            InstRegRecord(const Registers::STF_REG_packed_int reg,
+                          const Registers::STF_REG_TYPE reg_type,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type,
+                          const VectorType& data) :
+                InstRegRecord(static_cast<Registers::STF_REG>(Registers::Codec::combineRegType(reg, reg_type)),
+                              operand_type,
+                              data)
+            {
+            }
+
+            /**
+             * Constructs an InstRegRecord
+             * \param reg register number
+             * \param reg_type register type
+             * \param operand_type register operand type
+             * \param data vector register data
+             */
+            InstRegRecord(const Registers::STF_REG_packed_int reg,
+                          const Registers::STF_REG_TYPE reg_type,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type,
+                          const std::vector<ValueType>& data) :
+                InstRegRecord(reg,
+                              reg_type,
+                              operand_type,
+                              VectorType(data.begin(), data.end()))
+            {
+            }
+
+            /**
+             * Constructs an InstRegRecord
+             * \param reg register number
+             * \param reg_type register type
+             * \param operand_type register operand type
+             * \param data vector register data
+             */
+            InstRegRecord(const Registers::STF_REG_packed_int reg,
+                          const Registers::STF_REG_TYPE reg_type,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type,
+                          std::initializer_list<ValueType> data) :
+                InstRegRecord(reg,
+                              reg_type,
+                              operand_type,
+                              VectorType(data))
+            {
+            }
+
+            /**
+             * Calculates the vector length needed to represent a given vlen
+             * \param vlen Vlen to use
+             */
+            inline static size_t calcVectorLen(const vlen_t vlen) {
+                constexpr auto VECTOR_DATA_SIZE = byte_utils::bitSize<decltype(data_)::value_type>();
+                constexpr auto SHIFT_AMT = math_utils::constexpr_log::log2(VECTOR_DATA_SIZE);
+                return (static_cast<size_t>(vlen) + VECTOR_DATA_SIZE - 1) >> SHIFT_AMT;
             }
 
             /**
@@ -994,24 +1190,76 @@ namespace stf {
             Registers::STF_REG_OPERAND_TYPE getOperandType() const { return operand_type_; }
 
             /**
-             * Gets the register data
+             * Gets the scalar register data
              */
-            uint64_t getData() const { return data_; }
+            ValueType getScalarData() const {
+                stf_assert(!isVector(), "Attempted to get scalar data from a vector register");
+                stf_assert(data_.size() == 1, "Invalid data size for scalar register");
+                return data_.front();
+            }
 
             /**
              * Sets the register data
+             * \param data new value to set
              */
-            void setData(uint64_t data) { data_ = data; }
+            void setScalarData(const ValueType data) {
+                stf_assert(!isVector(), "Attempted to set scalar data on a vector register");
+                stf_assert(data_.size() == 1, "Invalid data size for scalar register");
+                data_.front() = data;
+            }
+
+            /**
+             * Gets the vector register data
+             */
+            const VectorType& getVectorData() const {
+                stf_assert(isVector(), "Attempted to get vector data from a non-vector register");
+                return data_;
+            }
+
+            /**
+             * Sets the register data
+             * \param data new value to set
+             */
+            void setVectorData(const VectorType& data) {
+                stf_assert(isVector(), "Attempted to set vector data on a scalar register");
+                stf_assert(data_.size() == data.size(), "Invalid data size for vector register");
+                data_ = data;
+            }
+
+            /**
+             * Sets the register data
+             * \param data new value to set
+             */
+            void setVectorData(const std::vector<ValueType>& data) {
+                stf_assert(isVector(), "Attempted to set vector data on a scalar register");
+                stf_assert(data_.size() == data.size(), "Invalid data size for vector register");
+                std::copy(data.begin(), data.end(), data_.begin());
+            }
 
             /**
              * Packs an InstRegRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
             inline void pack_impl(STFOFstream& writer) const {
+                // Pack everything including the first data record
                 write_(writer,
                        Registers::Codec::packRegNum(reg_),
                        Registers::Codec::packRegMetadata(reg_, operand_type_),
-                       data_);
+                       data_.front());
+
+                // If it's a vector record, pack the rest of the data
+                if(STF_EXPECT_FALSE(isVector())) {
+                    vlen_ = writer.getVLen();
+                    stf_assert(vlen_, "Attempted to read vector register without setting vlen first");
+                    const auto vector_len = calcVectorLen_();
+                    stf_assert(vector_len == data_.size(),
+                               "Vector register record length ("
+                               << data_.size()
+                               << ") does not match length required by vlen parameter ("
+                               << vector_len
+                               << ")");
+                    write_(writer, ConstVectorView(data_, 1));
+                }
             }
 
             /**
@@ -1020,10 +1268,22 @@ namespace stf {
              */
             __attribute__((always_inline))
             inline void unpack_impl(STFIFstream& reader) {
+                // Unpack assuming it's a scalar register record
                 Registers::STF_REG_packed_int reg;
                 Registers::STF_REG_metadata_int reg_metadata;
-                read_(reader, reg, reg_metadata, data_);
+                read_(reader, reg, reg_metadata, data_.front());
                 Registers::Codec::decode(reg, reg_metadata, reg_, operand_type_);
+
+                // If it's actually a vector record, unpack the rest of the vector data
+                if(STF_EXPECT_FALSE(isVector())) {
+                    vlen_ = reader.getVLen();
+                    stf_assert(vlen_, "Attempted to read vector register without setting vlen first");
+                    data_.resize(calcVectorLen_());
+                    read_(reader, VectorView(data_, 1));
+                }
+                else {
+                    data_.resize(1); // always resize the vector in case this record object is being reused
+                }
             }
 
             /**
@@ -1031,8 +1291,44 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << operand_type_ << ' ' << reg_ << ' ';
-                format_utils::formatHex(os, data_);
+                if(STF_EXPECT_FALSE(isVector())) {
+                    std::ostringstream ss;
+                    ss << operand_type_ << ' ' << reg_ << ' ';
+                    const size_t padding = static_cast<size_t>(ss.tellp());
+                    os << ss.str();
+                    format_utils::formatHex(os, data_.front());
+
+                    for(auto it = std::next(data_.begin()); it != data_.end(); ++it) {
+                        os << std::endl;
+                        format_utils::formatSpaces(os, padding);
+                        format_utils::formatHex(os, *it);
+                    }
+                }
+                else {
+                    os << operand_type_ << ' ' << reg_ << ' ';
+                    format_utils::formatHex(os, data_.front());
+                }
+            }
+
+            /**
+             * Gets whether this record is a vector register
+             */
+            inline bool isVector() const {
+                return stf::Registers::isVector(reg_);
+            }
+
+            /**
+             * Gets whether this record is an FP register
+             */
+            inline bool isFP() const {
+                return stf::Registers::isFPR(reg_);
+            }
+
+            /**
+             * Gets the vlen parameter used when this record was read or written
+             */
+            inline vlen_t getVLen() const {
+                return vlen_;
             }
     };
 
@@ -1472,9 +1768,9 @@ namespace stf {
     class TraceInfoRecord : public TypeAwareSTFRecord<TraceInfoRecord> {
         private:
             STF_GEN generator_ = STF_GEN::STF_GEN_RESERVED;          /**< The generator used to create the trace */
-            uint8_t major_version_;                                  /**< The major version of the generator */
-            uint8_t minor_version_;                                  /**< The minor version of the generator */
-            uint8_t minor_minor_version_;                            /**< The minor minor version of the generator */
+            uint8_t major_version_ = 0;                                  /**< The major version of the generator */
+            uint8_t minor_version_ = 0;                                  /**< The minor version of the generator */
+            uint8_t minor_minor_version_ = 0;                            /**< The minor minor version of the generator */
             SerializableString<uint16_t> comment_;                   /**< Additional comments */
             mutable std::string version_str_;                        /**< Cached version string */
 
@@ -1537,7 +1833,16 @@ namespace stf {
             /**
              * Gets the generator
              */
-            STF_GEN getGenerator() const { return generator_; }
+            STF_GEN getGenerator() const {
+                return generator_;
+            }
+
+            /**
+             * Checks if the trace was generated with a particular generator
+             */
+            bool isGenerator(const STF_GEN generator) const {
+                return generator_ == generator;
+            }
 
             /**
              * Returns a formatted version string

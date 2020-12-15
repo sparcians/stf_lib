@@ -32,6 +32,9 @@ namespace stf {
                     case Descriptor::STF_PROCESS_ID_EXT:
                         os << "PROCESS_ID_EXT";
                         return os;
+                    case Descriptor::STF_VLEN_CONFIG:
+                        os << "VLEN_CONFIG";
+                        return os;
                     case Descriptor::STF_END_HEADER:
                         os << "END_HEADER";
                         return os;

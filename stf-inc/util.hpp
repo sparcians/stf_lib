@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <limits>
 
-//#include "stf_record_pointers.hpp"
+#include "type_utils.hpp"
 
 namespace stf {
     namespace byte_utils {
@@ -23,7 +23,7 @@ namespace stf {
          * Converts bytes to bits
          */
         template<typename T>
-        constexpr T toBits(T bytes) {
+        static constexpr T toBits(T bytes) {
             constexpr T BYTES_TO_BITS = 8;
             return BYTES_TO_BITS * bytes;
         }
@@ -32,14 +32,19 @@ namespace stf {
          * Converts bytes to kilobytes
          */
         template<typename T>
-        constexpr T toKB(T bytes) {
+        static constexpr T toKB(T bytes) {
             constexpr T KB_SHIFT = 10;
             return bytes >> KB_SHIFT;
         }
 
+        template<typename T>
+        static constexpr size_t bitSize() {
+            return toBits(sizeof(T));
+        }
+
         template<typename T, size_t num_bits>
         static constexpr T bitMask() {
-            constexpr size_t MAX_BITS = toBits(sizeof(T));
+            constexpr size_t MAX_BITS = bitSize<T>();
 
             static_assert(num_bits > 0 && num_bits <= MAX_BITS, "Mask must be >= 1 bit and <= sizeof(T) bits");
 
@@ -50,6 +55,7 @@ namespace stf {
                 return (1ULL << num_bits) - 1;
             }
         }
+
     } // end namespace byte_utils
 
     namespace page_utils {
@@ -77,7 +83,7 @@ namespace stf {
              */
             template<typename T>
             static constexpr T log2(T n) {
-                return (n < 2) ? 1 : 1 + log2(n/2);
+                return (n < 2) ? 0 : 1 + log2(n/2);
             }
 
             /**
@@ -86,7 +92,7 @@ namespace stf {
              */
             template<typename T>
             static constexpr T floor_log2(const T n) {
-                return byte_utils::toBits(static_cast<T>(sizeof(T))) - static_cast<T>(__builtin_clz(n)) - 1;
+                return static_cast<T>(byte_utils::bitSize<T>()) - static_cast<T>(__builtin_clz(n)) - 1;
             }
         };
 
@@ -126,14 +132,6 @@ namespace stf {
             dest = static_cast<std::remove_reference_t<decltype(dest)>>(dest | conditionalValue(cond, mask));
         }
     } // end namespace math_utils
-
-    namespace type_utils {
-        template <class T, class... Ts>
-        struct are_same : std::conjunction<std::is_same<T, Ts>...> {};
-
-        template <class... Ts>
-        struct are_trivially_copyable : std::conjunction<std::is_trivially_copyable<std::remove_reference_t<Ts>>...> {};
-    } // end namespace type_utils
 
     namespace pointer_utils {
         /**
