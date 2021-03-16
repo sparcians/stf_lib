@@ -2,6 +2,10 @@
 #              RequiredLibraries
 ################################################################################
 
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.4.0)
+    message(FATAL_ERROR "Provided gcc version (${CMAKE_CXX_COMPILER_VERSION}) is older than required version (7.4.0)")
+endif()
+
 # zstd
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(zstd)
