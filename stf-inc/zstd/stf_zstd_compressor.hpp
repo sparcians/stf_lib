@@ -108,6 +108,9 @@ namespace stf {
                 // Output buffer should at least be able to fit an entire block
                 out_buf.fit(getInitialBoundedSize());
 
+                out_.dst = out_buf.getPtrAs<void>();
+                out_.size = out_buf.size();
+
                 size_t result = ZSTD_endStream(zstd_context_, &out_);
                 stf_assert(!ZSTD_isError(result), "ZSTD Error: " << ZSTD_getErrorName(result));
 
