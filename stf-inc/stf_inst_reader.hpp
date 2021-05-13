@@ -312,7 +312,7 @@ namespace stf {
                         // Set FP flag if we have an FP source or dest register
                         // Set vector flag if we have a vector source or dest register
                         inst.setInstFlag_(math_utils::conditionalValue(reg_rec.isFP(), STFInst::INST_IS_FP,
-                                                                       reg_rec.isVector(), STFInst::INST_IS_VECTOR));
+                                                                       inst.checkIfVector_(reg_rec), STFInst::INST_IS_VECTOR));
                     }
                     else if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_OPCODE16)) {
                         finalizeInst_<InstOpcode16Record>(inst, rec);

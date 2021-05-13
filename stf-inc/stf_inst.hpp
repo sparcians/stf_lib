@@ -370,6 +370,8 @@ namespace stf {
 #endif
 
             enums::int_t<INSTFLAGS> inst_flags_ = 0; /**< inst flags to indicate nullified, branch, etc; */
+            bool has_vstart_ = false; /**< If true, this instruction accesses the VSTART CSR */
+            bool has_vl_ = false; /**< If true, this instruction accesses the VL CSR */
             bool skipped_ = false; /**< If true, this instruction should be skipped over by the reader */
             uint8_t opcode_size_ = 0; /**< Size of the opcode in bytes */
 
@@ -704,6 +706,8 @@ namespace stf {
                 i_page_cross_ = 0;
                 d_page_cross_ = 0;
 #endif
+                has_vl_ = false;
+                has_vstart_ = false;
                 inst_flags_ = 0;
                 events_.clear();
                 auto& reg_state_records = register_records_[REG_STATE_IDX];
@@ -729,6 +733,18 @@ namespace stf {
              */
             inline void setInstFlag_(const INSTFLAGS flag) {
                 inst_flags_ = static_cast<decltype(inst_flags_)>(inst_flags_ | flag);
+            }
+
+            /**
+             * Checks whether this is a vector instruction. Used by STFInstReader while building the STFInst
+             * \param rec InstRegRecord used to check for vector register accesses
+             */
+            inline bool checkIfVector_(const InstRegRecord& rec) {
+                // Some vector LS instructions only access VSTART and VL when VL == 0
+                has_vstart_ |= rec.getReg() == Registers::STF_REG::STF_REG_CSR_VSTART;
+                has_vl_ |= rec.getReg() == Registers::STF_REG::STF_REG_CSR_VL;
+                // Otherwise, any vector instruction should have at least 1 vector operand
+                return rec.isVector() || (has_vstart_ && has_vl_);
             }
 
             /**
