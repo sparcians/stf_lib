@@ -892,19 +892,25 @@ namespace stf {
              * \brief The end of the instruction stream
              *
              */
-            inline iterator end() { return iterator(this, true); }
+            inline const iterator& end() {
+                static const auto end_it = iterator(this, true);
+                return end_it;
+            }
 
             /**
              * \brief The beginning of the PTE stream
              *
              */
-            pte_iterator pteBegin() { return pte_iterator(this); }
+            inline pte_iterator pteBegin() { return pte_iterator(this); }
 
             /**
              * \brief The end of the PTE stream
              *
              */
-            pte_iterator pteEnd() { return pte_iterator(this, true); }
+            inline const pte_iterator& pteEnd() {
+                static const auto end_it = pte_iterator(this, true);
+                return end_it;
+            }
 
             /**
              * \brief Opens a file
