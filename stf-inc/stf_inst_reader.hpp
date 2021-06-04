@@ -889,6 +889,19 @@ namespace stf {
             inline iterator begin() { return iterator(this); }
 
             /**
+             * \brief The beginning of the instruction stream
+             * \param skip Skip this many instructions at the beginning
+             *
+             */
+            inline iterator begin(const size_t skip) {
+                if(skip) {
+                    return seekFromBeginning(skip);
+                }
+
+                return iterator(this);
+            }
+
+            /**
              * \brief The end of the instruction stream
              *
              */
