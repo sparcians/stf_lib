@@ -17,4 +17,4 @@ fi
 
 echo $sha > $CACHE_FILE
 
-sed -r "s/@${var_name}@/${sha}/g" $input_file > $output_file
+sed "s/@${var_name}@/${sha}/g" $input_file > $output_file
