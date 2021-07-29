@@ -12,8 +12,8 @@
 #include "zstd/stf_zstd_compressor.hpp"
 
 namespace stf {
-    STFWriter::STFWriter(const std::string_view filename, int compression_level) {
-        open(filename, compression_level);
+    STFWriter::STFWriter(const std::string_view filename, const int compression_level, const size_t chunk_size) {
+        open(filename, compression_level, chunk_size);
     }
 
     void STFWriter::initSimpleStreamAndOpen_(const std::string_view filename) {
@@ -26,7 +26,7 @@ namespace stf {
         stream_->openWithProcess(cmd, filename);
     }
 
-    void STFWriter::open(const std::string_view filename, int compression_level) {
+    void STFWriter::open(const std::string_view filename, int compression_level, const size_t chunk_size) {
         static const STFIdentifierRecord STF_IDENTIFIER_RECORD = STFIdentifierRecord();
         static const VersionRecord CUR_VERSION_RECORD(STF_CUR_VERSION_MAJOR, STF_CUR_VERSION_MINOR);
 
@@ -37,7 +37,7 @@ namespace stf {
                 if(compression_level == -1) {
                     compression_level = ZSTDCompressor::DEFAULT_COMPRESSION_LEVEL;
                 }
-                stream_ = std::make_unique<STFCompressedOFstream<ZSTDCompressor>>(filename, compression_level);
+                stream_ = std::make_unique<STFCompressedOFstream<ZSTDCompressor>>(filename, chunk_size, compression_level);
                 break;
             case STF_FILE_TYPE::STF_GZ:
                 if(compression_level == -1) {

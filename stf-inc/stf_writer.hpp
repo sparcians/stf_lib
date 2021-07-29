@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "stf.hpp"
+#include "stf_compressed_chunked_base.hpp"
 #include "stf_enums.hpp"
 #include "stf_generator.hpp"
 #include "stf_exception.hpp"
@@ -52,6 +53,7 @@ namespace stf {
         public:
             static constexpr int DEFAULT_GZIP_COMPRESS = 6; /**< Default GZIP compression level */
             static constexpr int DEFAULT_XZ_COMPRESS = 3;   /**< Default XZ compression level */
+            static constexpr size_t DEFAULT_CHUNK_SIZE = STFCompressedChunkedBase::DEFAULT_CHUNK_SIZE; /**< Default compressed trace chunk size */
 
         private:
             std::unique_ptr<STFOFstream> stream_;
@@ -107,16 +109,20 @@ namespace stf {
              *
              * \param filename The trace file name
              * \param compression_level Compression level to use (-1 for default).
+             * \param chunk_size Chunk size to use (Defaults to DEFAULT_CHUNK_SIZE)
              */
-            explicit STFWriter(std::string_view filename, int compression_level = -1);
+            explicit STFWriter(std::string_view filename,
+                               int compression_level = -1,
+                               size_t chunk_size = DEFAULT_CHUNK_SIZE);
 
             /**
              * Opens the specified file for writing
              *
              * \param filename The trace file name
              * \param compression_level Compression level to use (-1 for default).
+             * \param chunk_size Chunk size to use (Defaults to DEFAULT_CHUNK_SIZE)
              */
-            void open(std::string_view filename, int compression_level = -1);
+            void open(std::string_view filename, int compression_level = -1, size_t chunk_size = DEFAULT_CHUNK_SIZE);
 
             /**
              * \brief Flush the stream

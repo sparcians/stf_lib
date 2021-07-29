@@ -189,13 +189,26 @@ namespace stf {
             /**
              * Constructs an STFCompressedOFstream and opens it
              * \param filename Filename to open
+             * \param chunk_size Chunk size to use. Overrides STFCompressedChunkedBase::DEFAULT_CHUNK_SIZE
+             * \param args Optional arguments that will be passed to the underlying compressor
+             */
+            template<typename ... CompressorArgs>
+            explicit STFCompressedOFstream(const std::string_view filename, const size_t chunk_size, CompressorArgs... args) :
+                STFCompressedOFstream(args...)
+            {
+                setChunkSize(chunk_size);
+                open(filename);
+            }
+
+            /**
+             * Constructs an STFCompressedOFstream and opens it
+             * \param filename Filename to open
              * \param args Optional arguments that will be passed to the underlying compressor
              */
             template<typename ... CompressorArgs>
             explicit STFCompressedOFstream(const std::string_view filename, CompressorArgs... args) :
-                STFCompressedOFstream(args...)
+                STFCompressedOFstream(filename, DEFAULT_CHUNK_SIZE, args...)
             {
-                open(filename);
             }
 
             // Have to override the base class destructor to ensure that *our* close method gets called before destruction

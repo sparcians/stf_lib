@@ -16,7 +16,7 @@ namespace stf {
      */
     class STFCompressedChunkedBase {
         public:
-            static constexpr size_t DEFAULT_CHUNK_SIZE = 10000000; /**< Default chunk size, in number of instructions */
+            static constexpr size_t DEFAULT_CHUNK_SIZE = 100000; /**< Default chunk size, in number of instructions */
 
         protected:
             /**
