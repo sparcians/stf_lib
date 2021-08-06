@@ -1,7 +1,7 @@
 set(GIT_VERSION_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/scripts/gen_git_version.sh")
 
 function(git_version_generator input_file output_file var_name)
-    get_filename_component(GIT_VERSION_TARGET ${output_file} NAME)
+    get_filename_component(GIT_VERSION_TARGET ${output_file} NAME_WE)
     add_custom_target(
         ${GIT_VERSION_TARGET}
         "${GIT_VERSION_SCRIPT}" "${CMAKE_CURRENT_SOURCE_DIR}" "${input_file}" "${output_file}" "${var_name}"
