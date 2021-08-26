@@ -19,21 +19,11 @@ if(hasParent)
     set (STF_LINK_LIBS ${STF_LINK_LIBS} PARENT_SCOPE)
 endif()
 
-include(${CMAKE_CURRENT_LIST_DIR}/stf_linker_setup.cmake)
+include(stf_linker_setup)
 
-if(NOT NO_STF_LTO)
-    message("-- Enabling link-time optimization in STF library")
-else()
-    message("-- Disabling link-time optimization in STF library")
-endif()
+setup_stf_linker(true)
 
 add_compile_options(-Werror -std=c++17 -fPIC -Wall -Wextra -pedantic -Wconversion -Wno-unused-parameter -Wno-unused-function -pipe)
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    if (NOT CMAKE_BUILD_TYPE MATCHES "^[Dd]ebug")
-        add_compile_options(-mllvm -inline-threshold=1024)
-    endif()
-endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
     if(NOT DISABLE_STF_DOXYGEN)
