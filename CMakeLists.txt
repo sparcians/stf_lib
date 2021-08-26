@@ -11,7 +11,7 @@ if(hasParent)
     set (STF_BASE ${STF_BASE} PARENT_SCOPE)
 endif()
 
-include (${STF_BASE}/stf-config.cmake)
+include (${STF_BASE}/cmake/stf-config.cmake)
 
 # Boost
 find_package (Boost 1.49.0)
