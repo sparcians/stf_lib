@@ -25,7 +25,7 @@ namespace stf {
     /// Current STF library major version
     static constexpr uint32_t STF_CUR_VERSION_MAJOR = 1;
     /// Current STF library minor version
-    static constexpr uint32_t STF_CUR_VERSION_MINOR = 4;
+    static constexpr uint32_t STF_CUR_VERSION_MINOR = 5;
 
     /// Current STF library major version
     static constexpr uint32_t STF_OLDEST_SUPPORTED_VERSION_MAJOR = 0;
