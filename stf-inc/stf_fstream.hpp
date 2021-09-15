@@ -35,6 +35,7 @@ namespace stf {
             PCTracker pc_tracker_; /**< Tracks the current and next instruction PC */
             size_t num_records_read_ = 0; /**< Number of records seen so far */
             size_t num_insts_ = 0; /**< Number of instructions seen so far */
+            bool has_32bit_events_ = false; /**< If true, EventRecord event values are packed into 32 bits */
 
             STFFstream() = default;
 
@@ -240,6 +241,21 @@ namespace stf {
              */
             vlen_t getVLen() const {
                 return vlen_;
+            }
+
+            /**
+             * Returns whether the trace uses 32-bit event records
+             */
+            bool has32BitEvents() const {
+                return has_32bit_events_;
+            }
+
+            /**
+             * Sets whether the trace uses 32-bit event records
+             * \param has_32bit_events If true, the trace to be read/written uses 32-bit event records
+             */
+            void set32BitEvents(const bool has_32bit_events) {
+                has_32bit_events_ = has_32bit_events;
             }
     };
 } // end namespace stf

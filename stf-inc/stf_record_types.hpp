@@ -775,15 +775,17 @@ namespace stf {
      */
     class EventRecord : public TypeAwareSTFRecord<EventRecord> {
         public:
-            static constexpr uint32_t INTERRUPT_MASK = (1U << 31); /**< Interrupt mask */
-            static constexpr uint32_t SPECIAL_MASK = (1U << 30); /**< Special event mask */
+            static constexpr uint64_t INTERRUPT_MASK = (1ULL << 63); /**< Interrupt mask */
+            static constexpr uint64_t SPECIAL_MASK = (1ULL << 62); /**< Special event mask */
 
+            static constexpr uint32_t EVENT32_INTERRUPT_MASK = {1U << 31}; /**< 32-bit event interrupt mask */
+            static constexpr uint32_t EVENT32_SPECIAL_MASK = {1U << 30}; /**< 32-bit special event mask */
             /**
              * \enum TYPE
              *
              * Defines the different event types
              */
-            enum class TYPE : uint32_t {
+            enum class TYPE : uint64_t {
                 // Synchronous Exceptions/Traps
                 INST_ADDR_MISALIGN          = 0x0, /**< Misaligned instruction exception */
                 INST_ADDR_FAULT             = 0x1, /**< Instruction address fault */
@@ -825,6 +827,21 @@ namespace stf {
             TYPE event_;
             SerializableVector<uint64_t, uint8_t> content_;
 
+            static constexpr uint32_t EVENT32_TOP_BITS_ = EVENT32_INTERRUPT_MASK | EVENT32_SPECIAL_MASK;
+            static constexpr uint64_t EVENT64_TOP_BITS_ = INTERRUPT_MASK | SPECIAL_MASK;
+            static constexpr uint64_t EVENT64_ZERO_BITS_ = byte_utils::bitMask<uint64_t, 58>() << 4;
+            static constexpr uint32_t EVENT32_ZERO_BITS_ = byte_utils::bitMask<uint32_t, 26>() << 4;
+            static constexpr uint64_t EVENT64_TOP_ZERO_BITS_ = EVENT64_ZERO_BITS_ & ~EVENT32_ZERO_BITS_;
+
+            inline uint32_t convertTo32BitEvent_() const {
+                return static_cast<uint32_t>(event_) | ((static_cast<uint64_t>(event_) & EVENT64_TOP_BITS_) >> 32);
+            }
+
+            static inline TYPE convertFrom32BitEvent_(const uint32_t event32) {
+                return static_cast<TYPE>((event32 & ~EVENT32_TOP_BITS_) |
+                                         (static_cast<uint64_t>(event32 & EVENT32_TOP_BITS_) << 32));
+            }
+
         public:
             EventRecord() = default;
 
@@ -842,9 +859,24 @@ namespace stf {
              * \param content_data Event content data
              */
             explicit EventRecord(const TYPE event, const std::vector<uint64_t>& content_data) :
+                EventRecord(event, SerializableVector<uint64_t, uint8_t>(content_data))
+            {
+            }
+
+            /**
+             * Constructs an EventRecord
+             * \param event event number
+             * \param content_data Event content data
+             */
+            explicit EventRecord(const TYPE event, const SerializableVector<uint64_t, uint8_t>& content_data) :
                 event_(event),
                 content_(content_data)
             {
+                if(const auto event_u64 = static_cast<uint64_t>(event_); STF_EXPECT_FALSE(event_u64 & EVENT32_TOP_BITS_)) {
+                    stf_assert(!(event_u64 & EVENT64_TOP_ZERO_BITS_),
+                               "Invalid event type specified: " << std::hex << event_u64);
+                    event_ = convertFrom32BitEvent_(static_cast<uint32_t>(event_));
+                }
             }
 
             /**
@@ -867,7 +899,12 @@ namespace stf {
              * \param writer STFOFstream to use
              */
             inline void pack_impl(STFOFstream& writer) const {
-                write_(writer, event_, content_);
+                if(writer.has32BitEvents()) {
+                    write_(writer, convertTo32BitEvent_(), content_);
+                }
+                else {
+                    write_(writer, event_, content_);
+                }
             }
 
             /**
@@ -876,7 +913,14 @@ namespace stf {
              */
             __attribute__((always_inline))
             inline void unpack_impl(STFIFstream& reader) {
-                read_(reader, event_, content_);
+                if(reader.has32BitEvents()) {
+                    uint32_t event32;
+                    read_(reader, event32, content_);
+                    event_ = convertFrom32BitEvent_(event32);
+                }
+                else {
+                    read_(reader, event_, content_);
+                }
             }
 
             /**
@@ -894,7 +938,7 @@ namespace stf {
             /**
              * Gets whether the event is an interrupt
              */
-            inline bool isInterrupt() const { return static_cast<uint32_t>(event_) & INTERRUPT_MASK; }
+            inline bool isInterrupt() const { return static_cast<uint64_t>(event_) & INTERRUPT_MASK; }
 
             /**
              * Gets whether the event is a fault
@@ -1355,14 +1399,14 @@ namespace stf {
              * \param data data
              */
             explicit InstMemContentRecord(uint64_t data) :
-                GenericSingleDataRecord<InstMemContentRecord, uint64_t>(data)
+                GenericSingleDataRecord(data)
             {
             }
 
             /**
              * Gets the data
              */
-            uint64_t getData() const { return GenericSingleDataRecord<InstMemContentRecord, uint64_t>::getData_(); }
+            uint64_t getData() const { return GenericSingleDataRecord::getData_(); }
     };
 
     /**
@@ -1637,14 +1681,14 @@ namespace stf {
              * \param reg register number
              */
             explicit InstReadyRegRecord(uint16_t reg) :
-                GenericSingleDataRecord<InstReadyRegRecord, uint16_t>(reg)
+                GenericSingleDataRecord(reg)
             {
             }
 
             /**
              * Gets the register number
              */
-            uint16_t getReg() const { return GenericSingleDataRecord<InstReadyRegRecord, uint16_t>::getData_(); }
+            uint16_t getReg() const { return GenericSingleDataRecord::getData_(); }
     };
 
     /**
@@ -1749,14 +1793,14 @@ namespace stf {
              * \param data data
              */
             explicit BusMasterContentRecord(uint64_t data) :
-                GenericSingleDataRecord<BusMasterContentRecord, uint64_t>(data)
+                GenericSingleDataRecord(data)
             {
             }
 
             /**
              * Gets the data
              */
-            uint64_t getData() const { return GenericSingleDataRecord<BusMasterContentRecord, uint64_t>::getData_(); }
+            uint64_t getData() const { return GenericSingleDataRecord::getData_(); }
     };
 
     /**
@@ -2028,7 +2072,20 @@ namespace stf {
      * Defines which features are supported by this trace
      */
     class TraceInfoFeatureRecord : public GenericSingleDataRecord<TraceInfoFeatureRecord, uint64_t> {
+        private:
+            void handleStreamFlags_(STFFstream& strm) const {
+                // If the trace doesn't support 64 bit events, tell the stream to pack/unpack from 32 bits
+                strm.set32BitEvents(!hasFeature(TRACE_FEATURES::STF_CONTAIN_EVENT64));
+            }
+
         public:
+            /**
+             * \typedef feature_int_type
+             *
+             * Underlying integer type used by TraceInfoFeatureRecord
+             */
+            using feature_int_type = enums::int_t<TRACE_FEATURES>;
+
             TraceInfoFeatureRecord() = default;
 
             /**
@@ -2043,7 +2100,7 @@ namespace stf {
              * Constructs a TraceInfoFeatureRecord
              * \param features Features to enable
              */
-            explicit TraceInfoFeatureRecord(TRACE_FEATURES features) :
+            explicit TraceInfoFeatureRecord(const TRACE_FEATURES features) :
                 TraceInfoFeatureRecord(enums::to_int(features))
             {
             }
@@ -2052,16 +2109,35 @@ namespace stf {
              * Constructs a TraceInfoFeatureRecord
              * \param features Features to enable
              */
-            explicit TraceInfoFeatureRecord(uint64_t features) :
-                GenericSingleDataRecord<TraceInfoFeatureRecord, uint64_t>(features)
+            explicit TraceInfoFeatureRecord(const feature_int_type features) :
+                GenericSingleDataRecord(features)
             {
+            }
+
+            /**
+             * Packs a TraceInfoFeatureRecord into an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            inline void pack_impl(STFOFstream& writer) const {
+                handleStreamFlags_(writer);
+                GenericSingleDataRecord::pack_impl(writer);
+            }
+
+            /**
+             * Unpacks a TraceInfoFeatureRecord from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            __attribute__((always_inline))
+            inline void unpack_impl(STFIFstream& reader) {
+                GenericSingleDataRecord::unpack_impl(reader);
+                handleStreamFlags_(reader);
             }
 
             /**
              * Enables a feature
              * \param feature Feature to enable
              */
-            void setFeature(TRACE_FEATURES feature) {
+            void setFeature(const TRACE_FEATURES feature) {
                 setFeature(enums::to_int(feature));
             }
 
@@ -2069,20 +2145,38 @@ namespace stf {
              * Enables a feature
              * \param feature Feature to enable
              */
-            void setFeature(uint64_t feature) {
-                GenericSingleDataRecord<TraceInfoFeatureRecord, uint64_t>::setData_(getFeatures() | feature);
+            void setFeature(const feature_int_type feature) {
+                GenericSingleDataRecord::setData_(getFeatures() | feature);
+            }
+
+            /**
+             * Disables a feature
+             * \param feature Feature to disable
+             */
+            void disableFeature(const TRACE_FEATURES feature) {
+                disableFeature(enums::to_int(feature));
+            }
+
+            /**
+             * Disables a feature
+             * \param feature Feature to disable
+             */
+            void disableFeature(const feature_int_type feature) {
+                GenericSingleDataRecord::setData_(getFeatures() & ~feature);
             }
 
             /**
              * Gets all enabled features
              */
-            uint64_t getFeatures() const { return GenericSingleDataRecord<TraceInfoFeatureRecord, uint64_t>::getData_(); }
+            feature_int_type getFeatures() const {
+                return GenericSingleDataRecord::getData_();
+            }
 
             /**
              * Checks whether a feature is enabled
              * \param feature feature to check
              */
-            bool hasFeature(TRACE_FEATURES feature) const {
+            bool hasFeature(const TRACE_FEATURES feature) const {
                 return getFeatures() & enums::to_int(feature);
             }
     };

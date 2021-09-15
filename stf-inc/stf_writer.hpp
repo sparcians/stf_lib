@@ -89,6 +89,7 @@ namespace stf {
             bool wrote_event_record_group_ = false;
             bool wrote_page_table_walk_ = false;
             bool wrote_reg_ = false;
+            bool force_32bit_events_ = false;
 
             /**
              * Opens the specified file with an STFOFstream
@@ -204,13 +205,31 @@ namespace stf {
              * Adds trace feature to header
              * \param trace_feature feature to add
              */
-            void setTraceFeature(uint64_t trace_feature);
+            template<typename FeatureType>
+            void setTraceFeature(const FeatureType trace_feature) {
+                setTraceFeature(static_cast<TRACE_FEATURES>(trace_feature));
+            }
 
             /**
              * Adds trace feature to header
              * \param trace_feature feature to add
              */
             void setTraceFeature(TRACE_FEATURES trace_feature);
+
+            /**
+             * Removes trace feature from header
+             * \param trace_feature feature to remove
+             */
+            template<typename FeatureType>
+            void disableTraceFeature(const FeatureType trace_feature) {
+                disableTraceFeature(static_cast<TRACE_FEATURES>(trace_feature));
+            }
+
+            /**
+             * Removes trace feature from header
+             * \param trace_feature feature to remove
+             */
+            void disableTraceFeature(TRACE_FEATURES trace_feature);
 
             /**
              * Sets the vlen parameter

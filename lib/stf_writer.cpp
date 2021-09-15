@@ -136,7 +136,7 @@ namespace stf {
         }
     }
 
-    void STFWriter::setTraceFeature(uint64_t trace_feature) {
+    void STFWriter::setTraceFeature(const TRACE_FEATURES trace_feature) {
         if(!trace_features_) {
             trace_features_ = STFRecordPool::make<TraceInfoFeatureRecord>(trace_feature);
         }
@@ -145,8 +145,16 @@ namespace stf {
         }
     }
 
-    void STFWriter::setTraceFeature(TRACE_FEATURES trace_feature) {
-        setTraceFeature(enums::to_int(trace_feature));
+    void STFWriter::disableTraceFeature(const TRACE_FEATURES trace_feature) {
+        if(trace_feature == TRACE_FEATURES::STF_CONTAIN_EVENT64) {
+            force_32bit_events_ = true;
+        }
+
+        if(!trace_features_) {
+            return;
+        }
+
+        trace_features_->disableFeature(trace_feature);
     }
 
     void STFWriter::setVLen(const vlen_t vlen) {
@@ -224,6 +232,15 @@ namespace stf {
         }
 
         stf_assert(header_started_, "Attempted to finalize the header before anything has been written to it");
+
+        // Set up any ISA/IEM-dependent options
+        const bool is_riscv = isa_ && isa_->getISA() == ISA::RISCV;
+        const bool is_riscv64 = is_riscv && initial_iem_ && initial_iem_->getMode() == INST_IEM::STF_INST_IEM_RV64;
+
+        // RV64 traces should use 64 bit events
+        if(!force_32bit_events_ && is_riscv64) {
+            setTraceFeature(stf::TRACE_FEATURES::STF_CONTAIN_EVENT64);
+        }
 
         if(!(header_comments_written_ &&
              isa_written_ &&
