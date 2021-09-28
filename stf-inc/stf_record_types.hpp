@@ -802,6 +802,10 @@ namespace stf {
                 INST_PAGE_FAULT             = 0xc, /**< Instruction page fault */
                 LOAD_PAGE_FAULT             = 0xd, /**< Load page fault */
                 STORE_PAGE_FAULT            = 0xf, /**< Store page fault */
+                GUEST_INST_PAGE_FAULT       = 0x14, /**< Instruction guest-page fault */
+                GUEST_LOAD_PAGE_FAULT       = 0x15, /**< Load guest-page fault */
+                VIRTUAL_INST                = 0x16, /**< Virtual instruction */
+                GUEST_STORE_PAGE_FAULT      = 0x17, /**< Store/AMO guest-page fault */
 
                 // Interrupts/Asynchronous Exceptions
                 INT_USER_SOFTWARE           = 0x0 | INTERRUPT_MASK, /**< User-mode software interrupt */

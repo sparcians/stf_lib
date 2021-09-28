@@ -112,6 +112,14 @@ namespace stf {
                 return os << "LOAD_PAGE_FAULT";
             case EventRecord::TYPE::STORE_PAGE_FAULT:
                 return os << "STORE_PAGE_FAULT";
+            case EventRecord::TYPE::GUEST_INST_PAGE_FAULT:
+                return os << "GUEST_INST_PAGE_FAULT";
+            case EventRecord::TYPE::GUEST_LOAD_PAGE_FAULT:
+                return os << "GUEST_LOAD_PAGE_FAULT";
+            case EventRecord::TYPE::VIRTUAL_INST:
+                return os << "VIRTUAL_INST";
+            case EventRecord::TYPE::GUEST_STORE_PAGE_FAULT:
+                return os << "GUEST_STORE_PAGE_FAULT";
             case EventRecord::TYPE::INT_USER_SOFTWARE:
                 return os << "INT_USER_SOFTWARE";
             case EventRecord::TYPE::INT_SUPERVISOR_SOFTWARE:
