@@ -61,15 +61,23 @@ namespace stf {
             }
 
             /**
-             * Gets the block size of the filesystem we are reading from
+             * Calls fstat() on the stream and returns the result
              */
-            size_t getFSBlockSize_() const {
+            struct stat getFileStat_() const {
                 stf_assert(!used_popen_, "Cannot get block size of a stream input.");
                 stf_assert(stream_, "Attempted to query blocksize without opening a file first.");
 
                 struct stat stat_result;
                 stf_assert(fstat(fileno(stream_), &stat_result) == 0, "Failed to stat file");
 
+                return stat_result;
+            }
+
+            /**
+             * Gets the block size of the filesystem we are reading from
+             */
+            size_t getFSBlockSize_() const {
+                struct stat stat_result = getFileStat_();
                 return static_cast<size_t>(stat_result.st_blksize);
             }
 
