@@ -37,11 +37,17 @@ namespace stf {
             return bytes >> KB_SHIFT;
         }
 
+        /**
+         * Gets size of a type in bits
+         */
         template<typename T>
         static constexpr size_t bitSize() {
             return toBits(sizeof(T));
         }
 
+        /**
+         * Gets a bitmask of a specified number of bits
+         */
         template<typename T, size_t num_bits>
         static constexpr T bitMask() {
             constexpr size_t MAX_BITS = bitSize<T>();
@@ -56,6 +62,145 @@ namespace stf {
             }
         }
 
+        /**
+         * \class BitExtractor
+         * \brief Class that knows how to extract single bits and contiguous regions of bits from integer types
+         */
+        template<typename T>
+        class BitExtractor {
+            private:
+                /**
+                 * \typedef U
+                 * \brief Non-const version of T that ensures this class works on const and non-const types
+                 */
+                using U = std::remove_const_t<T>;
+
+                /**
+                 * \class BitParameterBase
+                 * \brief Dummy base class for Bit and BitRange that prevents the extraction methods from being used
+                 * with other types
+                 */
+                struct BitParameterBase {
+                };
+
+            public:
+                /**
+                 * \struct Bit
+                 * \brief Extracts a single bit at bit_idx, optionally shifting it to dest_bit_idx
+                 */
+                template<size_t bit_idx, size_t dest_bit_idx = bit_idx>
+                struct Bit : public BitParameterBase {
+                    static_assert(bit_idx < bitSize<U>(), "Bit index must fit inside specified type");
+                    static_assert(dest_bit_idx < bitSize<U>(), "Destination bit index must fit inside specified type");
+
+                    /**
+                     * Gets the bit at bit_idx from the specified value, optionally shifting it to dest_bit_idx
+                     * \param val Value to extract the bit from
+                     */
+                    static constexpr U get(const U val) {
+                        U result = val & (U(1) << bit_idx);
+
+                        if(dest_bit_idx > bit_idx) {
+                            result <<= (dest_bit_idx - bit_idx);
+                        }
+                        else if(dest_bit_idx < bit_idx) {
+                            result >>= (bit_idx - dest_bit_idx);
+                        }
+
+                        return result;
+                    }
+                };
+
+                /**
+                 * \struct BitRange
+                 * \brief Extracts the bits from the range [start_idx:end_idx], optionally shifting it to dest_start_idx
+                 */
+                template<size_t start_idx, size_t end_idx, size_t dest_start_idx = start_idx>
+                struct BitRange : public BitParameterBase {
+                    static_assert(start_idx < bitSize<U>(), "Start index must fit inside specified type");
+                    static_assert(end_idx < bitSize<U>(), "End index must fit inside specified type");
+                    static_assert(dest_start_idx < bitSize<U>(),
+                                  "Destination start index must fit inside specified type");
+                    static_assert(start_idx >= end_idx, "Bit range should be specified from largest to smallest index");
+                    static_assert(dest_start_idx >= (start_idx - end_idx),
+                                  "Destination bit range must fit original bit range");
+
+                    /**
+                     * Gets the bits from [start_idx:end_idx] from the specified value, optionally shifting them to dest_start_idx
+                     * \param val Value to extract the bits from
+                     */
+                    static constexpr U get(const U val) {
+                        constexpr U mask = bitMask<U, start_idx - end_idx + 1>() << end_idx;
+                        U result = val & mask;
+
+                        if(dest_start_idx > start_idx) {
+                            result <<= (dest_start_idx - start_idx);
+                        }
+                        else if(dest_start_idx < start_idx) {
+                            result >>= (start_idx - dest_start_idx);
+                        }
+
+                        return result;
+                    }
+                };
+
+                /**
+                 * Extracts multiple bits from a value, specified using Bit and/or BitRange classes as the template parameters. Each extracted Bit/BitRange is bitwise-ORed together to form the final value
+                 * \param val Value to extract the bits from
+                 */
+                template<typename ... BitArgs>
+                static constexpr typename std::enable_if<(std::is_base_of_v<BitParameterBase, BitArgs> && ...), U>::type
+                get(const U val) {
+                    return (BitArgs::get(val) | ...);
+                }
+        };
+
+        /**
+         * Helper function that extracts a single bit range [start_idx:end_idx] from the specified value
+         * \param val Value to extract bit range from
+         */
+        template<size_t start_idx, size_t end_idx, typename T>
+        static constexpr T getBitRange(const T val) {
+            return BitExtractor<T>::template BitRange<start_idx, end_idx>::get(val);
+        }
+
+        /**
+         * Helper function that extracts a single bit range [start_idx:end_idx] from the specified value, shifting it to dest_start_idx
+         * \param val Value to extract bit range from
+         */
+        template<size_t start_idx, size_t end_idx, size_t dest_start_idx, typename T>
+        static constexpr T getBitRange(const T val) {
+            return BitExtractor<T>::template BitRange<start_idx, end_idx, dest_start_idx>::get(val);
+        }
+
+        /**
+         * Helper function that extracts a single bit at bit_idx from the specified value
+         * \param val Value to extract bit from
+         */
+        template<size_t bit_idx, typename T>
+        static constexpr T getBit(const T val) {
+            return BitExtractor<T>::template Bit<bit_idx>::get(val);
+        }
+
+        /**
+         * Helper function that extracts a single bit at bit_idx from the specified value, shifting it to dest_bit_idx
+         * \param val Value to extract bit range from
+         */
+        template<size_t bit_idx, size_t dest_bit_idx, typename T>
+        static constexpr T getBit(const T val) {
+            return BitExtractor<T>::template Bit<bit_idx, dest_bit_idx>::get(val);
+        }
+
+        /**
+         * Sign extends a value of Width bits to a DestT type
+         * \param val Value to sign extend
+         */
+        template<size_t Width, typename DestT, typename T>
+        static constexpr DestT signExtend(const T val) {
+            struct { DestT to_extend:Width; } converter;
+            converter.to_extend = val;
+            return converter.to_extend;
+        }
     } // end namespace byte_utils
 
     namespace page_utils {

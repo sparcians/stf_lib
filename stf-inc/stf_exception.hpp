@@ -29,6 +29,62 @@ namespace stf
     class STFException : public std::exception
     {
         public:
+            /**
+             * \class stringstream
+             * std::ostringstream subclass used to construct STFException messages
+             */
+            class stringstream : public std::ostringstream {
+                public:
+                    stringstream() = default;
+
+                    /**
+                     * Constructs a stringstream, initializing it with the specified string
+                     * \param str String value to initialize stringstream with
+                     */
+                    stringstream(const std::string& str) :
+                        std::ostringstream(str)
+                    {
+                    }
+
+                    /**
+                     * operator<< for string types
+                     * \param msg String message
+                     */
+                    template<class T>
+                    typename std::enable_if<std::is_same<T, std::string>::value ||
+                                            std::is_same<T, std::string_view>::value ||
+                                            !type_utils::is_iterable<T>::value, stringstream&>::type
+                    operator<<(const T & msg) {
+                        static_cast<std::ostringstream&>(*this) << msg;
+                        return *this;
+                    }
+
+                    /**
+                     * operator<< for non-string iterable collections
+                     * \param msg_vec Collection to format
+                     */
+                    template<typename Vector>
+                    typename std::enable_if<!std::is_same<Vector, std::string>::value &&
+                                            !std::is_same<Vector, std::string_view>::value &&
+                                            type_utils::is_iterable<Vector>::value, stringstream&>::type
+                    operator<<(const Vector& msg_vec) {
+                        bool first = true;
+                        *this << "[";
+                        for(const auto& msg: msg_vec) {
+                            if(!first) {
+                                *this << ",";
+                            }
+                            else {
+                                first = false;
+                            }
+                            *this << msg;
+                        }
+                        *this << "]";
+                        return *this;
+                    }
+
+            };
+
 
             /**
              * \brief Construct a STFException object with empty reason
@@ -77,52 +133,9 @@ namespace stf
              * but it's not as pretty.
              */
             template<class T>
-            typename std::enable_if<std::is_same<T, std::string>::value ||
-                                    std::is_same<T, std::string_view>::value ||
-                                    !type_utils::is_iterable<T>::value, STFException&>::type
-            operator<<(const T & msg) {
-                std::ostringstream str;
+            STFException& operator<<(const T & msg) {
+                stringstream str;
                 str << msg;
-                reason_ += str.str();
-                return *this;
-            }
-
-            /**
-             * \brief Append additional information in an iterable container to the message.
-             * \param msg_vec The container to add
-             * \return This exception object
-             *
-             * Usage:
-             * \code
-             * int bad_company = 4;
-             * stf::STFException e("Oh uh");
-             * e << ": this is bad: " << bad_company;
-             * \endcode
-             * or you can do this:
-             * \code
-             * int bad_company = 4;
-             * throw stf::STFException e("Oh uh") << ": this is bad: " << bad_company;
-             * \endcode
-             * but it's not as pretty.
-             */
-            template<typename Vector>
-            typename std::enable_if<!std::is_same<Vector, std::string>::value &&
-                                    !std::is_same<Vector, std::string_view>::value &&
-                                    type_utils::is_iterable<Vector>::value, STFException&>::type
-            operator<<(const Vector& msg_vec) {
-                std::ostringstream str;
-                bool first = true;
-                str << "[";
-                for(const auto& msg: msg_vec) {
-                    if(!first) {
-                        str << ",";
-                    }
-                    else {
-                        first = false;
-                    }
-                    str << msg;
-                }
-                str << "]";
                 reason_ += str.str();
                 return *this;
             }
@@ -193,6 +206,19 @@ namespace stf
     throw ex;
 
 /**
+ * \def stf_throw_impl
+ * For internal use only
+ */
+#define stf_throw_impl(prefix, message) \
+    { \
+        stf::STFException::stringstream msg(prefix); \
+        msg << ": " << message; \
+        stf::STFException ex(msg.str()); \
+        ADD_FILE_INFORMATION(ex, __FILE__, __LINE__); \
+        throw ex; \
+    }
+
+/**
  * \def stf_assert1
  * For internal use only
  */
@@ -204,10 +230,7 @@ namespace stf
  * For internal use only
  */
 #define stf_assert2(e, insertions)                                                 \
-    if(__builtin_expect(!(e), 0)) { stf::STFException ex(std::string(#e) + ": " ); \
-                                    ex << insertions;                              \
-                                    ADD_FILE_INFORMATION(ex, __FILE__, __LINE__);  \
-                                    throw ex; }
+    if(__builtin_expect(!(e), 0)) stf_throw_impl(#e, insertions)
 
 /**
  * \def VA_NARGS_IMPL
@@ -239,14 +262,7 @@ namespace stf
  * \def stf_throw
  * Throws an stf::STFException with the provided message (supports << operator on message)
  */
-#define stf_throw(message) \
-    { \
-        std::stringstream msg; \
-        msg << message; \
-        stf::STFException ex(std::string("abort: ") + msg.str()); \
-        ADD_FILE_INFORMATION(ex, __FILE__, __LINE__); \
-        throw ex; \
-    }
+#define stf_throw(message) stf_throw_impl("abort", message)
 
 /**
  * \def invalid_descriptor_throw

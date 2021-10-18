@@ -14,6 +14,7 @@
 #include "boost_small_vector.hpp"
 
 #include "stf_enums.hpp"
+#include "stf_item.hpp"
 #include "stf_record.hpp"
 #include "stf_record_map.hpp"
 #include "stf_record_types.hpp"
@@ -319,7 +320,7 @@ namespace stf {
      *
      * \todo implement is_branch, is_load, and is_store
      */
-    class STFInst {
+    class STFInst : public STFItem {
         private:
             static constexpr uint32_t NOP_OPCODE_ = 0x00000013; /**< Opcode for RISCV nop */
             static const InstRegRecord x0_src_; /**< X0 register source record */
@@ -358,7 +359,6 @@ namespace stf {
             bool iem_changed_ = false; /**< If true, IEM changed with this instruction */
 #endif
             uint32_t opcode_ = 0; /**< opcode */
-            uint64_t index_ = 0; /**< instruction index */
 
             uint32_t tgid_ = 0; /**< Thread group ID */
             uint32_t tid_ = 0; /**< Thread ID */
@@ -691,6 +691,7 @@ namespace stf {
              * Somewhat clunky solution, but this avoids some reallocations and speeds up reading
              */
             void reset_() {
+                STFItem::reset_();
                 branch_target_ = 0;
                 pc_ = 0;
 #ifdef STF_INST_HAS_IEM
@@ -698,7 +699,6 @@ namespace stf {
                 iem_changed_ = 0;
 #endif
                 opcode_ = 0;
-                index_ = 0;
                 tgid_ = 0;
                 tid_ = 0;
                 asid_ = 0;
@@ -1151,12 +1151,6 @@ namespace stf {
             uint8_t opcodeSize() const { return opcode_size_; }
 
             /**
-             * \brief Instruction index (starting from 1)
-             * \return Instruction index
-             */
-            uint64_t index() const { return index_; }
-
-            /**
              * \brief whether the information in this instance is valid
              * \return True if valid
              */
@@ -1167,6 +1161,13 @@ namespace stf {
              */
             inline const char* getOpcodeWidthStr() const {
                 return isOpcode16() ? "INST16" : "INST32";
+            }
+
+            /**
+             * Gets whether the instruction is a branch
+             */
+            bool isBranch() const {
+                return inst_flags_ & INST_IS_BRANCH;
             }
     };
 
