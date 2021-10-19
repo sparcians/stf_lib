@@ -14,6 +14,7 @@
 #include <string_view>
 #include "stf_enums.hpp"
 #include "stf_exception.hpp"
+#include "stf_item.hpp"
 #include "stf_reader.hpp"
 #include "stf_record.hpp"
 #include "stf_record_pointers.hpp"
@@ -89,6 +90,21 @@ namespace stf {
             }
 
             /**
+             * Default item skipping cleanup callback. Does nothing.
+             */
+            __attribute__((always_inline))
+            inline void skippedCleanup_() {
+            }
+
+            /**
+             * Invokes subclass callback to clean up any addtional state when an item is skipped
+             */
+            __attribute__((always_inline))
+            inline void skippedItemCleanup_() {
+                static_cast<ReaderType*>(this)->skippedCleanup_();
+            }
+
+            /**
              * Initializes the internal buffer
              */
             bool initItemBuffer_() {
@@ -99,6 +115,7 @@ namespace stf {
                     try {
                         readNextItem_(buf_[i]);
                         if(STF_EXPECT_FALSE(itemSkipped_(buf_[i]))) {
+                            skippedItemCleanup_();
                             continue;
                         }
                     }
@@ -247,6 +264,14 @@ namespace stf {
             }
 
             /**
+             * Initializes item index
+             */
+            __attribute__((always_inline))
+            inline void initItemIndex_(ItemType& item) const {
+                delegates::STFItemDelegate::setIndex_(item, numItemsReadFromReader_());
+            }
+
+            /**
              * Returns the number of items read from the buffer so far with filtering
              */
             inline size_t numItemsRead_() const {
@@ -266,6 +291,7 @@ namespace stf {
                     try {
                         readNextItem_(buf_[pos]);
                         if(STF_EXPECT_FALSE(itemSkipped_(buf_[pos]))) {
+                            skippedItemCleanup_();
                             pos = (pos - 1) & buffer_mask_;
                         }
                     }

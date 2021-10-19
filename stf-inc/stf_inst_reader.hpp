@@ -18,8 +18,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include "stf_branch_decoder.hpp"
-#include "stf_buffered_reader.hpp"
+#include "stf_user_mode_skipping_reader.hpp"
 #include "stf_enums.hpp"
 #include "stf_exception.hpp"
 #include "stf_filter_types.hpp"
@@ -45,18 +44,26 @@ namespace stf {
      *
      */
     template<typename FilterType>
-    class STFInstReaderBase: public STFBufferedReader<STFInst, FilterType, STFInstReaderBase<FilterType>> {
+    class STFInstReaderBase: public STFUserModeSkippingReader<STFInst, FilterType, STFInstReaderBase<FilterType>> {
         private:
-            using ParentReader = STFBufferedReader<STFInst, FilterType, STFInstReaderBase<FilterType>>;
+            using ParentReader = STFUserModeSkippingReader<STFInst, FilterType, STFInstReaderBase<FilterType>>;
             friend ParentReader;
+            /// \cond DOXYGEN_IGNORED
+            friend typename ParentReader::BufferedReader;
+            /// \endcond
+
             using ParentReader::DEFAULT_BUFFER_SIZE_;
             using IntDescriptor = typename ParentReader::IntDescriptor;
             using ParentReader::getItem_;
+            using ParentReader::initItemIndex_;
             using ParentReader::readRecord_;
             using ParentReader::countSkipped_;
             using ParentReader::numItemsReadFromReader_;
+            using ParentReader::updateSkipping_;
+            using ParentReader::checkSkipping_;
+            using ParentReader::onlyUserMode_;
+            using ParentReader::skippingEnabled_;
 
-            const bool only_user_mode_ = false; // skips non-user-mode instructions if true
             const bool filter_mode_change_events_ = false; // Filters out all mode change events if true
 
             bool iem_changes_allowed_ = false;
@@ -73,8 +80,6 @@ namespace stf {
             bool initial_iem_ = true;
 #endif
 
-            bool skipping_enabled_ = false; // Marks all instructions read as skipped while true
-            bool disable_skipping_on_next_inst_ = false; // If true, disables skipping when the next instruction is read
             bool pending_user_syscall_ = false; // If true, the instruction that is currently being processed is a user syscall
             bool buffer_is_empty_ = true; // True if the buffer contains no instructions
 
@@ -100,24 +105,6 @@ namespace stf {
                 return !pte_end_;
             }
 
-            __attribute__((always_inline))
-            static inline bool skipped_(const STFInst& inst) {
-                return inst.skipped_;
-            }
-
-            __attribute__((always_inline))
-            inline bool readerSkipCallback_(uint64_t& index, size_t& loc) const {
-                bool skip_instruction = false;
-                if(only_user_mode_) {
-                    const auto inst = getItem_(index, loc);
-                    skip_instruction = inst->skipped_;
-                    if(skip_instruction) {
-                        --index;
-                    }
-                }
-                return skip_instruction;
-            }
-
             __attribute__((hot, always_inline))
             inline size_t rawNumRead_() const {
                 return rawNumInstsRead();
@@ -125,18 +112,16 @@ namespace stf {
 
             // read STF records to construction a STFInst instance
             __attribute__((hot, always_inline))
-            inline void readNext_(STFInst &inst) {
-                inst.reset_();
+            inline void readNext_(STFInst& inst) {
+                delegates::STFInstDelegate::reset_(inst);
 #ifdef STF_INST_HAS_IEM
                 bool iem_changed = initial_iem_;
                 initial_iem_ = false;
 #endif
 
                 bool event_valid = false;
-                if(STF_EXPECT_FALSE(disable_skipping_on_next_inst_)) {
-                    skipping_enabled_ = false;
-                    disable_skipping_on_next_inst_ = false;
-                }
+
+                updateSkipping_();
 
                 pending_user_syscall_ = false;
 
@@ -184,11 +169,7 @@ namespace stf {
                     if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_REG)) {
                         const auto& reg_rec = rec->template as<InstRegRecord>();
                         const Registers::STF_REG_OPERAND_TYPE type = reg_rec.getOperandType();
-                        inst.getOperandVector_(type).emplace_back(&reg_rec);
-                        // Set FP flag if we have an FP source or dest register
-                        // Set vector flag if we have a vector source or dest register
-                        inst.setInstFlag_(math_utils::conditionalValue(reg_rec.isFP(), STFInst::INST_IS_FP,
-                                                                       inst.checkIfVector_(reg_rec), STFInst::INST_IS_VECTOR));
+                        delegates::STFInstDelegate::appendOperand_(inst, type, reg_rec);
                     }
                     else if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_OPCODE16)) {
                         finalizeInst_<InstOpcode16Record>(inst, rec);
@@ -207,17 +188,17 @@ namespace stf {
                                        "Invalid trace: memory access must be followed by memory content");
 
                             const auto access_type = rec->template as<InstMemAccessRecord>().getType();
-                            inst.setInstFlag_(MEM_ACCESS_FLAGS[enums::to_int(access_type)]);
+                            delegates::STFInstDelegate::setFlag_(inst, MEM_ACCESS_FLAGS[enums::to_int(access_type)]);
 
-                            inst.getMemAccessVector_(access_type).emplace_back(rec, content_rec);
+                            delegates::STFInstDelegate::appendMemAccess_(inst, access_type, rec, content_rec);
                         }
                     }
                     // These are the least common records
                     else {
                         switch(desc) {
                             case IntDescriptor::STF_INST_PC_TARGET:
-                                inst.inst_flags_ |= STFInst::INST_TAKEN_BRANCH;
-                                inst.branch_target_ = rec->template as<InstPCTargetRecord>().getAddr();
+                                delegates::STFInstDelegate::setTakenBranch_(inst,
+                                                                            rec->template as<InstPCTargetRecord>().getAddr());
                                 break;
 
                             case IntDescriptor::STF_EVENT:
@@ -227,43 +208,39 @@ namespace stf {
                                     const bool is_syscall = event.isSyscall();
                                     bool is_mode_change = false;
 
-                                    inst.setInstFlag_(math_utils::conditionalValue(
-                                        is_syscall, STFInst::INST_IS_SYSCALL,
-                                        event.isFault(), STFInst::INST_IS_FAULT,
-                                        !is_syscall && (is_mode_change = event.isModeChange()), MODE_CHANGE_FLAGS[event.getData().front()]
+                                    delegates::STFInstDelegate::setFlag_(inst,
+                                                                         math_utils::conditionalValue(
+                                                                            is_syscall, STFInst::INST_IS_SYSCALL,
+                                                                            event.isFault(), STFInst::INST_IS_FAULT,
+                                                                            !is_syscall && (is_mode_change = event.isModeChange()), MODE_CHANGE_FLAGS[event.getData().front()]
                                     ));
 
-                                    if(STF_EXPECT_FALSE(is_mode_change && only_user_mode_)) {
-                                        const bool is_change_to_user = inst.isChangeToUserMode();
-                                        const bool is_change_from_user = !is_change_to_user;
-                                        disable_skipping_on_next_inst_ |= is_change_to_user;
-                                        skipping_enabled_ |= is_change_from_user;
-                                    }
+                                    checkSkipping_(is_mode_change, inst.isChangeToUserMode());
 
-                                    if(STF_EXPECT_FALSE(only_user_mode_ &&
+                                    if(STF_EXPECT_FALSE(onlyUserMode_() &&
                                                         is_syscall &&
                                                         (event.getEvent() == EventRecord::TYPE::USER_ECALL))) {
                                         pending_user_syscall_ = true;
                                     }
 
-                                    if(STF_EXPECT_FALSE((only_user_mode_ || filter_mode_change_events_) &&
+                                    if(STF_EXPECT_FALSE((onlyUserMode_() || filter_mode_change_events_) &&
                                                         is_mode_change)) {
                                         // Filter out mode change events when mode skipping or if it is explicitly required
                                         break;
                                     }
 
-                                    inst.events_.emplace_back(rec);
+                                    delegates::STFInstDelegate::appendEvent_(inst, rec);
                                 }
                                 break;
 
                             case IntDescriptor::STF_EVENT_PC_TARGET:
                                 stf_assert(event_valid, "Saw EventPCTargetRecord without accompanying EventRecord");
-                                inst.events_.back().setTarget(rec);
+                                delegates::STFInstDelegate::setLastEventTarget_(inst, rec);
                                 event_valid = false;
                                 break;
 
                             case IntDescriptor::STF_FORCE_PC:
-                                inst.inst_flags_ |= STFInst::INST_COF;
+                                delegates::STFInstDelegate::setFlag_(inst, STFInst::INST_COF);
                                 break;
 
                             case IntDescriptor::STF_PROCESS_ID_EXT:
@@ -368,45 +345,32 @@ namespace stf {
 
             __attribute__((always_inline))
             inline const STFRecord* handleNewRecord_(STFInst& inst, STFRecord::UniqueHandle&& urec) {
-                return inst.appendOrigRecord_(std::move(urec));
+                return delegates::STFInstDelegate::appendOrigRecord_(inst, std::move(urec));
             }
 
             template<typename InstRecordType>
             inline void finalizeInst_(STFInst& inst, const STFRecord* const rec) {
                 const auto& inst_rec = rec->as<InstRecordType>();
-                inst.opcode_ = inst_rec.getOpcode();
-                inst.pc_ = inst_rec.getPC();
-                inst.opcode_size_ = inst_rec.getOpcodeSize();
-
+                delegates::STFInstDelegate::setInstInfo_(inst,
+                                                         inst_rec,
+                                                         last_iem_,
 #ifdef STF_INST_HAS_IEM
-                inst.iem_ = last_iem_;
-                inst.iem_changed_ = iem_changed_;
+                                                         iem_changed_,
 #endif
-
-                // User syscalls need to be overridden instead of skipped
-                inst.skipped_ = skipping_enabled_ && !pending_user_syscall_;
-                countSkipped_(inst.skipped_);
-
-                inst.setInstFlag_(math_utils::conditionalValue(STFBranchDecoder::isBranch(last_iem_, inst_rec), STFInst::INST_IS_BRANCH,
-                                                               std::is_same<InstRecordType, InstOpcode16Record>::value, STFInst::INST_OPCODE16));
+                                                         asid_,
+                                                         tid_,
+                                                         tgid_,
+                                                         skippingEnabled_() && !pending_user_syscall_); // User syscalls need to be overridden instead of skipped
+                countSkipped_(inst.skipped());
 
                 // Override user syscall into a nop
                 if(STF_EXPECT_FALSE(pending_user_syscall_)) {
-                    inst.setNop_();
+                    delegates::STFInstDelegate::setNop_(inst);
                     pending_user_syscall_ = false;
                 }
 
-                inst.index_ = numItemsReadFromReader_();
-
-                inst.asid_ = asid_;
-                inst.tid_ = tid_;
-                inst.tgid_ = tgid_;
-
-                inst.inst_flags_ |= STFInst::INST_VALID;
-            }
-
-            inline bool slowSeek_() const {
-                return only_user_mode_;
+                initItemIndex_(inst);
+                delegates::STFInstDelegate::setFlag_(inst, STFInst::INST_VALID);
             }
 
         public:
@@ -429,8 +393,7 @@ namespace stf {
                                        const bool filter_mode_change_events = false,
                                        const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
                                        const bool force_single_threaded_stream = false) :
-                ParentReader(buffer_size),
-                only_user_mode_(only_user_mode),
+                ParentReader(only_user_mode, buffer_size),
                 filter_mode_change_events_(filter_mode_change_events)
             {
                 open(filename, check_stf_pte, force_single_threaded_stream);

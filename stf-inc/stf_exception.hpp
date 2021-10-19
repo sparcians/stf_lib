@@ -31,9 +31,12 @@ namespace stf
         public:
             /**
              * \class stringstream
-             * std::ostringstream subclass used to construct STFException messages
+             * Class used to construct STFException messages
              */
-            class stringstream : public std::ostringstream {
+            class stringstream {
+                private:
+                    std::ostringstream ss_;
+
                 public:
                     stringstream() = default;
 
@@ -42,7 +45,7 @@ namespace stf
                      * \param str String value to initialize stringstream with
                      */
                     stringstream(const std::string& str) :
-                        std::ostringstream(str)
+                        ss_(str, std::ostringstream::ate)
                     {
                     }
 
@@ -55,7 +58,7 @@ namespace stf
                                             std::is_same<T, std::string_view>::value ||
                                             !type_utils::is_iterable<T>::value, stringstream&>::type
                     operator<<(const T & msg) {
-                        static_cast<std::ostringstream&>(*this) << msg;
+                        ss_ << msg;
                         return *this;
                     }
 
@@ -83,6 +86,12 @@ namespace stf
                         return *this;
                     }
 
+                    /**
+                     * Returns the contained string
+                     */
+                    std::string str() const {
+                        return ss_.str();
+                    }
             };
 
 
@@ -230,7 +239,7 @@ namespace stf
  * For internal use only
  */
 #define stf_assert2(e, insertions)                                                 \
-    if(__builtin_expect(!(e), 0)) stf_throw_impl(#e, insertions)
+    if(__builtin_expect(!(e), 0)) { stf_throw_impl(#e, insertions) }
 
 /**
  * \def VA_NARGS_IMPL

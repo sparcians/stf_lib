@@ -298,13 +298,14 @@ namespace stf {
                 const bool is_branch = decode(iem, rec, target, is_conditional, is_call, is_return, is_indirect);
 
                 if(is_branch) {
-                    branch.setInfo(rec.getPC(),
-                                   target,
-                                   rec.getOpcode(),
-                                   is_conditional,
-                                   is_call,
-                                   is_return,
-                                   is_indirect);
+                    delegates::STFBranchDelegate::setInfo_(branch,
+                                                           rec.getPC(),
+                                                           target,
+                                                           rec.getOpcode(),
+                                                           is_conditional,
+                                                           is_call,
+                                                           is_return,
+                                                           is_indirect);
                 }
 
                 return is_branch;

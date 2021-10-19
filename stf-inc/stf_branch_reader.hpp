@@ -19,7 +19,7 @@
 #include <string_view>
 #include "stf_branch.hpp"
 #include "stf_branch_decoder.hpp"
-#include "stf_buffered_reader.hpp"
+#include "stf_user_mode_skipping_reader.hpp"
 #include "stf_enums.hpp"
 #include "stf_exception.hpp"
 #include "stf_filter_types.hpp"
@@ -39,12 +39,22 @@ namespace stf {
      * \class STFBranchReader
      * \brief The STF branch reader provides an iterator to the branches in the instruction stream
      */
-    class STFBranchReader: public STFBufferedReader<STFBranch, DummyFilter, STFBranchReader> {
+    class STFBranchReader: public STFUserModeSkippingReader<STFBranch, DummyFilter, STFBranchReader> {
         private:
-            using ParentReader = STFBufferedReader<STFBranch, DummyFilter, STFBranchReader>;
+            using ParentReader = STFUserModeSkippingReader<STFBranch, DummyFilter, STFBranchReader>;
             friend ParentReader;
+            /// \cond DOXYGEN_IGNORED
+            friend typename ParentReader::BufferedReader;
+            /// \endcond
+
             using ParentReader::DEFAULT_BUFFER_SIZE_;
-            using IntDescriptor = descriptors::internal::Descriptor;
+            using IntDescriptor = typename ParentReader::IntDescriptor;
+            using ParentReader::numItemsReadFromReader_;
+            using ParentReader::updateSkipping_;
+            using ParentReader::checkSkipping_;
+            using ParentReader::onlyUserMode_;
+            using ParentReader::skippingEnabled_;
+
             uint64_t num_branches_read_ = 0;
             STFBranch* last_branch_ = nullptr;
             STFRecord::UniqueHandle current_record_;
@@ -54,13 +64,19 @@ namespace stf {
                 return num_branches_read_;
             }
 
+            __attribute__((always_inline))
+            inline void skippedCleanup_() {
+                last_branch_ = nullptr;
+            }
+
             template<typename InstRecordType>
+            __attribute__((hot, always_inline))
             inline void updateLastBranch_(const InstRecordType& rec) {
                 if(STF_EXPECT_FALSE(last_branch_ != nullptr)) {
                     stf_assert(last_branch_->getTargetPC() == rec.getPC(),
                                "Mismatch between current PC (" << std::hex << rec.getPC() <<
                                ") and expected target PC (" << last_branch_->getTargetPC() << ") of last taken branch");
-                    last_branch_->setTargetOpcode(rec.getOpcode());
+                    delegates::STFBranchDelegate::setTargetOpcode_(*last_branch_, rec.getOpcode());
                     last_branch_ = nullptr;
                 }
             }
@@ -69,7 +85,8 @@ namespace stf {
             __attribute__((hot, always_inline))
             inline void finalizeNotABranch_(STFBranch& branch, const STFRecord* const rec) {
                 updateLastBranch_(rec->as<InstRecordType>());
-                branch.reset();
+                updateSkipping_();
+                delegates::STFBranchDelegate::reset_(branch);
             }
 
             template<typename InstRecordType>
@@ -84,7 +101,10 @@ namespace stf {
                     return false;
                 }
 
-                branch.setIndex(++num_branches_read_);
+                ++num_branches_read_;
+                initItemIndex_(branch);
+                delegates::STFBranchDelegate::setSkipped_(branch, skippingEnabled_());
+                countSkipped_(branch.skipped());
 
                 if(branch.isTaken()) {
                     last_branch_ = &branch;
@@ -102,7 +122,9 @@ namespace stf {
             // read STF records to construction a STFInst instance
             __attribute__((hot, always_inline))
             inline void readNext_(STFBranch &branch) {
-                branch.reset();
+                delegates::STFBranchDelegate::reset_(branch);
+
+                updateSkipping_();
 
                 bool not_a_branch = false;
 
@@ -115,7 +137,14 @@ namespace stf {
 
                     const auto desc = rec->getDescriptor();
 
-                    if(!not_a_branch) {
+                    if(STF_EXPECT_FALSE(desc == IntDescriptor::STF_EVENT)) {
+                        // Branches don't fault
+                        not_a_branch = true;
+                        const auto& event = rec->template as<EventRecord>();
+                        checkSkipping_(event.isModeChange(),
+                                       static_cast<EXECUTION_MODE>(event.getData().front()) == EXECUTION_MODE::USER_MODE);
+                    }
+                    else if(!not_a_branch) {
                         if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_REG)) {
                             const auto& reg_rec = rec->template as<InstRegRecord>();
                             if(STF_EXPECT_FALSE(reg_rec.getOperandType() == Registers::STF_REG_OPERAND_TYPE::REG_STATE)) {
@@ -138,13 +167,9 @@ namespace stf {
                             // Branches don't access memory
                             not_a_branch = true;
                         }
-                        else if(desc == IntDescriptor::STF_EVENT) {
-                            // Branches don't fault
-                            not_a_branch = true;
-                        }
-                        else if(desc == IntDescriptor::STF_INST_PC_TARGET) {
-                            branch.setTaken(true);
-                            branch.setTarget(rec->template as<InstPCTargetRecord>().getAddr());
+                        else if(STF_EXPECT_FALSE(desc == IntDescriptor::STF_INST_PC_TARGET)) {
+                            delegates::STFBranchDelegate::setTaken_(branch,
+                                                                    rec->template as<InstPCTargetRecord>().getAddr());
                         }
                     }
                     else if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_OPCODE16)) {
@@ -164,14 +189,16 @@ namespace stf {
             /**
              * \brief Constructor
              * \param filename The trace file name
+             * \param only_user_mode If true, non-user-mode instructions will be skipped
              * \param buffer_size The size of the instruction sliding window
              * \param force_single_threaded_stream If true, forces single threaded mode in reader
              */
             template<typename StrType>
             explicit STFBranchReader(const StrType& filename,
+                                     const bool only_user_mode = false,
                                      const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
                                      const bool force_single_threaded_stream = false) :
-                ParentReader(buffer_size)
+                ParentReader(only_user_mode, buffer_size)
             {
                 open(filename, force_single_threaded_stream);
             }

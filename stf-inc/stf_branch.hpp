@@ -5,12 +5,21 @@
 #include "stf_item.hpp"
 
 namespace stf {
+    class STFBranchReader;
+    class STFBranchDecoder;
+
+    namespace delegates {
+        class STFBranchDelegate;
+    };
+
     /**
      * \class STFBranch
      * \brief Branch information returned by the STFBranchReader
      */
-    class STFBranch : public STFItem {
+    class STFBranch : public STFSkippableItem {
         private:
+            friend class delegates::STFBranchDelegate;
+
             uint64_t pc_ = 0;
             uint64_t target_ = 0;
             uint32_t opcode_ = 0;
@@ -26,6 +35,7 @@ namespace stf {
              * \param target Target address computed by STFBranchDecoder
              * \param is_indirect If true, branch is an indirect
              */
+            __attribute__((always_inline))
             inline uint64_t validateBranchTarget_(const uint64_t target, const bool is_indirect) const {
                 if(is_indirect) {
                     // Indirect branches must get their targets from the trace
@@ -38,6 +48,73 @@ namespace stf {
                            " trace = " << target_ << " calculated = " << target);
 
                 return target;
+            }
+
+            /**
+             * Resets branch info to initial state (used by STFBranchReader)
+             */
+            __attribute__((always_inline))
+            inline void reset_() {
+                STFSkippableItem::reset_();
+                pc_ = 0;
+                target_ = 0;
+                opcode_ = 0;
+                target_opcode_ = 0;
+                taken_ = false;
+                conditional_ = false;
+                call_ = false;
+                return_ = false;
+                indirect_ = false;
+            }
+
+            /**
+             * Sets the branch to taken
+             * \param target Target address
+             */
+            __attribute__((always_inline))
+            inline void setTaken_(const uint64_t target) {
+                taken_ = true;
+                target_ = target;
+            }
+
+            /**
+             * Sets the target opcode
+             * \param target_opcode Target opcode value
+             */
+            __attribute__((always_inline))
+            inline void setTargetOpcode_(const uint32_t target_opcode) {
+                target_opcode_ = target_opcode;
+            }
+
+            /**
+             * Sets branch info (used by STFBranchReader)
+             * \param pc Branch PC
+             * \param target Branch target PC
+             * \param opcode Branch opcode
+             * \param is_conditional If true, branch is conditional
+             * \param is_call If true, branch is a call
+             * \param is_return If true, branch is a return
+             * \param is_indirect If true, branch is indirect
+             */
+            __attribute__((always_inline))
+            inline void setInfo_(const uint64_t pc,
+                                 const uint64_t target,
+                                 const uint32_t opcode,
+                                 const bool is_conditional,
+                                 const bool is_call,
+                                 const bool is_return,
+                                 const bool is_indirect) {
+                stf_assert(!(is_conditional && is_indirect), "Indirect branches cannot be conditional");
+                stf_assert(!(is_conditional && is_call), "Calls cannot be conditional");
+                stf_assert(!(is_conditional && is_return), "Returns cannot be conditional");
+
+                pc_ = pc;
+                target_ = validateBranchTarget_(target, is_indirect);
+                opcode_ = opcode;
+                conditional_ = is_conditional;
+                call_ = is_call;
+                return_ = is_return;
+                indirect_ = is_indirect;
             }
 
         public:
@@ -111,85 +188,76 @@ namespace stf {
             inline bool isBackwards() const {
                 return target_ <= pc_;
             }
-
-            /**
-             * Sets the index
-             * \param index Index value to set
-             */
-            inline void setIndex(const uint64_t index) {
-                index_ = index;
-            }
-
-            /**
-             * Sets the taken value
-             * \param taken If true, the branch is taken
-             */
-            inline void setTaken(const bool taken) {
-                taken_ = taken;
-            }
-
-            /**
-             * Sets the target PC
-             * \param target Target PC value
-             */
-            inline void setTarget(const uint64_t target) {
-                target_ = target;
-            }
-
-            /**
-             * Sets the target opcode
-             * \param target_opcode Target opcode value
-             */
-            inline void setTargetOpcode(const uint32_t target_opcode) {
-                target_opcode_ = target_opcode;
-            }
-
-            /**
-             * Sets branch info (used by STFBranchReader)
-             * \param pc Branch PC
-             * \param target Branch target PC
-             * \param opcode Branch opcode
-             * \param is_conditional If true, branch is conditional
-             * \param is_call If true, branch is a call
-             * \param is_return If true, branch is a return
-             * \param is_indirect If true, branch is indirect
-             */
-            inline void setInfo(const uint64_t pc,
-                                const uint64_t target,
-                                const uint32_t opcode,
-                                const bool is_conditional,
-                                const bool is_call,
-                                const bool is_return,
-                                const bool is_indirect) {
-                stf_assert(!(is_conditional && is_indirect), "Indirect branches cannot be conditional");
-                stf_assert(!(is_conditional && is_call), "Calls cannot be conditional");
-                stf_assert(!(is_conditional && is_return), "Returns cannot be conditional");
-
-                pc_ = pc;
-                target_ = validateBranchTarget_(target, is_indirect);
-                opcode_ = opcode;
-                conditional_ = is_conditional;
-                call_ = is_call;
-                return_ = is_return;
-                indirect_ = is_indirect;
-            }
-
-            /**
-             * Resets branch info to initial state (used by STFBranchReader)
-             */
-            inline void reset() {
-                STFItem::reset_();
-                pc_ = 0;
-                target_ = 0;
-                opcode_ = 0;
-                target_opcode_ = 0;
-                taken_ = false;
-                conditional_ = false;
-                call_ = false;
-                return_ = false;
-                indirect_ = false;
-            }
     };
+
+    namespace delegates {
+        /**
+         * \class STFBranchDelegate
+         * Delegate class used to hide any non-const methods from non-reader classes
+         */
+        class STFBranchDelegate : public STFSkippableItemDelegate {
+            private:
+                /**
+                 * Sets branch info (used by STFBranchReader)
+                 * \param pc Branch PC
+                 * \param target Branch target PC
+                 * \param opcode Branch opcode
+                 * \param is_conditional If true, branch is conditional
+                 * \param is_call If true, branch is a call
+                 * \param is_return If true, branch is a return
+                 * \param is_indirect If true, branch is indirect
+                 */
+                __attribute__((always_inline))
+                static inline void setInfo_(STFBranch& branch,
+                                            const uint64_t pc,
+                                            const uint64_t target,
+                                            const uint32_t opcode,
+                                            const bool is_conditional,
+                                            const bool is_call,
+                                            const bool is_return,
+                                            const bool is_indirect) {
+                    branch.setInfo_(pc,
+                                    target,
+                                    opcode,
+                                    is_conditional,
+                                    is_call,
+                                    is_return,
+                                    is_indirect);
+                }
+
+                /**
+                 * Resets branch info to initial state
+                 * \param branch Branch to reset
+                 */
+                __attribute__((always_inline))
+                static inline void reset_(STFBranch& branch) {
+                    branch.reset_();
+                }
+
+                /**
+                 * Sets the branch to taken
+                 * \param branch Branch to modify
+                 * \param target Target address
+                 */
+                __attribute__((always_inline))
+                static inline void setTaken_(STFBranch& branch, const uint64_t target) {
+                    branch.setTaken_(target);
+                }
+
+                /**
+                 * Sets the target opcode
+                 * \param branch Branch to modify
+                 * \param target_opcode Target opcode value
+                 */
+                __attribute__((always_inline))
+                static inline void setTargetOpcode_(STFBranch& branch, const uint32_t opcode) {
+                    branch.setTargetOpcode_(opcode);
+                }
+
+                friend class stf::STFBranchReader;
+                friend class stf::STFBranchDecoder;
+        };
+    } // end namespace delegates
 } // end namespace stf
 
 #endif

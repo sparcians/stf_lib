@@ -13,6 +13,7 @@
 #include <boost/container/flat_set.hpp>
 #include "boost_small_vector.hpp"
 
+#include "stf_branch_decoder.hpp"
 #include "stf_enums.hpp"
 #include "stf_item.hpp"
 #include "stf_record.hpp"
@@ -23,6 +24,15 @@
 #include "util.hpp"
 
 namespace stf {
+    template<typename FilterType>
+    class STFInstReaderBase;
+
+    class STFInstWriter;
+
+    namespace delegates {
+        class STFInstDelegate;
+    } // end namespace delegates
+
     /**
      * \class MemAccess
      * \brief Defines address and data of a memory access
@@ -320,16 +330,8 @@ namespace stf {
      *
      * \todo implement is_branch, is_load, and is_store
      */
-    class STFInst : public STFItem {
-        private:
-            static constexpr uint32_t NOP_OPCODE_ = 0x00000013; /**< Opcode for RISCV nop */
-            static const InstRegRecord x0_src_; /**< X0 register source record */
-            static const InstRegRecord x0_dest_; /**< X0 register dest record */
-            static const boost::container::flat_map<descriptors::internal::Descriptor, descriptors::internal::Descriptor> PAIRED_RECORDS_;
-            static const boost::container::flat_set<descriptors::internal::Descriptor> SKIPPED_PAIRED_RECORDS_;
-
-
-        protected:
+    class STFInst : public STFSkippableItem {
+        public:
             /**
              * \enum INSTFLAGS
              * Defines instruction attribute flags
@@ -351,6 +353,16 @@ namespace stf {
                 INST_IS_VECTOR          = 1 << 12,  /**< instruction is vector */
             };
 
+        private:
+            friend class delegates::STFInstDelegate;
+
+            static constexpr uint32_t NOP_OPCODE_ = 0x00000013; /**< Opcode for RISCV nop */
+            static const InstRegRecord x0_src_; /**< X0 register source record */
+            static const InstRegRecord x0_dest_; /**< X0 register dest record */
+            static const boost::container::flat_map<descriptors::internal::Descriptor, descriptors::internal::Descriptor> PAIRED_RECORDS_;
+            static const boost::container::flat_set<descriptors::internal::Descriptor> SKIPPED_PAIRED_RECORDS_;
+
+        protected:
             uint64_t branch_target_ = 0; /**< branch target PC */
             uint64_t pc_ = 0; /**< PC of the instruction */
 
@@ -372,7 +384,6 @@ namespace stf {
             enums::int_t<INSTFLAGS> inst_flags_ = 0; /**< inst flags to indicate nullified, branch, etc; */
             bool has_vstart_ = false; /**< If true, this instruction accesses the VSTART CSR */
             bool has_vl_ = false; /**< If true, this instruction accesses the VL CSR */
-            bool skipped_ = false; /**< If true, this instruction should be skipped over by the reader */
             uint8_t opcode_size_ = 0; /**< Size of the opcode in bytes */
 
             /**
@@ -789,13 +800,6 @@ namespace stf {
             STFInst& operator=(STFInst&&) = default;
 
             /**
-             * \brief Only STFInstReader can modify the content of STFInst
-             */
-            template<typename FilterType>
-            friend class STFInstReaderBase;
-            friend class STFInstWriter;
-
-            /**
              * \brief Write all records in this instruction to STFWriter
              */
             inline void write(STFWriter& stf_writer) const {
@@ -1170,6 +1174,158 @@ namespace stf {
                 return inst_flags_ & INST_IS_BRANCH;
             }
     };
+
+    namespace delegates {
+        /**
+         * \class STFInstDelegate
+         * Delegate class used to hide any non-const methods from non-reader classes
+         */
+        class STFInstDelegate : public STFSkippableItemDelegate {
+            private:
+                /**
+                 * Appends a memory access
+                 * \param inst STFInst to modify
+                 * \param type Type of memory access
+                 * \param access_record Memory access record
+                 * \param content_record Memory content record
+                 */
+                __attribute__((always_inline))
+                static inline void appendMemAccess_(STFInst& inst,
+                                                    const INST_MEM_ACCESS type,
+                                                    const STFRecord* const access_record,
+                                                    const STFRecord* const content_record) {
+                    inst.getMemAccessVector_(type).emplace_back(access_record, content_record);
+                }
+
+                /**
+                 * Sets an instruction flag
+                 * \param inst STFInst to modify
+                 * \param flag Flag to set
+                 */
+                __attribute__((always_inline))
+                static inline void setFlag_(STFInst& inst, const STFInst::INSTFLAGS flag) {
+                    inst.setInstFlag_(flag);
+                }
+
+                /**
+                 * Appends an event to the EventVector
+                 * \param inst STFInst to modify
+                 * \param rec Event record to append
+                 */
+                __attribute__((always_inline))
+                static inline void appendEvent_(STFInst& inst, const STFRecord* const rec) {
+                    inst.events_.emplace_back(rec);
+                }
+
+                /**
+                 * Sets the last event's target info
+                 * \param inst STFInst to modify
+                 * \param rec Event target record to add
+                 */
+                __attribute__((always_inline))
+                static inline void setLastEventTarget_(STFInst& inst, const STFRecord* const rec) {
+                    return inst.events_.back().setTarget(rec);
+                }
+
+                /**
+                 * Marks the instruction as a taken branch
+                 * \param inst STFInst to modify
+                 * \param target Branch target address
+                 */
+                __attribute__((always_inline))
+                static inline void setTakenBranch_(STFInst& inst, const uint64_t target) {
+                    inst.setInstFlag_(STFInst::INST_TAKEN_BRANCH);
+                    inst.branch_target_ = target;
+                }
+
+                /**
+                 * Resets the instruction to its initial state
+                 * \param inst STFInst to reset
+                 */
+                __attribute__((always_inline))
+                static inline void reset_(STFInst& inst) {
+                    inst.reset_();
+                }
+
+                /**
+                 * Appends an operand to the instruction
+                 * \param inst STFInst to modify
+                 * \param type Operand type
+                 * \param rec Operand record to append
+                 */
+                __attribute__((always_inline))
+                static inline void appendOperand_(STFInst& inst,
+                                                  const Registers::STF_REG_OPERAND_TYPE type,
+                                                  const InstRegRecord& rec) {
+                    inst.getOperandVector_(type).emplace_back(&rec);
+
+                    // Set FP flag if we have an FP source or dest register
+                    // Set vector flag if we have a vector source or dest register
+                    inst.setInstFlag_(math_utils::conditionalValue(rec.isFP(), STFInst::INST_IS_FP,
+                                                                   inst.checkIfVector_(rec), STFInst::INST_IS_VECTOR));
+                }
+
+                /**
+                 * Appends a record to the instruction's record map
+                 * \param inst STFInst to modify
+                 * \param urec Record to append
+                 */
+                __attribute__((always_inline))
+                static inline const STFRecord* appendOrigRecord_(STFInst& inst, STFRecord::UniqueHandle&& urec) {
+                    return inst.appendOrigRecord_(std::move(urec));
+                }
+
+                /**
+                 * Appends a record to the instruction's record map
+                 * \param inst STFInst to modify
+                 * \param urec Record to append
+                 */
+                template<typename InstRecordType>
+                __attribute__((always_inline))
+                static inline void setInstInfo_(STFInst& inst,
+                                                const InstRecordType& rec,
+                                                const INST_IEM iem,
+#ifdef STF_INST_HAS_IEM
+                                                const bool iem_changed,
+#endif
+                                                const uint32_t asid,
+                                                const uint32_t tid,
+                                                const uint32_t tgid,
+                                                const bool is_skipped) {
+                    static constexpr bool is_compressed = std::is_same<InstRecordType, InstOpcode16Record>::value;
+
+                    inst.opcode_ = rec.getOpcode();
+                    inst.pc_ = rec.getPC();
+                    inst.opcode_size_ = rec.getOpcodeSize();
+#ifdef STF_INST_HAS_IEM
+                    inst.iem_ = iem;
+                    inst.iem_changed_ = iem_changed;
+#endif
+                    inst.setSkipped_(is_skipped);
+                    inst.setInstFlag_(math_utils::conditionalValue(STFBranchDecoder::isBranch(iem, rec), STFInst::INST_IS_BRANCH,
+                                                                   is_compressed, STFInst::INST_OPCODE16));
+                    inst.asid_ = asid;
+                    inst.tid_ = tid;
+                    inst.tgid_ = tgid;
+                }
+
+                /**
+                 * Turns this instruction into a nop
+                 * \param inst Instruction to turn into a nop
+                 */
+                __attribute__((always_inline))
+                static inline void setNop_(STFInst& inst) {
+                    inst.setNop_();
+                }
+
+                /**
+                 * \brief Only STFInstReader can modify the content of STFInst
+                 */
+                template<typename FilterType>
+                friend class stf::STFInstReaderBase;
+                friend class stf::STFInstWriter;
+        };
+    } // end namespace delegates
 
 } // end namespace stf
 
