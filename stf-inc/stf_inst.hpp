@@ -27,8 +27,6 @@ namespace stf {
     template<typename FilterType>
     class STFInstReaderBase;
 
-    class STFInstWriter;
-
     namespace delegates {
         class STFInstDelegate;
     } // end namespace delegates
@@ -1323,7 +1321,6 @@ namespace stf {
                  */
                 template<typename FilterType>
                 friend class stf::STFInstReaderBase;
-                friend class stf::STFInstWriter;
         };
     } // end namespace delegates
 
