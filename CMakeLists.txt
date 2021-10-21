@@ -18,3 +18,7 @@ find_package (Boost 1.49.0)
 include_directories (SYSTEM ${Boost_INCLUDE_DIRS})
 
 add_subdirectory(lib)
+
+if(BUILD_STF_PYTHON_LIB)
+    add_subdirectory(stfpy)
+endif()

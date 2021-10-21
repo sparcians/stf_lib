@@ -202,7 +202,12 @@ namespace stf {
         initial_pc_.reset();
         trace_info_records_.clear();
         trace_features_.reset();
-        return stream_->close();
+
+        if(stream_) {
+            return stream_->close();
+        }
+
+        return 0;
     }
 
     void STFReader::copyHeader(STFWriter& stf_writer) const {

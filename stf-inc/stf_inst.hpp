@@ -384,6 +384,19 @@ namespace stf {
             bool has_vl_ = false; /**< If true, this instruction accesses the VL CSR */
             uint8_t opcode_size_ = 0; /**< Size of the opcode in bytes */
 
+            static constexpr size_t OPERAND_VEC_SIZE = 2; /**< Initial size of an OperandVector */
+
+            static constexpr size_t REG_STATE_IDX = 0; /**< Index of register state records in register_records_ array */
+            static constexpr size_t REG_SOURCE_IDX = 1; /**< Index of register source records in register_records_ array */
+            static constexpr size_t REG_DEST_IDX = 2; /**< Index of register dest records in register_records_ array */
+            static constexpr size_t REG_RECORD_ARRAY_SIZE = REG_DEST_IDX + 1; /**< Size of register_records_ array */
+
+            static_assert(enums::to_int(Registers::STF_REG_OPERAND_TYPE::REG_STATE) - 1 == REG_STATE_IDX &&
+                          enums::to_int(Registers::STF_REG_OPERAND_TYPE::REG_SOURCE) - 1 == REG_SOURCE_IDX &&
+                          enums::to_int(Registers::STF_REG_OPERAND_TYPE::REG_DEST) - 1 == REG_DEST_IDX,
+                          "STF_REG_OPERAND_TYPE values are not compatible with how InstRegRecords are stored in STFInst");
+
+        public:
             /**
              * \typedef EventVector
              * Vector that holds Event objects
@@ -391,14 +404,19 @@ namespace stf {
             using EventVector = boost::container::small_vector<Event, 4>;
             EventVector events_; /**< events_ saves (possibly multiple) events */
 
-            static constexpr size_t OPERAND_VEC_SIZE = 2; /**< Initial size of an OperandVector */
             /**
              * \typedef OperandVector
              * Vector that holds Operand objects
              */
             using OperandVector = boost::container::small_vector<Operand,
                                                                  OPERAND_VEC_SIZE>;
+            /**
+             * \typedef MemAccessVector
+             * Vector that holds MemAccess objects
+             */
+            using MemAccessVector = boost::container::small_vector<MemAccess, 1>;
 
+        protected:
             /**
              * \class CombinedView
              * Combines two vectors into a single iterable view
@@ -555,29 +573,20 @@ namespace stf {
                     }
             };
 
-            static constexpr size_t REG_STATE_IDX = 0; /**< Index of register state records in register_records_ array */
-            static constexpr size_t REG_SOURCE_IDX = 1; /**< Index of register source records in register_records_ array */
-            static constexpr size_t REG_DEST_IDX = 2; /**< Index of register dest records in register_records_ array */
-            static constexpr size_t REG_RECORD_ARRAY_SIZE = REG_DEST_IDX + 1; /**< Size of register_records_ array */
-
-            static_assert(enums::to_int(Registers::STF_REG_OPERAND_TYPE::REG_STATE) - 1 == REG_STATE_IDX &&
-                          enums::to_int(Registers::STF_REG_OPERAND_TYPE::REG_SOURCE) - 1 == REG_SOURCE_IDX &&
-                          enums::to_int(Registers::STF_REG_OPERAND_TYPE::REG_DEST) - 1 == REG_DEST_IDX,
-                          "STF_REG_OPERAND_TYPE values are not compatible with how InstRegRecords are stored in STFInst");
-            std::array<OperandVector, REG_RECORD_ARRAY_SIZE> register_records_; /**< register_records_ saves (possibly multiple) operands */
-
             /**
              * \typedef CombinedOperandView
              * Combined view of operand vectors
              */
             using CombinedOperandView = CombinedView<OperandVector>;
-            CombinedOperandView operands_{register_records_[REG_SOURCE_IDX], register_records_[REG_DEST_IDX]}; /**< combined view of register_records_ */
 
             /**
-             * \typedef MemAccessVector
-             * Vector that holds MemAccess objects
+             * \typedef CombinedMemAccessView
+             * Combined view of memory access vectors
              */
-            using MemAccessVector = boost::container::small_vector<MemAccess, 1>;
+            using CombinedMemAccessView = CombinedView<MemAccessVector>;
+
+            std::array<OperandVector, REG_RECORD_ARRAY_SIZE> register_records_; /**< register_records_ saves (possibly multiple) operands */
+            CombinedOperandView operands_{register_records_[REG_SOURCE_IDX], register_records_[REG_DEST_IDX]}; /**< combined view of register_records_ */
 
             static constexpr size_t MEM_READ_IDX = 0; /**< Index of memory read records in mem_access_records_ array */
             static constexpr size_t MEM_WRITE_IDX = 1; /**< Index of memory write records in mem_access_records_ array */
@@ -595,11 +604,6 @@ namespace stf {
                                                                                      * So ALWAYS iterate through the memory accesses.
                                                                                      */
 
-            /**
-             * \typedef CombinedMemAccessView
-             * Combined view of memory access vectors
-             */
-            using CombinedMemAccessView = CombinedView<MemAccessVector>;
             CombinedMemAccessView mem_accesses_{mem_access_records_[MEM_READ_IDX], mem_access_records_[MEM_WRITE_IDX]}; /**< combined view of mem_accesses_ */
 
             RecordMap orig_records_; /**< orig_records_ contains all the STFRecords for

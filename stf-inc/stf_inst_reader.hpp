@@ -537,6 +537,8 @@ namespace stf {
              */
             class iterator : public ParentReader::base_iterator {
                 public:
+                    iterator() = default;
+
                     /**
                      * Iterator constructor
                      * \param sir Parent STFInstReaderBase

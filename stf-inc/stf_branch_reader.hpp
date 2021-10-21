@@ -215,6 +215,8 @@ namespace stf {
              */
             class iterator : public ParentReader::base_iterator {
                 public:
+                    iterator() = default;
+
                     /**
                      * Iterator constructor
                      * \param sbr Parent STFBranchReader
