@@ -20,6 +20,7 @@ string(REPLACE ";" ":" include_dirs "${include_dirs}")
 string(REPLACE ";" ":" extra_lib_dirs "${extra_lib_dirs}")
 set(stf_libraries "stf pthread zstd mavis_json_files")
 
+file(GLOB py_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.py")
 file(GLOB pyx_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.pyx" "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/stf_lib/*.pyx")
 file(GLOB pxd_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.pxd" "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/stf_lib/*.pxd")
 
@@ -45,9 +46,17 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/setup.py
+    ${py_files}
     ${pyx_files}
     ${pxd_files}
     stf
   COMMENT "Building Python bindings to STF library"
 )
+
 add_custom_target(stfpy ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/stfpy.stamp)
+
+if(STF_INSTALL_DIR)
+    file(GLOB whl_file "${CMAKE_CURRENT_BINARY_DIR}/stfpy*.whl")
+    install(CODE "execute_process(COMMAND pip install --prefix ${STF_INSTALL_DIR} ${whl_file})")
+    install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tools/stfpython DESTINATION ${STF_INSTALL_DIR})
+endif()

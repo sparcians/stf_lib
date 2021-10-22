@@ -1,0 +1,8 @@
+#!/bin/bash
+
+SCRIPTPATH="$( cd -- "$(dirname "$(realpath "$0")")" >/dev/null 2>&1 ; pwd -P )"
+
+site_packages_dir=$(find ${SCRIPTPATH}/lib -type d -name "site-packages")
+
+export PYTHONPATH=${site_packages_dir}:$PYTHONPATH
+python $@
