@@ -838,7 +838,7 @@ namespace stf {
             static constexpr uint64_t EVENT64_TOP_ZERO_BITS_ = EVENT64_ZERO_BITS_ & ~EVENT32_ZERO_BITS_;
 
             inline uint32_t convertTo32BitEvent_() const {
-                return static_cast<uint32_t>(event_) | ((static_cast<uint64_t>(event_) & EVENT64_TOP_BITS_) >> 32);
+                return static_cast<uint32_t>(event_) | static_cast<uint32_t>((static_cast<uint64_t>(event_) & EVENT64_TOP_BITS_) >> 32);
             }
 
             static inline TYPE convertFrom32BitEvent_(const uint32_t event32) {

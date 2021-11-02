@@ -196,9 +196,15 @@ namespace stf {
          * \param val Value to sign extend
          */
         template<size_t Width, typename DestT, typename T>
-        static constexpr DestT signExtend(const T val) {
+        static constexpr typename std::enable_if<sizeof(T) <= sizeof(DestT), DestT>::type
+        signExtend(const T val) {
             struct { DestT to_extend:Width; } converter;
+// There's an outstanding issue in GCC re: bitfields and -Wconversion
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39170
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
             converter.to_extend = val;
+#pragma GCC diagnostic pop
             return converter.to_extend;
         }
     } // end namespace byte_utils
