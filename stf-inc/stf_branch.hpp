@@ -1,6 +1,7 @@
 #ifndef __STF_BRANCH_HPP__
 #define __STF_BRANCH_HPP__
 
+#include <ostream>
 #include "stf_exception.hpp"
 #include "stf_item.hpp"
 
@@ -189,6 +190,11 @@ namespace stf {
                 return target_ <= pc_;
             }
     };
+
+    /**
+     * Formats an STFBranch into an ostream
+     */
+    std::ostream& operator<<(std::ostream& os, const STFBranch& branch);
 
     namespace delegates {
         /**
