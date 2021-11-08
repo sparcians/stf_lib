@@ -41,7 +41,7 @@ namespace stf {
 
         private:
             static constexpr STF_REG_packed_int REG_MASK_ = std::numeric_limits<STF_REG_packed_int>::max();
-            static constexpr size_t TYPE_SHIFT_AMT_ = sizeof(STF_REG_packed_int) * 8;
+            static constexpr size_t TYPE_SHIFT_AMT_ = byte_utils::bitSize<STF_REG_packed_int>();
             static constexpr size_t OPERAND_TYPE_SHIFT_AMT_ = 4;
             static constexpr STF_REG_int TYPE_MASK_ = 0xF;
 
@@ -373,6 +373,7 @@ namespace stf {
         STF_REG_CSR_SSCRATCHCSW  = Codec::combineRegType(0x148, STF_REG_TYPE::CSR),
         STF_REG_CSR_SSCRATCHCSWL = Codec::combineRegType(0x149, STF_REG_TYPE::CSR),
         STF_REG_CSR_SATP         = Codec::combineRegType(0x180, STF_REG_TYPE::CSR),
+        STF_REG_CSR_SENVCFG      = Codec::combineRegType(0x19a, STF_REG_TYPE::CSR),
 
         // ???
         STF_REG_CSR_VSSTATUS     = Codec::combineRegType(0x200, STF_REG_TYPE::CSR),
@@ -394,6 +395,9 @@ namespace stf {
         STF_REG_CSR_MTVEC        = Codec::combineRegType(0x305, STF_REG_TYPE::CSR),
         STF_REG_CSR_MCOUNTEREN   = Codec::combineRegType(0x306, STF_REG_TYPE::CSR),
         STF_REG_CSR_MTVT         = Codec::combineRegType(0x307, STF_REG_TYPE::CSR),
+        STF_REG_CSR_MENVCFG      = Codec::combineRegType(0x30a, STF_REG_TYPE::CSR),
+        STF_REG_CSR_MSTATUSH     = Codec::combineRegType(0x310, STF_REG_TYPE::CSR),
+        STF_REG_CSR_MENVCFGH     = Codec::combineRegType(0x31a, STF_REG_TYPE::CSR),
         STF_REG_CSR_MSCRATCH     = Codec::combineRegType(0x340, STF_REG_TYPE::CSR),
         STF_REG_CSR_MEPC         = Codec::combineRegType(0x341, STF_REG_TYPE::CSR),
         STF_REG_CSR_MCAUSE       = Codec::combineRegType(0x342, STF_REG_TYPE::CSR),
@@ -409,6 +413,18 @@ namespace stf {
         STF_REG_CSR_PMPCFG1      = Codec::combineRegType(0x3a1, STF_REG_TYPE::CSR),
         STF_REG_CSR_PMPCFG2      = Codec::combineRegType(0x3a2, STF_REG_TYPE::CSR),
         STF_REG_CSR_PMPCFG3      = Codec::combineRegType(0x3a3, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG4      = Codec::combineRegType(0x3a4, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG5      = Codec::combineRegType(0x3a5, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG6      = Codec::combineRegType(0x3a6, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG7      = Codec::combineRegType(0x3a7, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG8      = Codec::combineRegType(0x3a8, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG9      = Codec::combineRegType(0x3a9, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG10     = Codec::combineRegType(0x3aa, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG11     = Codec::combineRegType(0x3ab, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG12     = Codec::combineRegType(0x3ac, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG13     = Codec::combineRegType(0x3ad, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG14     = Codec::combineRegType(0x3ae, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPCFG15     = Codec::combineRegType(0x3af, STF_REG_TYPE::CSR),
         STF_REG_CSR_PMPADDR0     = Codec::combineRegType(0x3b0, STF_REG_TYPE::CSR),
         STF_REG_CSR_PMPADDR1     = Codec::combineRegType(0x3b1, STF_REG_TYPE::CSR),
         STF_REG_CSR_PMPADDR2     = Codec::combineRegType(0x3b2, STF_REG_TYPE::CSR),
@@ -425,6 +441,54 @@ namespace stf {
         STF_REG_CSR_PMPADDR13    = Codec::combineRegType(0x3bd, STF_REG_TYPE::CSR),
         STF_REG_CSR_PMPADDR14    = Codec::combineRegType(0x3be, STF_REG_TYPE::CSR),
         STF_REG_CSR_PMPADDR15    = Codec::combineRegType(0x3bf, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR16    = Codec::combineRegType(0x3c0, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR17    = Codec::combineRegType(0x3c1, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR18    = Codec::combineRegType(0x3c2, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR19    = Codec::combineRegType(0x3c3, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR20    = Codec::combineRegType(0x3c4, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR21    = Codec::combineRegType(0x3c5, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR22    = Codec::combineRegType(0x3c6, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR23    = Codec::combineRegType(0x3c7, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR24    = Codec::combineRegType(0x3c8, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR25    = Codec::combineRegType(0x3c9, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR26    = Codec::combineRegType(0x3ca, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR27    = Codec::combineRegType(0x3cb, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR28    = Codec::combineRegType(0x3cc, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR29    = Codec::combineRegType(0x3cd, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR30    = Codec::combineRegType(0x3ce, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR31    = Codec::combineRegType(0x3cf, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR32    = Codec::combineRegType(0x3d0, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR33    = Codec::combineRegType(0x3d1, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR34    = Codec::combineRegType(0x3d2, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR35    = Codec::combineRegType(0x3d3, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR36    = Codec::combineRegType(0x3d4, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR37    = Codec::combineRegType(0x3d5, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR38    = Codec::combineRegType(0x3d6, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR39    = Codec::combineRegType(0x3d7, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR40    = Codec::combineRegType(0x3d8, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR41    = Codec::combineRegType(0x3d9, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR42    = Codec::combineRegType(0x3da, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR43    = Codec::combineRegType(0x3db, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR44    = Codec::combineRegType(0x3dc, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR45    = Codec::combineRegType(0x3dd, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR46    = Codec::combineRegType(0x3de, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR47    = Codec::combineRegType(0x3df, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR48    = Codec::combineRegType(0x3e0, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR49    = Codec::combineRegType(0x3e1, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR50    = Codec::combineRegType(0x3e2, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR51    = Codec::combineRegType(0x3e3, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR52    = Codec::combineRegType(0x3e4, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR53    = Codec::combineRegType(0x3e5, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR54    = Codec::combineRegType(0x3e6, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR55    = Codec::combineRegType(0x3e7, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR56    = Codec::combineRegType(0x3e8, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR57    = Codec::combineRegType(0x3e9, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR58    = Codec::combineRegType(0x3ea, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR59    = Codec::combineRegType(0x3eb, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR60    = Codec::combineRegType(0x3ec, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR61    = Codec::combineRegType(0x3ed, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR62    = Codec::combineRegType(0x3ee, STF_REG_TYPE::CSR),
+        STF_REG_CSR_PMPADDR63    = Codec::combineRegType(0x3ef, STF_REG_TYPE::CSR),
 
         // ???
         STF_REG_CSR_HSTATUS      = Codec::combineRegType(0x600, STF_REG_TYPE::CSR),
@@ -432,6 +496,10 @@ namespace stf {
         STF_REG_CSR_HIDELEG      = Codec::combineRegType(0x603, STF_REG_TYPE::CSR),
         STF_REG_CSR_HCOUNTEREN   = Codec::combineRegType(0x606, STF_REG_TYPE::CSR),
         STF_REG_CSR_HGATP        = Codec::combineRegType(0x680, STF_REG_TYPE::CSR),
+
+        // Machine Security Config Registers
+        STF_REG_CSR_MSECCFG      = Codec::combineRegType(0x747, STF_REG_TYPE::CSR),
+        STF_REG_CSR_MSECCFGH     = Codec::combineRegType(0x757, STF_REG_TYPE::CSR),
 
         // Basic Machine Counters
         STF_REG_CSR_MCYCLE       = Codec::combineRegType(0xb00, STF_REG_TYPE::CSR),
@@ -451,7 +519,7 @@ namespace stf {
         STF_REG_CSR_VTYPE        = Codec::combineRegType(0xc21, STF_REG_TYPE::CSR),
         STF_REG_CSR_VLENB        = Codec::combineRegType(0xc22, STF_REG_TYPE::CSR),
 
-        // Basica User Performance Monitoring Counters
+        // Basic User Performance Monitoring Counters
         STF_REG_CSR_CYCLEH       = Codec::combineRegType(0xc80, STF_REG_TYPE::CSR),
         STF_REG_CSR_TIMEH        = Codec::combineRegType(0xc81, STF_REG_TYPE::CSR),
         STF_REG_CSR_INSTRETH     = Codec::combineRegType(0xc82, STF_REG_TYPE::CSR),
@@ -461,7 +529,8 @@ namespace stf {
         STF_REG_CSR_MARCHID      = Codec::combineRegType(0xf12, STF_REG_TYPE::CSR),
         STF_REG_CSR_MIMPID       = Codec::combineRegType(0xf13, STF_REG_TYPE::CSR),
         STF_REG_CSR_MHARTID      = Codec::combineRegType(0xf14, STF_REG_TYPE::CSR),
-        STF_REG_END_DEF,
+        STF_REG_CSR_MCONFIGPTR   = Codec::combineRegType(0xf15, STF_REG_TYPE::CSR),
+
         STF_REG_INVALID          = std::numeric_limits<STF_REG_int>::max()
     };
 
