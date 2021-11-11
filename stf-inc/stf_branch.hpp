@@ -11,7 +11,7 @@ namespace stf {
 
     namespace delegates {
         class STFBranchDelegate;
-    };
+    } // end namespace delegates
 
     /**
      * \class STFBranch

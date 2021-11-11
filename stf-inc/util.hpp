@@ -100,13 +100,21 @@ namespace stf {
                     static constexpr U get(const U val) {
                         U result = val & (U(1) << bit_idx);
 
+// Older (<10.0) GCC versions complain about shift assignment operators with -Wconversion
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=40752
+#if defined(__GNUC__) && (__GNUC__ < 10)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
                         if(dest_bit_idx > bit_idx) {
                             result <<= (dest_bit_idx - bit_idx);
                         }
                         else if(dest_bit_idx < bit_idx) {
                             result >>= (bit_idx - dest_bit_idx);
                         }
-
+#if defined(__GNUC__) && (__GNUC__ < 10)
+#pragma GCC diagnostic pop
+#endif
                         return result;
                     }
                 };
@@ -133,13 +141,21 @@ namespace stf {
                         constexpr U mask = bitMask<U, start_idx - end_idx + 1>() << end_idx;
                         U result = val & mask;
 
+// Older (<10.0) GCC versions complain about shift assignment operators with -Wconversion
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=40752
+#if defined(__GNUC__) && (__GNUC__ < 10)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
                         if(dest_start_idx > start_idx) {
                             result <<= (dest_start_idx - start_idx);
                         }
                         else if(dest_start_idx < start_idx) {
                             result >>= (start_idx - dest_start_idx);
                         }
-
+#if defined(__GNUC__) && (__GNUC__ < 10)
+#pragma GCC diagnostic pop
+#endif
                         return result;
                     }
                 };
@@ -198,13 +214,26 @@ namespace stf {
         template<size_t Width, typename DestT, typename T>
         static constexpr typename std::enable_if<sizeof(T) <= sizeof(DestT), DestT>::type
         signExtend(const T val) {
-            struct { DestT to_extend:Width; } converter;
+            struct Converter {
+                DestT to_extend:Width;
+
+                // Need to define a default constructor to silence a warning in older GCC versions
+                // about an uninitialized member
+                Converter() :
+                    to_extend(0)
+                {
+                }
+            } converter;
 // There's an outstanding issue in GCC re: bitfields and -Wconversion
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39170
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+#endif
             converter.to_extend = val;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
             return converter.to_extend;
         }
     } // end namespace byte_utils

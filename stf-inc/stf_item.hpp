@@ -13,7 +13,7 @@ namespace stf {
     namespace delegates {
         class STFItemDelegate;
         class STFSkippableItemDelegate;
-    }; // end namespace delegates
+    } // end namespace delegates
 
     /**
      * \class STFItem
@@ -130,7 +130,7 @@ namespace stf {
                 template<typename ItemType, typename FilterType, typename ReaderType>
                 friend class STFUserModeSkippingReader;
         };
-    }; // end namespace delegates
+    } // end namespace delegates
 } // end namespace stf
 
 #endif

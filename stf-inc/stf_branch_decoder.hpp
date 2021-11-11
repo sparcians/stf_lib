@@ -329,6 +329,6 @@ namespace stf {
             }
 
     };
-}; // end namespace stf
+} // end namespace stf
 
 #endif
