@@ -15,3 +15,8 @@ cdef extern from "stf_branch.hpp" namespace "stf":
         bint isReturn()
         bint isConditional()
         bint isBackwards()
+        bint isCompareEqual()
+        bint isCompareNotEqual()
+        bint isCompareGreaterThanOrEqual()
+        bint isCompareLessThan()
+        bint isCompareUnsigned()

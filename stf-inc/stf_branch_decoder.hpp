@@ -67,7 +67,12 @@ namespace stf {
                                                   bool& is_conditional,
                                                   bool& is_call,
                                                   bool& is_return,
-                                                  bool& is_indirect) {
+                                                  bool& is_indirect,
+                                                  bool& compare_eq,
+                                                  bool& compare_not_eq,
+                                                  bool& compare_greater_than_or_equal,
+                                                  bool& compare_less_than,
+                                                  bool& compare_unsigned) {
                 const uint8_t opcode_top = static_cast<uint8_t>(byte_utils::getBitRange<15, 13, 2>(opcode));
                 const uint8_t opcode_bottom = static_cast<uint8_t>(byte_utils::getBitRange<1, 0>(opcode));
 
@@ -76,6 +81,11 @@ namespace stf {
                 is_call = false;
                 is_return = false;
                 is_indirect = false;
+                compare_eq = false;
+                compare_not_eq = false;
+                compare_greater_than_or_equal = false;
+                compare_less_than = false;
+                compare_unsigned = false;
 
                 switch(opcode_top) {
                     case 0b001:
@@ -88,12 +98,15 @@ namespace stf {
                         break;
                     case 0b110:
                         // BEQZ
+                        compare_eq = true; // FALLTHRU
                     case 0b111:
                         // BNEZ
                     {
                         if(STF_EXPECT_TRUE(opcode_bottom != 0b01)) {
+                            compare_eq = false;
                             return false;
                         }
+                        compare_not_eq = !compare_eq;
                         using extractor = byte_utils::BitExtractor<decltype(opcode)>;
                         target = getTarget_(pc, signExtendTarget_<9>(extractor::get<extractor::Bit<12, 8>,
                                                                                     extractor::Bit< 6, 7>,
@@ -148,7 +161,12 @@ namespace stf {
                                                   bool& is_conditional,
                                                   bool& is_call,
                                                   bool& is_return,
-                                                  bool& is_indirect) {
+                                                  bool& is_indirect,
+                                                  bool& compare_eq,
+                                                  bool& compare_not_eq,
+                                                  bool& compare_greater_than_or_equal,
+                                                  bool& compare_less_than,
+                                                  bool& compare_unsigned) {
                 const uint8_t opcode_top = static_cast<uint8_t>(byte_utils::getBitRange<6, 5, 1>(opcode));
                 const uint8_t opcode_bottom = static_cast<uint8_t>(byte_utils::getBitRange<4, 2, 2>(opcode));
 
@@ -161,6 +179,11 @@ namespace stf {
                 is_call = false;
                 is_return = false;
                 is_indirect = false;
+                compare_eq = false;
+                compare_not_eq = false;
+                compare_greater_than_or_equal = false;
+                compare_less_than = false;
+                compare_unsigned = false;
 
                 using extractor = byte_utils::BitExtractor<decltype(opcode)>;
 
@@ -172,6 +195,15 @@ namespace stf {
                                                                                      extractor::Bit<7, 11>,
                                                                                      extractor::BitRange<30, 25, 10>,
                                                                                      extractor::BitRange<11, 8, 4>>(opcode)));
+                        const bool eq_ne_lt_ge = byte_utils::getBit<14>(opcode);
+                        const bool pos_neg = byte_utils::getBit<12>(opcode);
+
+                        compare_eq = !eq_ne_lt_ge && !pos_neg;
+                        compare_not_eq = !eq_ne_lt_ge && pos_neg;
+                        compare_greater_than_or_equal = eq_ne_lt_ge && pos_neg;
+                        compare_less_than = eq_ne_lt_ge && !pos_neg;
+                        compare_unsigned = byte_utils::getBit<13>(opcode);
+
                         is_conditional = true;
                         break;
                     }
@@ -216,7 +248,12 @@ namespace stf {
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
-                                             bool& is_indirect) {
+                                             bool& is_indirect,
+                                             bool& compare_eq,
+                                             bool& compare_not_eq,
+                                             bool& compare_greater_than_or_equal,
+                                             bool& compare_less_than,
+                                             bool& compare_unsigned) {
                 return decodeBranch16_(iem,
                                        rec.getPC(),
                                        rec.getOpcode(),
@@ -224,7 +261,12 @@ namespace stf {
                                        is_conditional,
                                        is_call,
                                        is_return,
-                                       is_indirect);
+                                       is_indirect,
+                                       compare_eq,
+                                       compare_not_eq,
+                                       compare_greater_than_or_equal,
+                                       compare_less_than,
+                                       compare_unsigned);
             }
 
             /**
@@ -244,14 +286,24 @@ namespace stf {
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
-                                             bool& is_indirect) {
+                                             bool& is_indirect,
+                                             bool& compare_eq,
+                                             bool& compare_not_eq,
+                                             bool& compare_greater_than_or_equal,
+                                             bool& compare_less_than,
+                                             bool& compare_unsigned) {
                 return decodeBranch32_(rec.getPC(),
                                        rec.getOpcode(),
                                        target,
                                        is_conditional,
                                        is_call,
                                        is_return,
-                                       is_indirect);
+                                       is_indirect,
+                                       compare_eq,
+                                       compare_not_eq,
+                                       compare_greater_than_or_equal,
+                                       compare_less_than,
+                                       compare_unsigned);
             }
 
         public:
@@ -273,8 +325,24 @@ namespace stf {
                                       bool& is_conditional,
                                       bool& is_call,
                                       bool& is_return,
-                                      bool& is_indirect) {
-                return decodeBranch_(iem, rec, target, is_conditional, is_call, is_return, is_indirect);
+                                      bool& is_indirect,
+                                      bool& compare_eq,
+                                      bool& compare_not_eq,
+                                      bool& compare_greater_than_or_equal,
+                                      bool& compare_less_than,
+                                      bool& compare_unsigned) {
+                return decodeBranch_(iem,
+                                     rec,
+                                     target,
+                                     is_conditional,
+                                     is_call,
+                                     is_return,
+                                     is_indirect,
+                                     compare_eq,
+                                     compare_not_eq,
+                                     compare_greater_than_or_equal,
+                                     compare_less_than,
+                                     compare_unsigned);
             }
 
             /**
@@ -294,8 +362,25 @@ namespace stf {
                 bool is_call = false;
                 bool is_return = false;
                 bool is_indirect = false;
+                bool compare_eq = false;
+                bool compare_not_eq = false;
+                bool compare_greater_than_or_equal = false;
+                bool compare_less_than = false;
+                bool compare_unsigned = false;
 
-                const bool is_branch = decode(iem, rec, target, is_conditional, is_call, is_return, is_indirect);
+                const bool is_branch = decode(iem,
+                                              rec,
+                                              target,
+                                              is_conditional,
+                                              is_call,
+                                              is_return,
+                                              is_indirect,
+                                              compare_eq,
+                                              compare_not_eq,
+                                              compare_greater_than_or_equal,
+                                              compare_less_than,
+                                              compare_unsigned);
+
 
                 if(is_branch) {
                     delegates::STFBranchDelegate::setInfo_(branch,
@@ -305,7 +390,12 @@ namespace stf {
                                                            is_conditional,
                                                            is_call,
                                                            is_return,
-                                                           is_indirect);
+                                                           is_indirect,
+                                                           compare_eq,
+                                                           compare_not_eq,
+                                                           compare_greater_than_or_equal,
+                                                           compare_less_than,
+                                                           compare_unsigned);
                 }
 
                 return is_branch;
@@ -324,8 +414,24 @@ namespace stf {
                 bool is_call = false;
                 bool is_return = false;
                 bool is_indirect = false;
+                bool compare_eq = false;
+                bool compare_not_eq = false;
+                bool compare_greater_than_or_equal = false;
+                bool compare_less_than = false;
+                bool compare_unsigned = false;
 
-                return decode(iem, rec, target, is_conditional, is_call, is_return, is_indirect);
+                return decode(iem,
+                              rec,
+                              target,
+                              is_conditional,
+                              is_call,
+                              is_return,
+                              is_indirect,
+                              compare_eq,
+                              compare_not_eq,
+                              compare_greater_than_or_equal,
+                              compare_less_than,
+                              compare_unsigned);
             }
 
     };

@@ -36,3 +36,17 @@ cdef class STFBranch:
     def isBackwards(self):
         return deref(self.c_branch).isBackwards()
 
+    def isCompareEqual(self):
+        return deref(self.c_branch).isCompareEqual()
+
+    def isCompareNotEqual(self):
+        return deref(self.c_branch).isCompareNotEqual()
+
+    def isCompareGreaterThanOrEqual(self):
+        return deref(self.c_branch).isCompareGreaterThanOrEqual()
+
+    def isCompareLessThan(self):
+        return deref(self.c_branch).isCompareLessThan()
+
+    def isCompareUnsigned(self):
+        return deref(self.c_branch).isCompareUnsigned()

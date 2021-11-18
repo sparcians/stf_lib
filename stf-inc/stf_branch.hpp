@@ -30,6 +30,11 @@ namespace stf {
             bool call_ = false;
             bool return_ = false;
             bool indirect_ = false;
+            bool compare_eq_ = false;
+            bool compare_not_eq_ = false;
+            bool compare_greater_than_or_equal_ = false;
+            bool compare_less_than_ = false;
+            bool compare_unsigned_ = false;
 
             /**
              * Sanity checks branch target addresses
@@ -104,7 +109,12 @@ namespace stf {
                                  const bool is_conditional,
                                  const bool is_call,
                                  const bool is_return,
-                                 const bool is_indirect) {
+                                 const bool is_indirect,
+                                 const bool compare_eq,
+                                 const bool compare_not_eq,
+                                 const bool compare_greater_than_or_equal,
+                                 const bool compare_less_than,
+                                 const bool compare_unsigned) {
                 stf_assert(!(is_conditional && is_indirect), "Indirect branches cannot be conditional");
                 stf_assert(!(is_conditional && is_call), "Calls cannot be conditional");
                 stf_assert(!(is_conditional && is_return), "Returns cannot be conditional");
@@ -116,6 +126,11 @@ namespace stf {
                 call_ = is_call;
                 return_ = is_return;
                 indirect_ = is_indirect;
+                compare_eq_ = compare_eq;
+                compare_not_eq_ = compare_not_eq;
+                compare_greater_than_or_equal_ = compare_greater_than_or_equal;
+                compare_less_than_ = compare_less_than;
+                compare_unsigned_ = compare_unsigned;
             }
 
         public:
@@ -189,6 +204,41 @@ namespace stf {
             inline bool isBackwards() const {
                 return target_ <= pc_;
             }
+
+            /**
+             * Gets whether this branch does an equality comparison
+             */
+            inline bool isCompareEqual() const {
+                return compare_eq_;
+            }
+
+            /**
+             * Gets whether this branch does an inequality comparison
+             */
+            inline bool isCompareNotEqual() const {
+                return compare_not_eq_;
+            }
+
+            /**
+             * Gets whether this branch does a greater-than or equal comparison
+             */
+            inline bool isCompareGreaterThanOrEqual() const {
+                return compare_greater_than_or_equal_;
+            }
+
+            /**
+             * Gets whether this branch does a less-than comparison
+             */
+            inline bool isCompareLessThan() const {
+                return compare_less_than_;
+            }
+
+            /**
+             * Gets whether this branch does an unsigned comparison
+             */
+            inline bool isCompareUnsigned() const {
+                return compare_unsigned_;
+            }
     };
 
     /**
@@ -221,14 +271,24 @@ namespace stf {
                                             const bool is_conditional,
                                             const bool is_call,
                                             const bool is_return,
-                                            const bool is_indirect) {
+                                            const bool is_indirect,
+                                            const bool compare_eq,
+                                            const bool compare_not_eq,
+                                            const bool compare_greater_than_or_equal,
+                                            const bool compare_less_than,
+                                            const bool compare_unsigned) {
                     branch.setInfo_(pc,
                                     target,
                                     opcode,
                                     is_conditional,
                                     is_call,
                                     is_return,
-                                    is_indirect);
+                                    is_indirect,
+                                    compare_eq,
+                                    compare_not_eq,
+                                    compare_greater_than_or_equal,
+                                    compare_less_than,
+                                    compare_unsigned);
                 }
 
                 /**
