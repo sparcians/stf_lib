@@ -1378,6 +1378,17 @@ namespace stf {
             inline vlen_t getVLen() const {
                 return vlen_;
             }
+
+            /**
+             * Sets the vlen parameter
+             */
+            inline void setVLen(const vlen_t vlen) const {
+                stf_assert(isVector(), "VLen should only be set on vector register records");
+                vlen_ = vlen;
+                stf_assert(vlen_, "VLen cannot be 0");
+                const auto expected_vector_len = calcVectorLen_();
+                stf_assert(data_.size() == expected_vector_len, "Vector data length mismatch: got " << data_.size() << ", expected " << expected_vector_len);
+            }
     };
 
     /**
