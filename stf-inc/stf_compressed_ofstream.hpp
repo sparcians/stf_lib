@@ -283,10 +283,10 @@ namespace stf {
                 // Finish any pending chunk
                 if(pending_chunk_) {
                     compressChunk_();
-                    if(compression_in_progress_) {
-                        compression_done_.get();
-                        compression_in_progress_ = false;
-                    }
+                }
+                if(compression_in_progress_) {
+                    compression_done_.get();
+                    compression_in_progress_ = false;
                 }
                 // Get the current file offset so we can write it back at the beginning
                 const off_t end = ftell(stream_);
