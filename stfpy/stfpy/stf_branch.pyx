@@ -1,6 +1,7 @@
 # distutils: language = c++
 
 from cython.operator cimport dereference as deref
+from stfpy.stf_lib.stf_reg_def cimport STF_REG
 
 cdef class STFBranch:
     def index(self):
@@ -50,3 +51,15 @@ cdef class STFBranch:
 
     def isCompareUnsigned(self):
         return deref(self.c_branch).isCompareUnsigned()
+
+    def getRS1(self):
+        return STF_REG(deref(self.c_branch).getRS1())
+
+    def getRS1Value(self):
+        return deref(self.c_branch).getRS1Value()
+
+    def getRS2(self):
+        return STF_REG(deref(self.c_branch).getRS1())
+
+    def getRS2Value(self):
+        return deref(self.c_branch).getRS1Value()

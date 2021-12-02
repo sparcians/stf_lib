@@ -1,6 +1,7 @@
 # distutils: language = c++
 
 from libc.stdint cimport *
+from stfpy.stf_lib.stf_reg_def cimport _STF_REG
 
 cdef extern from "stf_branch.hpp" namespace "stf":
     cdef cppclass STFBranch:
@@ -20,3 +21,7 @@ cdef extern from "stf_branch.hpp" namespace "stf":
         bint isCompareGreaterThanOrEqual()
         bint isCompareLessThan()
         bint isCompareUnsigned()
+        _STF_REG getRS1()
+        uint64_t getRS1Value()
+        _STF_REG getRS2()
+        uint64_t getRS2Value()
