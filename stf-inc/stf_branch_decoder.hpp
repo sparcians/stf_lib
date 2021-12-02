@@ -4,6 +4,7 @@
 #include <cstddef>
 #include "stf_branch.hpp"
 #include "stf_record_types.hpp"
+#include "stf_reg_def.hpp"
 #include "util.hpp"
 
 namespace stf {
@@ -50,20 +51,39 @@ namespace stf {
             }
 
             /**
+             * Encodes a raw integer register number into an STF_REG
+             * \param reg_num Raw integer register number to encode
+             */
+            template<typename IntType>
+            static constexpr Registers::STF_REG encodeRegNum_(const IntType reg_num) {
+                return static_cast<Registers::STF_REG>(Registers::Codec::combineRegType(static_cast<Registers::STF_REG_packed_int>(reg_num),
+                                                                                        Registers::STF_REG_TYPE::INTEGER));
+            }
+
+            /**
              * Decodes a compressed RISCV instruction, returning true if it is a branch.
              * \param[in] iem Instruction encoding mode
              * \param[in] pc Instruction PC
              * \param[in] opcode Instruction opcode
              * \param[out] target Branch target PC (only set for non-indirect branches)
+             * \param[out] rs1 Number of first source register (if any)
+             * \param[out] rs2 Number of second source register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
              * \param[out] is_indirect Set to true if the branch is an indirect
+             * \param[out] compare_eq Set to true if the branch is comparing equality
+             * \param[out] compare_not_eq Set to true if the branch is comparing inequality
+             * \param[out] compare_greater_than_or_equal Set to true if the branch is comparing greater-than or equal
+             * \param[out] compare_less_than Set to true if the branch is comparing less-than
+             * \param[out] compare_unsigned Set to true if the branch is comparing unsigned
              */
             static constexpr bool decodeBranch16_(const INST_IEM iem,
                                                   const uint64_t pc,
                                                   const uint16_t opcode,
                                                   uint64_t& target,
+                                                  Registers::STF_REG& rs1,
+                                                  Registers::STF_REG& rs2,
                                                   bool& is_conditional,
                                                   bool& is_call,
                                                   bool& is_return,
@@ -73,10 +93,12 @@ namespace stf {
                                                   bool& compare_greater_than_or_equal,
                                                   bool& compare_less_than,
                                                   bool& compare_unsigned) {
-                const uint8_t opcode_top = static_cast<uint8_t>(byte_utils::getBitRange<15, 13, 2>(opcode));
-                const uint8_t opcode_bottom = static_cast<uint8_t>(byte_utils::getBitRange<1, 0>(opcode));
+                const auto opcode_top = byte_utils::getBitRange<15, 13, 2>(opcode);
+                const auto opcode_bottom = byte_utils::getBitRange<1, 0>(opcode);
 
                 target = 0;
+                rs1 = Registers::STF_REG::STF_REG_INVALID;
+                rs2 = Registers::STF_REG::STF_REG_INVALID;
                 is_conditional = false;
                 is_call = false;
                 is_return = false;
@@ -114,21 +136,24 @@ namespace stf {
                                                                                     extractor::Bit< 2, 5>,
                                                                                     extractor::BitRange<11, 10, 4>,
                                                                                     extractor::BitRange< 4,  3, 2>>(opcode)));
+                        rs1 = encodeRegNum_(byte_utils::getBitRange<9, 7, 2>(opcode));
+                        rs2 = Registers::STF_REG::STF_REG_X0;
                         is_conditional = true;
                         break;
                     }
                     case 0b100:
                     {
                         // Possible J[AL]R
-                        const uint8_t rs1 = static_cast<uint8_t>(byte_utils::getBitRange<11, 7, 4>(opcode));
-                        const uint8_t rs2 = static_cast<uint8_t>(byte_utils::getBitRange<6, 2, 4>(opcode));
-                        if(STF_EXPECT_TRUE(opcode_bottom != 0b10 || rs1 == 0 || rs2 != 0)) {
+                        const auto rs1_num = byte_utils::getBitRange<11, 7, 4>(opcode);
+                        const auto rs2_num = byte_utils::getBitRange<6, 2, 4>(opcode);
+                        if(STF_EXPECT_TRUE(opcode_bottom != 0b10 || rs1_num == 0 || rs2_num != 0)) {
                             return false;
                         }
                         is_call = byte_utils::getBit<12>(opcode);
-                        is_return = !is_call && (rs1 == 1);
+                        is_return = !is_call && (rs1_num == 1);
                         is_indirect = true;
-                        break;;
+                        rs1 = encodeRegNum_(rs1_num);
+                        break;
                     }
                     case 0b101:
                         // J
@@ -150,14 +175,23 @@ namespace stf {
              * \param[in] pc Instruction PC
              * \param[in] opcode Instruction opcode
              * \param[out] target Branch target PC (only set for non-indirect branches)
+             * \param[out] rs1 Number of first source register (if any)
+             * \param[out] rs2 Number of second source register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
              * \param[out] is_indirect Set to true if the branch is an indirect
+             * \param[out] compare_eq Set to true if the branch is comparing equality
+             * \param[out] compare_not_eq Set to true if the branch is comparing inequality
+             * \param[out] compare_greater_than_or_equal Set to true if the branch is comparing greater-than or equal
+             * \param[out] compare_less_than Set to true if the branch is comparing less-than
+             * \param[out] compare_unsigned Set to true if the branch is comparing unsigned
              */
             static constexpr bool decodeBranch32_(const uint64_t pc,
                                                   const uint32_t opcode,
                                                   uint64_t& target,
+                                                  Registers::STF_REG& rs1,
+                                                  Registers::STF_REG& rs2,
                                                   bool& is_conditional,
                                                   bool& is_call,
                                                   bool& is_return,
@@ -167,14 +201,16 @@ namespace stf {
                                                   bool& compare_greater_than_or_equal,
                                                   bool& compare_less_than,
                                                   bool& compare_unsigned) {
-                const uint8_t opcode_top = static_cast<uint8_t>(byte_utils::getBitRange<6, 5, 1>(opcode));
-                const uint8_t opcode_bottom = static_cast<uint8_t>(byte_utils::getBitRange<4, 2, 2>(opcode));
+                const auto opcode_top = byte_utils::getBitRange<6, 5, 1>(opcode);
+                const auto opcode_bottom = byte_utils::getBitRange<4, 2, 2>(opcode);
 
                 if(STF_EXPECT_TRUE(opcode_top != 0b11)) {
                     return false;
                 }
 
                 target = 0;
+                rs1 = Registers::STF_REG::STF_REG_INVALID;
+                rs2 = Registers::STF_REG::STF_REG_INVALID;
                 is_conditional = false;
                 is_call = false;
                 is_return = false;
@@ -203,14 +239,16 @@ namespace stf {
                         compare_greater_than_or_equal = eq_ne_lt_ge && pos_neg;
                         compare_less_than = eq_ne_lt_ge && !pos_neg;
                         compare_unsigned = byte_utils::getBit<13>(opcode);
-
+                        rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
+                        rs2 = encodeRegNum_(byte_utils::getBitRange<24, 20, 4>(opcode));
                         is_conditional = true;
                         break;
                     }
                     case 0b001:
                     {
                         // jalr
-                        const uint8_t dest_reg = static_cast<uint8_t>(byte_utils::getBitRange<11, 7>(opcode));
+                        const auto dest_reg = byte_utils::getBitRange<11, 7>(opcode);
+                        rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
                         is_call = dest_reg != 0; // Indirect jumps have rd == x0
                         is_return = (dest_reg == 0) && (byte_utils::getBitRange<24, 20, 4>(opcode) == 1); // Returns have rd == x0 and rs == x1
                         is_indirect = true;
@@ -236,15 +274,24 @@ namespace stf {
              * \param[in] iem Instruction encoding mode
              * \param[in] rec Instruction record
              * \param[out] target Branch target PC (only set for non-indirect branches)
+             * \param[out] rs1 Number of first source register (if any)
+             * \param[out] rs2 Number of second source register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
              * \param[out] is_indirect Set to true if the branch is an indirect
+             * \param[out] compare_eq Set to true if the branch is comparing equality
+             * \param[out] compare_not_eq Set to true if the branch is comparing inequality
+             * \param[out] compare_greater_than_or_equal Set to true if the branch is comparing greater-than or equal
+             * \param[out] compare_less_than Set to true if the branch is comparing less-than
+             * \param[out] compare_unsigned Set to true if the branch is comparing unsigned
              */
             __attribute__((hot, always_inline))
             static inline bool decodeBranch_(const INST_IEM iem,
                                              const InstOpcode16Record& rec,
                                              uint64_t& target,
+                                             Registers::STF_REG& rs1,
+                                             Registers::STF_REG& rs2,
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
@@ -258,6 +305,8 @@ namespace stf {
                                        rec.getPC(),
                                        rec.getOpcode(),
                                        target,
+                                       rs1,
+                                       rs2,
                                        is_conditional,
                                        is_call,
                                        is_return,
@@ -274,15 +323,24 @@ namespace stf {
              * \param[in] iem Instruction encoding mode
              * \param[in] rec Instruction record
              * \param[out] target Branch target PC (only set for non-indirect branches)
+             * \param[out] rs1 Number of first source register (if any)
+             * \param[out] rs2 Number of second source register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
              * \param[out] is_indirect Set to true if the branch is an indirect
+             * \param[out] compare_eq Set to true if the branch is comparing equality
+             * \param[out] compare_not_eq Set to true if the branch is comparing inequality
+             * \param[out] compare_greater_than_or_equal Set to true if the branch is comparing greater-than or equal
+             * \param[out] compare_less_than Set to true if the branch is comparing less-than
+             * \param[out] compare_unsigned Set to true if the branch is comparing unsigned
              */
             __attribute__((hot, always_inline))
             static inline bool decodeBranch_(const INST_IEM,
                                              const InstOpcode32Record& rec,
                                              uint64_t& target,
+                                             Registers::STF_REG& rs1,
+                                             Registers::STF_REG& rs2,
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
@@ -295,6 +353,8 @@ namespace stf {
                 return decodeBranch32_(rec.getPC(),
                                        rec.getOpcode(),
                                        target,
+                                       rs1,
+                                       rs2,
                                        is_conditional,
                                        is_call,
                                        is_return,
@@ -312,16 +372,25 @@ namespace stf {
              * \param[in] iem Instruction encoding mode
              * \param[in] rec Instruction record
              * \param[out] target Branch target PC (only set for non-indirect branches)
+             * \param[out] rs1 Number of first source register (if any)
+             * \param[out] rs2 Number of second source register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
              * \param[out] is_indirect Set to true if the branch is an indirect
+             * \param[out] compare_eq Set to true if the branch is comparing equality
+             * \param[out] compare_not_eq Set to true if the branch is comparing inequality
+             * \param[out] compare_greater_than_or_equal Set to true if the branch is comparing greater-than or equal
+             * \param[out] compare_less_than Set to true if the branch is comparing less-than
+             * \param[out] compare_unsigned Set to true if the branch is comparing unsigned
              */
             template<typename RecordType>
             __attribute__((hot, always_inline))
             static inline bool decode(const INST_IEM iem,
                                       const RecordType& rec,
                                       uint64_t& target,
+                                      Registers::STF_REG& rs1,
+                                      Registers::STF_REG& rs2,
                                       bool& is_conditional,
                                       bool& is_call,
                                       bool& is_return,
@@ -334,6 +403,8 @@ namespace stf {
                 return decodeBranch_(iem,
                                      rec,
                                      target,
+                                     rs1,
+                                     rs2,
                                      is_conditional,
                                      is_call,
                                      is_return,
@@ -358,6 +429,8 @@ namespace stf {
                                       const RecordType& rec,
                                       STFBranch& branch) {
                 uint64_t target = 0;
+                Registers::STF_REG rs1;
+                Registers::STF_REG rs2;
                 bool is_conditional = false;
                 bool is_call = false;
                 bool is_return = false;
@@ -371,6 +444,8 @@ namespace stf {
                 const bool is_branch = decode(iem,
                                               rec,
                                               target,
+                                              rs1,
+                                              rs2,
                                               is_conditional,
                                               is_call,
                                               is_return,
@@ -387,6 +462,8 @@ namespace stf {
                                                            rec.getPC(),
                                                            target,
                                                            rec.getOpcode(),
+                                                           rs1,
+                                                           rs2,
                                                            is_conditional,
                                                            is_call,
                                                            is_return,
@@ -410,6 +487,8 @@ namespace stf {
             __attribute__((hot, always_inline))
             static inline bool isBranch(const INST_IEM iem, const RecordType& rec) {
                 uint64_t target = 0;
+                Registers::STF_REG rs1 = Registers::STF_REG::STF_REG_INVALID;
+                Registers::STF_REG rs2 = Registers::STF_REG::STF_REG_INVALID;
                 bool is_conditional = false;
                 bool is_call = false;
                 bool is_return = false;
@@ -423,6 +502,8 @@ namespace stf {
                 return decode(iem,
                               rec,
                               target,
+                              rs1,
+                              rs2,
                               is_conditional,
                               is_call,
                               is_return,

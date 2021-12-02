@@ -58,6 +58,7 @@ namespace stf {
             uint64_t num_branches_read_ = 0;
             STFBranch* last_branch_ = nullptr;
             STFRecord::UniqueHandle current_record_;
+            STFBranch::OperandMap src_operands_;
 
             __attribute__((hot, always_inline))
             inline size_t rawNumRead_() const {
@@ -87,6 +88,7 @@ namespace stf {
                 updateLastBranch_(rec->as<InstRecordType>());
                 updateSkipping_();
                 delegates::STFBranchDelegate::reset_(branch);
+                src_operands_.clear();
             }
 
             template<typename InstRecordType>
@@ -98,6 +100,8 @@ namespace stf {
 
                 if(STF_EXPECT_TRUE(!STFBranchDecoder::decode(getInitialIEM(), inst_rec, branch))) {
                     stf_assert(!branch.isTaken(), "Branch was marked taken but also didn't decode as a branch");
+                    delegates::STFBranchDelegate::reset_(branch);
+                    src_operands_.clear();
                     return false;
                 }
 
@@ -122,6 +126,7 @@ namespace stf {
             // read STF records to construction a STFInst instance
             __attribute__((hot, always_inline))
             inline void readNext_(STFBranch &branch) {
+                src_operands_.clear();
                 delegates::STFBranchDelegate::reset_(branch);
 
                 updateSkipping_();
@@ -144,14 +149,26 @@ namespace stf {
                         checkSkipping_(event.isModeChange(),
                                        static_cast<EXECUTION_MODE>(event.getData().front()) == EXECUTION_MODE::USER_MODE);
                     }
-                    else if(!not_a_branch) {
+                    // Most instructions aren't branches
+                    else if(STF_EXPECT_FALSE(!not_a_branch)) {
                         if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_REG)) {
                             const auto& reg_rec = rec->template as<InstRegRecord>();
                             if(STF_EXPECT_FALSE(reg_rec.getOperandType() == Registers::STF_REG_OPERAND_TYPE::REG_STATE)) {
                                 continue;
                             }
-                            // Branches don't access FP or vector registers
-                            not_a_branch |= reg_rec.isFP() || reg_rec.isVector();
+                            // Branches only access integer registers
+                            if(STF_EXPECT_FALSE(!reg_rec.isInt())) {
+                                not_a_branch = true;
+                            }
+                            else if(STF_EXPECT_TRUE(reg_rec.getOperandType() == Registers::STF_REG_OPERAND_TYPE::REG_SOURCE)) {
+                                // Branches don't have more than 2 source operands
+                                if(STF_EXPECT_FALSE(src_operands_.size() == 2)) {
+                                    not_a_branch = true;
+                                }
+                                else {
+                                    src_operands_.addOperand(reg_rec.getReg(), reg_rec.getScalarData());
+                                }
+                            }
                         }
                         else if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_OPCODE16)) {
                             if(finalizeBranch_<InstOpcode16Record>(branch, rec)) {

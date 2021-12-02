@@ -4,6 +4,7 @@
 #include <ostream>
 #include "stf_exception.hpp"
 #include "stf_item.hpp"
+#include "stf_reg_def.hpp"
 
 namespace stf {
     class STFBranchReader;
@@ -18,6 +19,71 @@ namespace stf {
      * \brief Branch information returned by the STFBranchReader
      */
     class STFBranch : public STFSkippableItem {
+        public:
+            /**
+             * \class OperandMap
+             * \brief Maps register numbers to their values. Only accepts up to 2 register values.
+             */
+            class OperandMap {
+                private:
+                    struct RegPair {
+                        Registers::STF_REG reg;
+                        uint64_t val;
+                    };
+
+                    size_t wr_index_ = 0;
+                    std::array<RegPair, 2> regs_ {{
+                        {Registers::STF_REG::STF_REG_INVALID, 0},
+                        {Registers::STF_REG::STF_REG_INVALID, 0}
+                    }};
+
+                public:
+                    /**
+                     * Add an operand to the map. Up to 2 operands can be stored.
+                     * \param reg_num Register number of the operand
+                     * \param val Operand value
+                     */
+                    inline void addOperand(const Registers::STF_REG reg_num, const uint64_t val) {
+                        stf_assert(wr_index_ < 2, "Attempted to add a third source register!");
+                        regs_[wr_index_] = {reg_num, val};
+                        ++wr_index_;
+                    }
+
+                    /**
+                     * Get an operand from the map.
+                     * \param reg_num Register number of the operand
+                     */
+                    inline uint64_t getOperand(const Registers::STF_REG reg_num) const {
+                        stf_assert(reg_num != Registers::STF_REG::STF_REG_INVALID,
+                                   "Attempted to read an invalid register");
+
+                        for(const auto& reg: regs_) {
+                            if(reg.reg == reg_num) {
+                                return reg.val;
+                            }
+                        }
+
+                        stf_throw("Register " << reg_num << " not present in the map");
+                    }
+
+                    /**
+                     * Clear the map.
+                     */
+                    inline void clear() {
+                        wr_index_ = 0;
+                        for(auto& reg: regs_) {
+                            reg = {Registers::STF_REG::STF_REG_INVALID, 0};
+                        }
+                    }
+
+                    /**
+                     * Get the number of operands in the map.
+                     */
+                    inline size_t size() const {
+                        return wr_index_;
+                    }
+            };
+
         private:
             friend class delegates::STFBranchDelegate;
 
@@ -25,6 +91,10 @@ namespace stf {
             uint64_t target_ = 0;
             uint32_t opcode_ = 0;
             uint32_t target_opcode_ = 0;
+            Registers::STF_REG rs1_ = Registers::STF_REG::STF_REG_INVALID;
+            Registers::STF_REG rs2_ = Registers::STF_REG::STF_REG_INVALID;
+            uint64_t rs1_value_ = 0;
+            uint64_t rs2_value_ = 0;
             bool taken_ = false;
             bool conditional_ = false;
             bool call_ = false;
@@ -66,11 +136,20 @@ namespace stf {
                 target_ = 0;
                 opcode_ = 0;
                 target_opcode_ = 0;
+                rs1_ = Registers::STF_REG::STF_REG_INVALID;
+                rs2_ = Registers::STF_REG::STF_REG_INVALID;
+                rs1_value_ = 0;
+                rs2_value_ = 0;
                 taken_ = false;
                 conditional_ = false;
                 call_ = false;
                 return_ = false;
                 indirect_ = false;
+                compare_eq_ = false;
+                compare_not_eq_ = false;
+                compare_greater_than_or_equal_ = false;
+                compare_less_than_ = false;
+                compare_unsigned_ = false;
             }
 
             /**
@@ -106,6 +185,8 @@ namespace stf {
             inline void setInfo_(const uint64_t pc,
                                  const uint64_t target,
                                  const uint32_t opcode,
+                                 const Registers::STF_REG rs1,
+                                 const Registers::STF_REG rs2,
                                  const bool is_conditional,
                                  const bool is_call,
                                  const bool is_return,
@@ -122,6 +203,8 @@ namespace stf {
                 pc_ = pc;
                 target_ = validateBranchTarget_(target, is_indirect);
                 opcode_ = opcode;
+                rs1_ = rs1;
+                rs2_ = rs2;
                 conditional_ = is_conditional;
                 call_ = is_call;
                 return_ = is_return;
@@ -131,6 +214,21 @@ namespace stf {
                 compare_greater_than_or_equal_ = compare_greater_than_or_equal;
                 compare_less_than_ = compare_less_than;
                 compare_unsigned_ = compare_unsigned;
+            }
+
+            /**
+             * Sets operand values
+             * \param operand_map std::unordered_map mapping register numbers to values
+             */
+            void setOperandValues_(const OperandMap& operand_map) {
+                if(rs1_ != Registers::STF_REG::STF_REG_INVALID) {
+                    rs1_value_ = operand_map.getOperand(rs1_);
+
+                    // Can't have an rs2 without an rs1
+                    if(rs2_ != Registers::STF_REG::STF_REG_INVALID) {
+                        rs2_value_ = operand_map.getOperand(rs2_);
+                    }
+                }
             }
 
         public:
@@ -239,6 +337,34 @@ namespace stf {
             inline bool isCompareUnsigned() const {
                 return compare_unsigned_;
             }
+
+            /**
+             * Gets the register number of RS1 (if any)
+             */
+            inline Registers::STF_REG getRS1() const {
+                return rs1_;
+            }
+
+            /**
+             * Gets the register value of RS1 (if any)
+             */
+            inline uint64_t getRS1Value() const {
+                return rs1_value_;
+            }
+
+            /**
+             * Gets the register number of RS2 (if any)
+             */
+            inline Registers::STF_REG getRS2() const {
+                return rs2_;
+            }
+
+            /**
+             * Gets the register value of RS2 (if any)
+             */
+            inline uint64_t getRS2Value() const {
+                return rs2_value_;
+            }
     };
 
     /**
@@ -268,6 +394,8 @@ namespace stf {
                                             const uint64_t pc,
                                             const uint64_t target,
                                             const uint32_t opcode,
+                                            const Registers::STF_REG rs1,
+                                            const Registers::STF_REG rs2,
                                             const bool is_conditional,
                                             const bool is_call,
                                             const bool is_return,
@@ -280,6 +408,8 @@ namespace stf {
                     branch.setInfo_(pc,
                                     target,
                                     opcode,
+                                    rs1,
+                                    rs2,
                                     is_conditional,
                                     is_call,
                                     is_return,
@@ -318,6 +448,16 @@ namespace stf {
                 __attribute__((always_inline))
                 static inline void setTargetOpcode_(STFBranch& branch, const uint32_t opcode) {
                     branch.setTargetOpcode_(opcode);
+                }
+
+                /**
+                 * Sets the branch operand values
+                 * \param branch Branch to modify
+                 * \param operand_map std::unordered_map mapping register numbers to values
+                 */
+                __attribute__((always_inline))
+                static inline void setOperandValues_(STFBranch& branch, const STFBranch::OperandMap& operand_map) {
+                    branch.setOperandValues_(operand_map);
                 }
 
                 friend class stf::STFBranchReader;
