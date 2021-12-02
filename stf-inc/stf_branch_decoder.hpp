@@ -136,7 +136,7 @@ namespace stf {
                                                                                     extractor::Bit< 2, 5>,
                                                                                     extractor::BitRange<11, 10, 4>,
                                                                                     extractor::BitRange< 4,  3, 2>>(opcode)));
-                        rs1 = encodeRegNum_(byte_utils::getBitRange<9, 7, 2>(opcode));
+                        rs1 = encodeRegNum_(byte_utils::getBitRange<9, 7, 2>(opcode) + 8);
                         rs2 = Registers::STF_REG::STF_REG_X0;
                         is_conditional = true;
                         break;

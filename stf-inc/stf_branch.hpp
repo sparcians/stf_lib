@@ -220,7 +220,7 @@ namespace stf {
              * Sets operand values
              * \param operand_map std::unordered_map mapping register numbers to values
              */
-            void setOperandValues_(const OperandMap& operand_map) {
+            inline void setOperandValues_(const OperandMap& operand_map) {
                 if(rs1_ != Registers::STF_REG::STF_REG_INVALID) {
                     rs1_value_ = operand_map.getOperand(rs1_);
 

@@ -105,6 +105,14 @@ namespace stf {
                     return false;
                 }
 
+                if constexpr(std::is_same_v<InstRecordType, InstOpcode16Record>) {
+                    // C.BEQZ/C.BNEZ instructions may not include a record for X0, so we'll add it in here if it's missing
+                    if(branch.isConditional() && src_operands_.size() != 2) {
+                        src_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
+                    }
+                }
+
+                delegates::STFBranchDelegate::setOperandValues_(branch, src_operands_);
                 ++num_branches_read_;
                 initItemIndex_(branch);
                 delegates::STFBranchDelegate::setSkipped_(branch, skippingEnabled_());
