@@ -1,6 +1,7 @@
 #ifndef __STF_BRANCH_HPP__
 #define __STF_BRANCH_HPP__
 
+#include <array>
 #include <ostream>
 #include "stf_exception.hpp"
 #include "stf_item.hpp"
