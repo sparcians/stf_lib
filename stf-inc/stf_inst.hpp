@@ -435,6 +435,7 @@ namespace stf {
                     class iterator {
                         private:
                             const CombinedView* parent_;
+                            const VecType* cur_vec_;
                             using vec_iterator = typename VecType::const_iterator;
                             vec_iterator it_;
 
@@ -442,7 +443,8 @@ namespace stf {
                              * Advances iterator to the next vector if we've reached the end of the first vector
                              */
                             inline void checkIterator_() {
-                                if(STF_EXPECT_FALSE(it_ == parent_->vec1_->end())) {
+                                if(STF_EXPECT_FALSE(cur_vec_ == parent_->vec1_ && it_ == parent_->vec1_->end())) {
+                                    cur_vec_ = parent_->vec2_;
                                     it_ = parent_->vec2_->begin();
                                 }
                             }
@@ -452,8 +454,9 @@ namespace stf {
                              * \param parent Parent CombinedView object
                              * \param it Initial iterator
                              */
-                            iterator(const CombinedView* parent, const vec_iterator& it) :
+                            iterator(const CombinedView* parent, const VecType* parent_vec, const vec_iterator& it) :
                                 parent_(parent),
+                                cur_vec_(parent_vec),
                                 it_(it)
                             {
                             }
@@ -464,7 +467,7 @@ namespace stf {
                              * \param parent Parent CombinedView object
                              */
                             static inline iterator constructBegin(const CombinedView* parent) {
-                                iterator it(parent, parent->vec1_->begin());
+                                iterator it(parent, parent->vec1_, parent->vec1_->begin());
                                 it.checkIterator_();
                                 return it;
                             }
@@ -474,7 +477,7 @@ namespace stf {
                              * \param parent Parent CombinedView object
                              */
                             static inline iterator constructEnd(const CombinedView* parent) {
-                                return iterator(parent, parent->vec2_->end());
+                                return iterator(parent, parent->vec2_, parent->vec2_->end());
                             }
 
                             /**
@@ -513,14 +516,14 @@ namespace stf {
                              * Equality operator
                              */
                             inline bool operator==(const iterator& rhs) {
-                                return it_ == rhs.it_;
+                                return cur_vec_ == rhs.cur_vec_ && it_ == rhs.it_;
                             }
 
                             /**
                              * Inequality operator
                              */
                             inline bool operator!=(const iterator& rhs) {
-                                return it_ != rhs.it_;
+                                return cur_vec_ != rhs.cur_vec_ || it_ != rhs.it_;
                             }
                     };
 
