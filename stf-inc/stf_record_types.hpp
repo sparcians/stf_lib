@@ -1221,7 +1221,8 @@ namespace stf {
              * Calculates the vector length needed to represent a given vlen
              * \param vlen Vlen to use
              */
-            inline static size_t calcVectorLen(const vlen_t vlen) {
+            template<typename VlenType>
+            inline static size_t calcVectorLen(const VlenType vlen) {
                 constexpr auto VECTOR_DATA_SIZE = byte_utils::bitSize<decltype(data_)::value_type>();
                 constexpr auto SHIFT_AMT = math_utils::constexpr_log::log2(VECTOR_DATA_SIZE);
                 return (static_cast<size_t>(vlen) + VECTOR_DATA_SIZE - 1) >> SHIFT_AMT;

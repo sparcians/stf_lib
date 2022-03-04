@@ -63,6 +63,23 @@ namespace stf {
         }
 
         /**
+         * Gets a bitmask of a specified number of bits
+         */
+        template<typename T>
+        inline T bitMask(const size_t num_bits) {
+            constexpr size_t MAX_BITS = bitSize<T>();
+
+            stf_assert(num_bits > 0 && num_bits <= MAX_BITS, "Mask must be >= 1 bit and <= sizeof(T) bits");
+
+            if(num_bits == MAX_BITS) {
+                return std::numeric_limits<T>::max();
+            }
+            else { //NOLINT: readability-else-after-return
+                return (1ULL << num_bits) - 1;
+            }
+        }
+
+        /**
          * \class BitExtractor
          * \brief Class that knows how to extract single bits and contiguous regions of bits from integer types
          */
