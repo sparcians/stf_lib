@@ -755,12 +755,12 @@ namespace stf {
              * Checks whether this is a vector instruction. Used by STFInstReader while building the STFInst
              * \param rec InstRegRecord used to check for vector register accesses
              */
-            inline bool checkIfVector_(const InstRegRecord& rec) {
+            inline bool checkIfVector_(const bool not_state, const InstRegRecord& rec) {
                 // Some vector LS instructions only access VSTART and VL when VL == 0
-                has_vstart_ |= rec.getReg() == Registers::STF_REG::STF_REG_CSR_VSTART;
-                has_vl_ |= rec.getReg() == Registers::STF_REG::STF_REG_CSR_VL;
+                has_vstart_ |= not_state && (rec.getReg() == Registers::STF_REG::STF_REG_CSR_VSTART);
+                has_vl_ |= not_state && (rec.getReg() == Registers::STF_REG::STF_REG_CSR_VL);
                 // Otherwise, any vector instruction should have at least 1 vector operand
-                return rec.isVector() || (has_vstart_ && has_vl_);
+                return not_state && (rec.isVector() || (has_vstart_ && has_vl_));
             }
 
             /**
@@ -1262,12 +1262,15 @@ namespace stf {
                 static inline void appendOperand_(STFInst& inst,
                                                   const Registers::STF_REG_OPERAND_TYPE type,
                                                   const InstRegRecord& rec) {
+                    const bool not_state = type != Registers::STF_REG_OPERAND_TYPE::REG_STATE;
                     inst.getOperandVector_(type).emplace_back(&rec);
 
                     // Set FP flag if we have an FP source or dest register
                     // Set vector flag if we have a vector source or dest register
-                    inst.setInstFlag_(math_utils::conditionalValue(rec.isFP(), STFInst::INST_IS_FP,
-                                                                   inst.checkIfVector_(rec), STFInst::INST_IS_VECTOR));
+                    inst.setInstFlag_(math_utils::conditionalValue(
+                        not_state && rec.isFP(), STFInst::INST_IS_FP,
+                        inst.checkIfVector_(not_state, rec), STFInst::INST_IS_VECTOR
+                    ));
                 }
 
                 /**
