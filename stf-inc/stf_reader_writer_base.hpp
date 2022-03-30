@@ -65,8 +65,8 @@ namespace stf {
              * \param filename Filename to get file type for
              */
             static constexpr STF_FILE_TYPE guessFileType(std::string_view filename) {
-                constexpr std::string_view gz_ext = ".gz";
-                constexpr std::string_view xz_ext = ".xz";
+                constexpr std::string_view gz_ext = ".stf.gz";
+                constexpr std::string_view xz_ext = ".stf.xz";
                 constexpr std::string_view sh_ext = ".sh";
                 constexpr std::string_view zstf_ext = ".zstf";
                 constexpr std::string_view stf_ext = ".stf";
