@@ -22,7 +22,12 @@ namespace stf {
         }
 
         if(branch.isCall()) {
-            format_utils::formatWidth(os, "CALL", BRANCH_TYPE_WIDTH);
+            if(branch.isReturn()) {
+                format_utils::formatWidth(os, "RET/CALL", BRANCH_TYPE_WIDTH);
+            }
+            else {
+                format_utils::formatWidth(os, "CALL", BRANCH_TYPE_WIDTH);
+            }
         }
         else if(branch.isReturn()) {
             format_utils::formatWidth(os, "RETURN", BRANCH_TYPE_WIDTH);

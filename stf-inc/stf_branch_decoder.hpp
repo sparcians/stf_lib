@@ -149,8 +149,8 @@ namespace stf {
                         if(STF_EXPECT_TRUE(opcode_bottom != 0b10 || rs1_num == 0 || rs2_num != 0)) {
                             return false;
                         }
-                        is_call = byte_utils::getBit<12>(opcode);
-                        is_return = !is_call && (rs1_num == 1);
+                        is_call = byte_utils::getBit<12>(opcode); // C.JALR always writes to x1, so it is always a call
+                        is_return = !is_call && ((rs1_num == 1) || (rs1_num == 5)); // C.JR is only a return if it reads from x1/x5
                         is_indirect = true;
                         rs1 = encodeRegNum_(rs1_num);
                         break;
@@ -248,20 +248,24 @@ namespace stf {
                     {
                         // jalr
                         const auto dest_reg = byte_utils::getBitRange<11, 7>(opcode);
+                        const auto src_reg = byte_utils::getBitRange<24, 20, 4>(opcode);
                         rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
-                        is_call = dest_reg != 0; // Indirect jumps have rd == x0
-                        is_return = (dest_reg == 0) && (byte_utils::getBitRange<24, 20, 4>(opcode) == 1); // Returns have rd == x0 and rs == x1
+                        is_call = (dest_reg == 1) || (dest_reg == 5); // Indirect calls have rd == x1/x5
+                        is_return = ((src_reg == 1) || (src_reg == 5)) && (dest_reg != src_reg); // Returns have rs == x1/x5, rs != rd
                         is_indirect = true;
                         break;
                     }
                     case 0b011:
+                    {
                         // jal
                         target = getTarget_(pc, signExtendTarget_<21>(extractor::get<extractor::Bit<31, 20>,
                                                                                      extractor::BitRange<19, 12>,
                                                                                      extractor::Bit<20, 11>,
                                                                                      extractor::BitRange<30, 21, 10>>(opcode)));
-                        is_call = byte_utils::getBitRange<11, 7>(opcode) != 0; // Unconditional jumps have rd == x0
+                        const auto dest_reg = byte_utils::getBitRange<11, 7>(opcode);
+                        is_call = (dest_reg == 1) || (dest_reg == 5); // Calls have rd == x1/x5
                         break;
+                    }
                     default:
                         return false;
                 };
