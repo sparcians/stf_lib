@@ -68,6 +68,20 @@ namespace stf {
                     }
 
                     /**
+                     * Check if an operand exists in the map.
+                     * \param reg_num Register number of the operand
+                     */
+                    inline bool hasOperand(const Registers::STF_REG reg_num) const {
+                        for(const auto& reg: regs_) {
+                            if(reg.reg == reg_num) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    }
+
+                    /**
                      * Clear the map.
                      */
                     inline void clear() {
@@ -94,12 +108,16 @@ namespace stf {
             uint32_t target_opcode_ = 0;
             Registers::STF_REG rs1_ = Registers::STF_REG::STF_REG_INVALID;
             Registers::STF_REG rs2_ = Registers::STF_REG::STF_REG_INVALID;
+            Registers::STF_REG rd_ = Registers::STF_REG::STF_REG_INVALID;
             uint64_t rs1_value_ = 0;
             uint64_t rs2_value_ = 0;
+            uint64_t rd_value_ = 0;
             bool taken_ = false;
             bool conditional_ = false;
             bool call_ = false;
             bool return_ = false;
+            bool millicall_ = false;
+            bool millireturn_ = false;
             bool indirect_ = false;
             bool compare_eq_ = false;
             bool compare_not_eq_ = false;
@@ -139,12 +157,16 @@ namespace stf {
                 target_opcode_ = 0;
                 rs1_ = Registers::STF_REG::STF_REG_INVALID;
                 rs2_ = Registers::STF_REG::STF_REG_INVALID;
+                rd_ = Registers::STF_REG::STF_REG_INVALID;
                 rs1_value_ = 0;
                 rs2_value_ = 0;
+                rd_value_ = 0;
                 taken_ = false;
                 conditional_ = false;
                 call_ = false;
                 return_ = false;
+                millicall_ = false;
+                millireturn_ = false;
                 indirect_ = false;
                 compare_eq_ = false;
                 compare_not_eq_ = false;
@@ -177,10 +199,20 @@ namespace stf {
              * \param pc Branch PC
              * \param target Branch target PC
              * \param opcode Branch opcode
-             * \param is_conditional If true, branch is conditional
-             * \param is_call If true, branch is a call
-             * \param is_return If true, branch is a return
-             * \param is_indirect If true, branch is indirect
+             * \param rs1 Number of first source register (if any)
+             * \param rs2 Number of second source register (if any)
+             * \param rd Number of dest register (if any)
+             * \param is_conditional Set to true if the branch is conditional
+             * \param is_call Set to true if the branch is a call
+             * \param is_return Set to true if the branch is a return
+             * \param is_millicall Set to true if the branch is a millicall
+             * \param is_millireturn Set to true if the branch is a millireturn
+             * \param is_indirect Set to true if the branch is an indirect
+             * \param compare_eq Set to true if the branch is comparing equality
+             * \param compare_not_eq Set to true if the branch is comparing inequality
+             * \param compare_greater_than_or_equal Set to true if the branch is comparing greater-than or equal
+             * \param compare_less_than Set to true if the branch is comparing less-than
+             * \param compare_unsigned Set to true if the branch is comparing unsigned
              */
             __attribute__((always_inline))
             inline void setInfo_(const uint64_t pc,
@@ -188,9 +220,12 @@ namespace stf {
                                  const uint32_t opcode,
                                  const Registers::STF_REG rs1,
                                  const Registers::STF_REG rs2,
+                                 const Registers::STF_REG rd,
                                  const bool is_conditional,
                                  const bool is_call,
                                  const bool is_return,
+                                 const bool is_millicall,
+                                 const bool is_millireturn,
                                  const bool is_indirect,
                                  const bool compare_eq,
                                  const bool compare_not_eq,
@@ -206,9 +241,12 @@ namespace stf {
                 opcode_ = opcode;
                 rs1_ = rs1;
                 rs2_ = rs2;
+                rd_ = rd;
                 conditional_ = is_conditional;
                 call_ = is_call;
                 return_ = is_return;
+                millicall_ = is_millicall;
+                millireturn_ = is_millireturn;
                 indirect_ = is_indirect;
                 compare_eq_ = compare_eq;
                 compare_not_eq_ = compare_not_eq;
@@ -221,14 +259,17 @@ namespace stf {
              * Sets operand values
              * \param operand_map std::unordered_map mapping register numbers to values
              */
-            inline void setOperandValues_(const OperandMap& operand_map) {
+            inline void setOperandValues_(const OperandMap& src_operand_map, const OperandMap& dest_operand_map) {
                 if(rs1_ != Registers::STF_REG::STF_REG_INVALID) {
-                    rs1_value_ = operand_map.getOperand(rs1_);
+                    rs1_value_ = src_operand_map.getOperand(rs1_);
 
                     // Can't have an rs2 without an rs1
                     if(rs2_ != Registers::STF_REG::STF_REG_INVALID) {
-                        rs2_value_ = operand_map.getOperand(rs2_);
+                        rs2_value_ = src_operand_map.getOperand(rs2_);
                     }
+                }
+                if(rd_ != Registers::STF_REG::STF_REG_INVALID) {
+                    rd_value_ = dest_operand_map.getOperand(rd_);
                 }
             }
 
@@ -287,6 +328,20 @@ namespace stf {
              */
             inline bool isReturn() const {
                 return return_;
+            }
+
+            /**
+             * Gets whether the branch is a millicode call
+             */
+            inline bool isMillicall() const {
+                return millicall_;
+            }
+
+            /**
+             * Gets whether the branch is a millicode return
+             */
+            inline bool isMillireturn() const {
+                return millireturn_;
             }
 
             /**
@@ -366,6 +421,21 @@ namespace stf {
             inline uint64_t getRS2Value() const {
                 return rs2_value_;
             }
+
+            /**
+             * Gets the register number of RD (if any)
+             */
+            inline Registers::STF_REG getRD() const {
+                return rd_;
+            }
+
+            /**
+             * Gets the register value of RD (if any)
+             */
+            inline uint64_t getRDValue() const {
+                return rd_value_;
+            }
+
     };
 
     /**
@@ -385,10 +455,20 @@ namespace stf {
                  * \param pc Branch PC
                  * \param target Branch target PC
                  * \param opcode Branch opcode
-                 * \param is_conditional If true, branch is conditional
-                 * \param is_call If true, branch is a call
-                 * \param is_return If true, branch is a return
-                 * \param is_indirect If true, branch is indirect
+                 * \param rs1 Number of first source register (if any)
+                 * \param rs2 Number of second source register (if any)
+                 * \param rd Number of dest register (if any)
+                 * \param is_conditional Set to true if the branch is conditional
+                 * \param is_call Set to true if the branch is a call
+                 * \param is_return Set to true if the branch is a return
+                 * \param is_millicall Set to true if the branch is a millicall
+                 * \param is_millireturn Set to true if the branch is a millireturn
+                 * \param is_indirect Set to true if the branch is an indirect
+                 * \param compare_eq Set to true if the branch is comparing equality
+                 * \param compare_not_eq Set to true if the branch is comparing inequality
+                 * \param compare_greater_than_or_equal Set to true if the branch is comparing greater-than or equal
+                 * \param compare_less_than Set to true if the branch is comparing less-than
+                 * \param compare_unsigned Set to true if the branch is comparing unsigned
                  */
                 __attribute__((always_inline))
                 static inline void setInfo_(STFBranch& branch,
@@ -397,9 +477,12 @@ namespace stf {
                                             const uint32_t opcode,
                                             const Registers::STF_REG rs1,
                                             const Registers::STF_REG rs2,
+                                            const Registers::STF_REG rd,
                                             const bool is_conditional,
                                             const bool is_call,
                                             const bool is_return,
+                                            const bool is_millicall,
+                                            const bool is_millireturn,
                                             const bool is_indirect,
                                             const bool compare_eq,
                                             const bool compare_not_eq,
@@ -411,9 +494,12 @@ namespace stf {
                                     opcode,
                                     rs1,
                                     rs2,
+                                    rd,
                                     is_conditional,
                                     is_call,
                                     is_return,
+                                    is_millicall,
+                                    is_millireturn,
                                     is_indirect,
                                     compare_eq,
                                     compare_not_eq,
@@ -454,11 +540,14 @@ namespace stf {
                 /**
                  * Sets the branch operand values
                  * \param branch Branch to modify
-                 * \param operand_map std::unordered_map mapping register numbers to values
+                 * \param src_operand_map std::unordered_map mapping source register numbers to values
+                 * \param dest_operand_map std::unordered_map mapping dest register numbers to values
                  */
                 __attribute__((always_inline))
-                static inline void setOperandValues_(STFBranch& branch, const STFBranch::OperandMap& operand_map) {
-                    branch.setOperandValues_(operand_map);
+                static inline void setOperandValues_(STFBranch& branch,
+                                                     const STFBranch::OperandMap& src_operand_map,
+                                                     const STFBranch::OperandMap& dest_operand_map) {
+                    branch.setOperandValues_(src_operand_map, dest_operand_map);
                 }
 
                 friend class stf::STFBranchReader;

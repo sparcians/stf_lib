@@ -4,7 +4,7 @@
 namespace stf {
     std::ostream& operator<<(std::ostream& os, const STFBranch& branch) {
         static constexpr int TAKEN_NOT_TAKEN_WIDTH = 5;
-        static constexpr int BRANCH_TYPE_WIDTH = 12;
+        static constexpr int BRANCH_TYPE_WIDTH = 22;
         static constexpr int FIELD_PADDING = 4;
 
         format_utils::formatVA(os, branch.getPC());
@@ -21,16 +21,33 @@ namespace stf {
             format_utils::formatSpaces(os, FIELD_PADDING + format_utils::VA_WIDTH);
         }
 
-        if(branch.isCall()) {
-            if(branch.isReturn()) {
-                format_utils::formatWidth(os, "RET/CALL", BRANCH_TYPE_WIDTH);
+        if(branch.isMillireturn()) {
+            if(branch.isMillicall()) {
+                format_utils::formatWidth(os, "MILLIRET/MILLICALL", BRANCH_TYPE_WIDTH);
+            }
+            else if(branch.isCall()) {
+                format_utils::formatWidth(os, "MILLIRET/CALL", BRANCH_TYPE_WIDTH);
             }
             else {
-                format_utils::formatWidth(os, "CALL", BRANCH_TYPE_WIDTH);
+                format_utils::formatWidth(os, "MILLIRETURN", BRANCH_TYPE_WIDTH);
             }
         }
         else if(branch.isReturn()) {
-            format_utils::formatWidth(os, "RETURN", BRANCH_TYPE_WIDTH);
+            if(branch.isMillicall()) {
+                format_utils::formatWidth(os, "RET/MILLICALL", BRANCH_TYPE_WIDTH);
+            }
+            else if(branch.isCall()) {
+                format_utils::formatWidth(os, "RET/CALL", BRANCH_TYPE_WIDTH);
+            }
+            else {
+                format_utils::formatWidth(os, "RETURN", BRANCH_TYPE_WIDTH);
+            }
+        }
+        else if(branch.isMillicall()) {
+            format_utils::formatWidth(os, "MILLICALL", BRANCH_TYPE_WIDTH);
+        }
+        else if(branch.isCall()) {
+            format_utils::formatWidth(os, "CALL", BRANCH_TYPE_WIDTH);
         }
         else if(branch.isIndirect()) {
             format_utils::formatWidth(os, "INDIRECT", BRANCH_TYPE_WIDTH);

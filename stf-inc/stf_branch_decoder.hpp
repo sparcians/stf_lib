@@ -68,9 +68,12 @@ namespace stf {
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
+             * \param[out] rd Number of dest register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
+             * \param[out] is_millicall Set to true if the branch is a millicall
+             * \param[out] is_millireturn Set to true if the branch is a millireturn
              * \param[out] is_indirect Set to true if the branch is an indirect
              * \param[out] compare_eq Set to true if the branch is comparing equality
              * \param[out] compare_not_eq Set to true if the branch is comparing inequality
@@ -84,9 +87,12 @@ namespace stf {
                                                   uint64_t& target,
                                                   Registers::STF_REG& rs1,
                                                   Registers::STF_REG& rs2,
+                                                  Registers::STF_REG& rd,
                                                   bool& is_conditional,
                                                   bool& is_call,
                                                   bool& is_return,
+                                                  bool& is_millicall,
+                                                  bool& is_millireturn,
                                                   bool& is_indirect,
                                                   bool& compare_eq,
                                                   bool& compare_not_eq,
@@ -99,9 +105,12 @@ namespace stf {
                 target = 0;
                 rs1 = Registers::STF_REG::STF_REG_INVALID;
                 rs2 = Registers::STF_REG::STF_REG_INVALID;
+                rd = Registers::STF_REG::STF_REG_INVALID;
                 is_conditional = false;
                 is_call = false;
                 is_return = false;
+                is_millicall = false;
+                is_millireturn = false;
                 is_indirect = false;
                 compare_eq = false;
                 compare_not_eq = false;
@@ -116,6 +125,7 @@ namespace stf {
                             return false;
                         }
                         target = getCJTarget_(pc, opcode);
+                        rd = Registers::STF_REG::STF_REG_X1;
                         is_call = true;
                         break;
                     case 0b110:
@@ -150,7 +160,16 @@ namespace stf {
                             return false;
                         }
                         is_call = byte_utils::getBit<12>(opcode); // C.JALR always writes to x1, so it is always a call
-                        is_return = !is_call && ((rs1_num == 1) || (rs1_num == 5)); // C.JR is only a return if it reads from x1/x5
+                        if(is_call) {
+                            rd = Registers::STF_REG::STF_REG_X1;
+                        }
+                        else {
+                            is_millireturn = (rs1_num == 5); // Compressed millireturn reads from x5
+                            is_return = is_millireturn || (rs1_num == 1); // C.JR is only a return if it reads from x1/x5
+                            if(is_return) {
+                                rd = Registers::STF_REG::STF_REG_X0;
+                            }
+                        }
                         is_indirect = true;
                         rs1 = encodeRegNum_(rs1_num);
                         break;
@@ -177,9 +196,12 @@ namespace stf {
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
+             * \param[out] rd Number of dest register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
+             * \param[out] is_millicall Set to true if the branch is a millicall
+             * \param[out] is_millireturn Set to true if the branch is a millireturn
              * \param[out] is_indirect Set to true if the branch is an indirect
              * \param[out] compare_eq Set to true if the branch is comparing equality
              * \param[out] compare_not_eq Set to true if the branch is comparing inequality
@@ -192,9 +214,12 @@ namespace stf {
                                                   uint64_t& target,
                                                   Registers::STF_REG& rs1,
                                                   Registers::STF_REG& rs2,
+                                                  Registers::STF_REG& rd,
                                                   bool& is_conditional,
                                                   bool& is_call,
                                                   bool& is_return,
+                                                  bool& is_millicall,
+                                                  bool& is_millireturn,
                                                   bool& is_indirect,
                                                   bool& compare_eq,
                                                   bool& compare_not_eq,
@@ -211,9 +236,12 @@ namespace stf {
                 target = 0;
                 rs1 = Registers::STF_REG::STF_REG_INVALID;
                 rs2 = Registers::STF_REG::STF_REG_INVALID;
+                rd = Registers::STF_REG::STF_REG_INVALID;
                 is_conditional = false;
                 is_call = false;
                 is_return = false;
+                is_millicall = false;
+                is_millireturn = false;
                 is_indirect = false;
                 compare_eq = false;
                 compare_not_eq = false;
@@ -247,25 +275,29 @@ namespace stf {
                     case 0b001:
                     {
                         // jalr
-                        const auto dest_reg = byte_utils::getBitRange<11, 7>(opcode);
-                        const auto src_reg = byte_utils::getBitRange<24, 20, 4>(opcode);
                         rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
-                        is_call = (dest_reg == 1) || (dest_reg == 5); // Indirect calls have rd == x1/x5
-                        is_return = ((src_reg == 1) || (src_reg == 5)) && (dest_reg != src_reg); // Returns have rs == x1/x5, rs != rd
+                        rd = encodeRegNum_(byte_utils::getBitRange<11, 7, 4>(opcode));
+
+                        is_millicall = (rd == Registers::STF_REG::STF_REG_X5); // Indirect millicalls have rd == x5
+                        is_call = is_millicall || (rd == Registers::STF_REG::STF_REG_X1); // Indirect calls have rd == x1/x5
+
+                        const bool possible_return = (rs1 != rd); // Returns have rs != rd
+                        is_millireturn = possible_return && (rs1 == Registers::STF_REG::STF_REG_X5); // Millireturns read from x5
+                        is_return = is_millireturn || (possible_return && (rs1 == Registers::STF_REG::STF_REG_X1)); // Returns have rs == x1/x5
+
                         is_indirect = true;
                         break;
                     }
                     case 0b011:
-                    {
                         // jal
                         target = getTarget_(pc, signExtendTarget_<21>(extractor::get<extractor::Bit<31, 20>,
                                                                                      extractor::BitRange<19, 12>,
                                                                                      extractor::Bit<20, 11>,
                                                                                      extractor::BitRange<30, 21, 10>>(opcode)));
-                        const auto dest_reg = byte_utils::getBitRange<11, 7>(opcode);
-                        is_call = (dest_reg == 1) || (dest_reg == 5); // Calls have rd == x1/x5
+                        rd = encodeRegNum_(byte_utils::getBitRange<11, 7, 4>(opcode));
+                        is_millicall = (rd == Registers::STF_REG::STF_REG_X5); // Millicalls have rd == x5
+                        is_call = is_millicall || (rd == Registers::STF_REG::STF_REG_X1); // Calls have rd == x1/x5
                         break;
-                    }
                     default:
                         return false;
                 };
@@ -280,9 +312,12 @@ namespace stf {
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
+             * \param[out] rd Number of dest register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
+             * \param[out] is_millicall Set to true if the branch is a millicall
+             * \param[out] is_millireturn Set to true if the branch is a millireturn
              * \param[out] is_indirect Set to true if the branch is an indirect
              * \param[out] compare_eq Set to true if the branch is comparing equality
              * \param[out] compare_not_eq Set to true if the branch is comparing inequality
@@ -296,9 +331,12 @@ namespace stf {
                                              uint64_t& target,
                                              Registers::STF_REG& rs1,
                                              Registers::STF_REG& rs2,
+                                             Registers::STF_REG& rd,
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
+                                             bool& is_millicall,
+                                             bool& is_millireturn,
                                              bool& is_indirect,
                                              bool& compare_eq,
                                              bool& compare_not_eq,
@@ -311,9 +349,12 @@ namespace stf {
                                        target,
                                        rs1,
                                        rs2,
+                                       rd,
                                        is_conditional,
                                        is_call,
                                        is_return,
+                                       is_millicall,
+                                       is_millireturn,
                                        is_indirect,
                                        compare_eq,
                                        compare_not_eq,
@@ -329,9 +370,12 @@ namespace stf {
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
+             * \param[out] rd Number of dest register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
+             * \param[out] is_millicall Set to true if the branch is a millicall
+             * \param[out] is_millireturn Set to true if the branch is a millireturn
              * \param[out] is_indirect Set to true if the branch is an indirect
              * \param[out] compare_eq Set to true if the branch is comparing equality
              * \param[out] compare_not_eq Set to true if the branch is comparing inequality
@@ -345,9 +389,12 @@ namespace stf {
                                              uint64_t& target,
                                              Registers::STF_REG& rs1,
                                              Registers::STF_REG& rs2,
+                                             Registers::STF_REG& rd,
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
+                                             bool& is_millicall,
+                                             bool& is_millireturn,
                                              bool& is_indirect,
                                              bool& compare_eq,
                                              bool& compare_not_eq,
@@ -359,9 +406,12 @@ namespace stf {
                                        target,
                                        rs1,
                                        rs2,
+                                       rd,
                                        is_conditional,
                                        is_call,
                                        is_return,
+                                       is_millicall,
+                                       is_millireturn,
                                        is_indirect,
                                        compare_eq,
                                        compare_not_eq,
@@ -378,9 +428,12 @@ namespace stf {
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
+             * \param[out] rd Number of dest register (if any)
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return
+             * \param[out] is_millicall Set to true if the branch is a millicall
+             * \param[out] is_millireturn Set to true if the branch is a millireturn
              * \param[out] is_indirect Set to true if the branch is an indirect
              * \param[out] compare_eq Set to true if the branch is comparing equality
              * \param[out] compare_not_eq Set to true if the branch is comparing inequality
@@ -395,9 +448,12 @@ namespace stf {
                                       uint64_t& target,
                                       Registers::STF_REG& rs1,
                                       Registers::STF_REG& rs2,
+                                      Registers::STF_REG& rd,
                                       bool& is_conditional,
                                       bool& is_call,
                                       bool& is_return,
+                                      bool& is_millicall,
+                                      bool& is_millireturn,
                                       bool& is_indirect,
                                       bool& compare_eq,
                                       bool& compare_not_eq,
@@ -409,9 +465,12 @@ namespace stf {
                                      target,
                                      rs1,
                                      rs2,
+                                     rd,
                                      is_conditional,
                                      is_call,
                                      is_return,
+                                     is_millicall,
+                                     is_millireturn,
                                      is_indirect,
                                      compare_eq,
                                      compare_not_eq,
@@ -435,9 +494,12 @@ namespace stf {
                 uint64_t target = 0;
                 Registers::STF_REG rs1;
                 Registers::STF_REG rs2;
+                Registers::STF_REG rd;
                 bool is_conditional = false;
                 bool is_call = false;
                 bool is_return = false;
+                bool is_millicall = false;
+                bool is_millireturn = false;
                 bool is_indirect = false;
                 bool compare_eq = false;
                 bool compare_not_eq = false;
@@ -450,9 +512,12 @@ namespace stf {
                                               target,
                                               rs1,
                                               rs2,
+                                              rd,
                                               is_conditional,
                                               is_call,
                                               is_return,
+                                              is_millicall,
+                                              is_millireturn,
                                               is_indirect,
                                               compare_eq,
                                               compare_not_eq,
@@ -468,9 +533,12 @@ namespace stf {
                                                            rec.getOpcode(),
                                                            rs1,
                                                            rs2,
+                                                           rd,
                                                            is_conditional,
                                                            is_call,
                                                            is_return,
+                                                           is_millicall,
+                                                           is_millireturn,
                                                            is_indirect,
                                                            compare_eq,
                                                            compare_not_eq,
@@ -493,9 +561,12 @@ namespace stf {
                 uint64_t target = 0;
                 Registers::STF_REG rs1 = Registers::STF_REG::STF_REG_INVALID;
                 Registers::STF_REG rs2 = Registers::STF_REG::STF_REG_INVALID;
+                Registers::STF_REG rd = Registers::STF_REG::STF_REG_INVALID;
                 bool is_conditional = false;
                 bool is_call = false;
                 bool is_return = false;
+                bool is_millicall = false;
+                bool is_millireturn = false;
                 bool is_indirect = false;
                 bool compare_eq = false;
                 bool compare_not_eq = false;
@@ -508,9 +579,12 @@ namespace stf {
                               target,
                               rs1,
                               rs2,
+                              rd,
                               is_conditional,
                               is_call,
                               is_return,
+                              is_millicall,
+                              is_millireturn,
                               is_indirect,
                               compare_eq,
                               compare_not_eq,

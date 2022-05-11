@@ -31,6 +31,12 @@ cdef class STFBranch:
     def isReturn(self):
         return deref(self.c_branch).isReturn()
 
+    def isMillicall(self):
+        return deref(self.c_branch).isMillicall()
+
+    def isMillireturn(self):
+        return deref(self.c_branch).isMillireturn()
+
     def isConditional(self):
         return deref(self.c_branch).isConditional()
 
@@ -63,3 +69,9 @@ cdef class STFBranch:
 
     def getRS2Value(self):
         return deref(self.c_branch).getRS1Value()
+
+    def getRD(self):
+        return STF_REG(deref(self.c_branch).getRD())
+
+    def getRDValue(self):
+        return deref(self.c_branch).getRDValue()

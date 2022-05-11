@@ -59,6 +59,7 @@ namespace stf {
             STFBranch* last_branch_ = nullptr;
             STFRecord::UniqueHandle current_record_;
             STFBranch::OperandMap src_operands_;
+            STFBranch::OperandMap dest_operands_;
 
             __attribute__((hot, always_inline))
             inline size_t rawNumRead_() const {
@@ -89,6 +90,7 @@ namespace stf {
                 updateSkipping_();
                 delegates::STFBranchDelegate::reset_(branch);
                 src_operands_.clear();
+                dest_operands_.clear();
             }
 
             template<typename InstRecordType>
@@ -102,17 +104,22 @@ namespace stf {
                     stf_assert(!branch.isTaken(), "Branch was marked taken but also didn't decode as a branch");
                     delegates::STFBranchDelegate::reset_(branch);
                     src_operands_.clear();
+                    dest_operands_.clear();
                     return false;
                 }
 
-                if constexpr(std::is_same_v<InstRecordType, InstOpcode16Record>) {
-                    // C.BEQZ/C.BNEZ instructions may not include a record for X0, so we'll add it in here if it's missing
-                    if(branch.isConditional() && src_operands_.size() != 2) {
-                        src_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
-                    }
+                // X0 records may not exist in the trace, so fix up the operand maps if necessary
+                if(STF_EXPECT_FALSE(((branch.getRS1() == Registers::STF_REG::STF_REG_X0) ||
+                                     (branch.getRS1() == Registers::STF_REG::STF_REG_X0)) &&
+                                    !src_operands_.hasOperand(Registers::STF_REG::STF_REG_X0))) {
+                    src_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
+                }
+                if(STF_EXPECT_FALSE((branch.getRD() == Registers::STF_REG::STF_REG_X0) &&
+                                    !dest_operands_.hasOperand(Registers::STF_REG::STF_REG_X0))) {
+                    dest_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
                 }
 
-                delegates::STFBranchDelegate::setOperandValues_(branch, src_operands_);
+                delegates::STFBranchDelegate::setOperandValues_(branch, src_operands_, dest_operands_);
                 ++num_branches_read_;
                 initItemIndex_(branch);
                 delegates::STFBranchDelegate::setSkipped_(branch, skippingEnabled_());
@@ -135,6 +142,7 @@ namespace stf {
             __attribute__((hot, always_inline))
             inline void readNext_(STFBranch &branch) {
                 src_operands_.clear();
+                dest_operands_.clear();
                 delegates::STFBranchDelegate::reset_(branch);
 
                 updateSkipping_();
@@ -170,11 +178,20 @@ namespace stf {
                             }
                             else if(STF_EXPECT_TRUE(reg_rec.getOperandType() == Registers::STF_REG_OPERAND_TYPE::REG_SOURCE)) {
                                 // Branches don't have more than 2 source operands
-                                if(STF_EXPECT_FALSE(src_operands_.size() == 2)) {
+                                if(STF_EXPECT_FALSE(src_operands_.size() >= 2)) {
                                     not_a_branch = true;
                                 }
                                 else {
                                     src_operands_.addOperand(reg_rec.getReg(), reg_rec.getScalarData());
+                                }
+                            }
+                            else if(STF_EXPECT_TRUE(reg_rec.getOperandType() == Registers::STF_REG_OPERAND_TYPE::REG_DEST)) {
+                                // Branches don't have more than 1 dest operand
+                                if(STF_EXPECT_FALSE(dest_operands_.size() > 0)) {
+                                    not_a_branch = true;
+                                }
+                                else {
+                                    dest_operands_.addOperand(reg_rec.getReg(), reg_rec.getScalarData());
                                 }
                             }
                         }
