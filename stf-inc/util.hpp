@@ -15,6 +15,7 @@
 #include <type_traits>
 #include <limits>
 
+#include "stf_exception.hpp"
 #include "type_utils.hpp"
 
 namespace stf {
