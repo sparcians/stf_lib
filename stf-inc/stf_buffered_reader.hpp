@@ -537,11 +537,7 @@ namespace stf {
                      * \param rv The iterator to compare with
                      */
                     inline bool operator==(const base_iterator& rv) const {
-                        if (end_ || rv.end_) {
-                            return end_ && rv.end_;
-                        }
-
-                        return index_ == rv.index_;
+                        return (end_ && rv.end_) || (!end_ && !rv.end_ && (index_ == rv.index_));
                     }
 
                     /**

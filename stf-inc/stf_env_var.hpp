@@ -14,10 +14,17 @@ namespace stf {
      * Provides a convenient interface to read environment variables
      */
     class STFEnvVar {
-        private:
-            const std::string var_name_;
-            const std::set<std::string> allowed_values_;
-            const std::string default_value_;
+        protected:
+            const std::string val_;
+
+            inline static std::string getVal_(const std::string& var_name, const std::string& default_value) {
+                const char* val = std::getenv(var_name.c_str());
+                if(!val) {
+                    return default_value;
+                }
+
+                return val;
+            }
 
         public:
             /**
@@ -25,9 +32,8 @@ namespace stf {
              * \param var_name Name of the environment variable
              * \param allowed_values List of allowed values
              */
-            STFEnvVar(const std::string& var_name,
-                      std::initializer_list<std::string> allowed_values) :
-                STFEnvVar(var_name, allowed_values, "")
+            STFEnvVar(const std::string& var_name) :
+                STFEnvVar(var_name, "")
             {
             }
 
@@ -38,11 +44,8 @@ namespace stf {
              * \param default_value Default value that should be returned if the variable is unset
              */
             STFEnvVar(const std::string& var_name,
-                      std::initializer_list<std::string> allowed_values,
                       const std::string& default_value) :
-                var_name_(var_name),
-                allowed_values_(allowed_values),
-                default_value_(default_value)
+                val_(getVal_(var_name, default_value))
             {
             }
 
@@ -51,21 +54,50 @@ namespace stf {
              * \returns Value of the variable, or the default value if it is unset
              */
             inline const std::string& get() const {
-                const char* val = std::getenv(var_name_.c_str());
-                if(!val) {
-                    return default_value_;
-                }
+                return val_;
+            }
+    };
 
-                const auto it = allowed_values_.find(val);
+    /**
+     * \class STFValidatedEnvVar
+     * Validates environment variable values against a predefined list of allowed values
+     */
+    class STFValidatedEnvVar : public STFEnvVar {
+        private:
+            const std::set<std::string> allowed_values_;
+
+        public:
+            /**
+             * Constructs an STFValidatedEnvVar
+             * \param var_name Name of the environment variable
+             * \param allowed_values List of allowed values
+             */
+            STFValidatedEnvVar(const std::string& var_name,
+                      std::initializer_list<std::string> allowed_values) :
+                STFValidatedEnvVar(var_name, allowed_values, "")
+            {
+            }
+
+            /**
+             * Constructs an STFValidatedEnvVar
+             * \param var_name Name of the environment variable
+             * \param allowed_values List of allowed values
+             * \param default_value Default value that should be returned if the variable is unset
+             */
+            STFValidatedEnvVar(const std::string& var_name,
+                      std::initializer_list<std::string> allowed_values,
+                      const std::string& default_value) :
+                STFEnvVar(var_name, default_value),
+                allowed_values_(allowed_values)
+            {
+                const auto it = allowed_values_.find(val_);
                 stf_assert(it != allowed_values_.end(),
                            "Invalid value specified for "
-                           << var_name_
+                           << var_name
                            << ": "
-                           << val
+                           << val_
                            << ". Allowed values are: "
                            << allowed_values_);
-
-                return *it;
             }
     };
 
@@ -73,7 +105,10 @@ namespace stf {
      * \class STFBooleanEnvVar
      * Interface for reading environment variables that should be interpreted as boolean values
      */
-    class STFBooleanEnvVar : public STFEnvVar {
+    class STFBooleanEnvVar : public STFValidatedEnvVar {
+        private:
+            const bool bool_val_;
+
         public:
             /**
              * Constructs an STFBooleanEnvVar
@@ -82,9 +117,10 @@ namespace stf {
              */
             STFBooleanEnvVar(const std::string& var_name,
                              const bool default_value = false) :
-                STFEnvVar(var_name,
-                          {"0", "false", "1", "true"},
-                          default_value ? "true": "false")
+                STFValidatedEnvVar(var_name,
+                                   {"0", "false", "1", "true"},
+                                   default_value ? "true": "false"),
+                bool_val_((val_ == "true") || (val_ == "1"))
             {
             }
 
@@ -93,12 +129,7 @@ namespace stf {
              * \returns Value of the variable, or the default value if it is unset
              */
             inline bool get() const {
-                const auto& string_val = STFEnvVar::get();
-                if((string_val == "true") || (string_val == "1")) {
-                    return true;
-                }
-
-                return false;
+                return bool_val_;
             }
 
             /**

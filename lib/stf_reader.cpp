@@ -73,10 +73,16 @@ namespace stf {
         bool complete_header = false;
         try {
             STFRecord::UniqueHandle rec;
-            operator>>(rec);
 
-            stf_assert(rec->getDescriptor() == descriptors::internal::Descriptor::STF_IDENTIFIER && rec->as<STFIdentifierRecord>().isValid(),
-                       "Specified file is not an STF");
+            try {
+                operator>>(rec);
+
+                stf_assert(rec->getDescriptor() == descriptors::internal::Descriptor::STF_IDENTIFIER && rec->as<STFIdentifierRecord>().isValid(),
+                           "Specified file looks like an STF, but does not have a valid STF_IDENTIFIER record");
+            }
+            catch(const InvalidDescriptorException&) {
+                stf_throw("Specified file is not an STF");
+            }
 
             operator>>(rec);
 
