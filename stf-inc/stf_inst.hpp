@@ -349,6 +349,7 @@ namespace stf {
                 INST_CHANGE_FROM_USER   = 1 << 10,  /**< inst changes from user mode */
                 INST_IS_FAULT           = 1 << 11,  /**< instruction is a fault */
                 INST_IS_VECTOR          = 1 << 12,  /**< instruction is vector */
+                INST_IS_INTERRUPT       = 1 << 13,  /**< instruction is an interrupt */
             };
 
         private:
@@ -955,6 +956,12 @@ namespace stf {
              * \return True if fault
              */
             bool isFault() const { return inst_flags_ & INST_IS_FAULT; }
+
+            /**
+             * \brief Fault or not
+             * \return True if fault
+             */
+            bool isInterrupt() const { return inst_flags_ & INST_IS_INTERRUPT; }
 
             /**
              * \brief FP or not

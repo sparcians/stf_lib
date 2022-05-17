@@ -212,6 +212,7 @@ namespace stf {
                                                                          math_utils::conditionalValue(
                                                                             is_syscall, STFInst::INST_IS_SYSCALL,
                                                                             event.isFault(), STFInst::INST_IS_FAULT,
+                                                                            event.isInterrupt(), STFInst::INST_IS_INTERRUPT,
                                                                             !is_syscall && (is_mode_change = event.isModeChange()), MODE_CHANGE_FLAGS[event.getData().front()]
                                     ));
 
