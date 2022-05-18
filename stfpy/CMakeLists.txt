@@ -5,7 +5,7 @@ find_package(PythonLibs 3.7 REQUIRED)
 
 include_directories(${STF_BASE}/stf-inc)
 
-add_compile_options(-Wno-sign-conversion)
+add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_link_options(-Wno-unused-command-line-argument)
@@ -24,6 +24,12 @@ file(GLOB py_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.py")
 file(GLOB pyx_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.pyx" "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/stf_lib/*.pyx")
 file(GLOB pxd_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.pxd" "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/stf_lib/*.pxd")
 
+if(APPLE)
+    set(CYTHON_PARALLEL_FLAG "")
+else()
+    set(CYTHON_PARALLEL_FLAG "-j4")
+endif()
+
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/stfpy.stamp
   COMMAND ${CMAKE_COMMAND} -E env --unset=CFLAGS
@@ -35,7 +41,7 @@ add_custom_command(
                                   LDFLAGS="${link_opts}"
                                   STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
                                   ${PYTHON_EXECUTABLE} setup.py build_ext -f
-                                                                          -j 4
+                                                                          ${CYTHON_PARALLEL_FLAG}
                                                                           --include-dirs "${include_dirs}"
                                                                           --libraries "${stf_libraries}"
                                                                           --library-dirs "${extra_lib_dirs}"

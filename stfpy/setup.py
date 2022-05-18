@@ -1,6 +1,6 @@
-import distutils.command.build
 import setuptools.command.egg_info
 from setuptools import setup, Extension, find_packages
+import distutils.command.build
 from Cython.Build import cythonize
 import os
 
