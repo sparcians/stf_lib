@@ -2,7 +2,7 @@ function(setup_stf_linker set_compiler_options)
   if (STF_LINK_SETUP_DONE AND STF_COMPILER_SETUP_DONE)
     message("-- ${PROJECT_NAME} link-time optimization and compiler flags handled by parent project")
   else()
-    set(STF_LINK_FLAGS )
+    set(STF_LINK_FLAGS -Wno-stringop-overflow)
     set(STF_COMPILE_FLAGS )
 
     # Don't need to change default linker on OS X
