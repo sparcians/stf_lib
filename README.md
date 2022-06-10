@@ -34,6 +34,9 @@ make
 API documentation: `doc_doxygen/html/classstf_1_1STFInstReaderBase.html`
 Example Usage:
 ```
+#include "stf-inc/stf_reader.hpp"
+#include "stf-inc/stf_record_types.hpp"
+
 constexpr bool skip_nonuser_mode = true; // example
 constexpr bool CHECK_FOR_STF_PTE = false; // If true, search for an stf-pte file alongside this trace.
 constexpr bool FILTER_MODE_CHANGE_EVENTS = true;
@@ -56,6 +59,9 @@ for(const stf::STFInst & inst : reader) {
 API documentation: `doc_doxygen/html/classstf_1_1STFWriter.html`
 Example Usage:
 ```
+#include "stf-inc/stf_writer.hpp"
+#include "stf-inc/stf_record_types.hpp"
+
 uint64_t pc = 0x1000;
 
 ////////////////////
@@ -63,7 +69,7 @@ uint64_t pc = 0x1000;
 ////////////////////
 stf::STFWriter stf_writer;
 stf_writer.open("my_trace.zstf");  // If you do not want compression, drop the 'z': my_trace.stf
-stf_writer.addTraceInfo(stf::TraceInfoRecord(stf::STF_GEN::IMPERAS, 1, 2, 0, "Trace from Imperas"));
+stf_writer.addTraceInfo(stf::TraceInfoRecord(stf::STF_GEN::STF_GEN_IMPERAS, 1, 2, 0, "Trace from Imperas"));
 stf_writer.setISA(stf::ISA::RISCV);
 stf_writer.setHeaderIEM(stf::INST_IEM::STF_INST_IEM_RV64);
 stf_writer.setTraceFeature(stf::TRACE_FEATURES::STF_CONTAIN_RV64);
