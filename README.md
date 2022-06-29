@@ -17,7 +17,9 @@ To install on **Mac**:
 
 To install on **Ubuntu**:
 `apt-get install zstd libzstd-dev`
-`apt install texlive-font-utils`  # For documentation
+
+To build documentation on **Ubuntu**:
+`apt install texlive-font-utils`
 
 ## Building
 
