@@ -31,7 +31,7 @@
         static const RecordFactoryRegistration<cls> registration_##cls(descriptors::encoded::Descriptor::desc); \
     } \
     template<> \
-    descriptors::internal::Descriptor TypeAwareSTFRecord<cls>::getTypeDescriptor() { \
+    descriptors::internal::Descriptor TypeAwareSTFRecord<cls>::type_aware_object::getTypeId() { \
         return descriptors::internal::Descriptor::desc; \
     }
 

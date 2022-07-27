@@ -2,6 +2,7 @@
 #define __STF_RECORD_INTERFACES_HPP__
 
 #include "format_utils.hpp"
+#include "stf_object.hpp"
 #include "stf_record.hpp"
 #include "stf_serializable_container.hpp"
 
@@ -13,7 +14,7 @@ namespace stf {
      *
      */
     template<typename T>
-    class TypeAwareSTFRecord : public STFRecord {
+    class TypeAwareSTFRecord : public STFRecord, public TypeAwareSTFObject<TypeAwareSTFRecord<T>, STFRecord::id_type> {
         private:
             /**
              * Packs a TypeAwareSTFRecord into an STFOFstream
@@ -23,19 +24,16 @@ namespace stf {
                 static_cast<const T*>(this)->pack_impl(writer);
             }
 
-        public:
-            /**
-             * Gets the STF descriptor for the underlying type
-             */
-            static descriptors::internal::Descriptor getTypeDescriptor();
-
         protected:
             TypeAwareSTFRecord() :
-                STFRecord(getTypeDescriptor())
+                STFRecord(getTypeId())
             {
             }
 
         public:
+            using type_aware_object = TypeAwareSTFObject<TypeAwareSTFRecord<T>, STFRecord::id_type>;
+            using type_aware_object::getTypeId;
+
             /**
              * Makes a copy of this record
              */

@@ -11,6 +11,7 @@
 #include "stf_packed_container.hpp"
 #include "stf_record_pointers.hpp"
 #include "stf_vector_view.hpp"
+#include "stf_object.hpp"
 #include "util.hpp"
 
 namespace stf {
@@ -20,10 +21,7 @@ namespace stf {
      * Defines the main STF record data structure
      *
      */
-    class STFRecord {
-        private:
-            const descriptors::internal::Descriptor desc_;
-
+    class STFRecord : public STFObject<descriptors::internal::Descriptor> {
         protected:
             /**
              * Writes an arithmetic data type to an STFOFstream
@@ -154,13 +152,14 @@ namespace stf {
              * unique_ptr to a const STFRecord
              */
             using UniqueHandle = STFRecordConstUniqueHandle;
+            //using STFObject<descriptors::internal::Descriptor>::id_type;
 
             /**
              * Constructs an STFRecord
              * \param desc Descriptor for the record
              */
             STFRecord(const descriptors::internal::Descriptor desc) :
-                desc_(desc)
+                STFObject(desc)
             {
             }
 
@@ -187,8 +186,8 @@ namespace stf {
             /**
              * Gets the descriptor
              */
-            descriptors::internal::Descriptor getDescriptor() const {
-                return desc_;
+            inline descriptors::internal::Descriptor getDescriptor() const {
+                return getId();
             }
 
             /**:
