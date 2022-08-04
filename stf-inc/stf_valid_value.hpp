@@ -64,7 +64,7 @@ namespace stf {
              * Gets the underlying value (non-ref version)
              */
             template<typename U = T>
-            typename std::enable_if<std::is_scalar<U>::value, U>::type
+            std::enable_if_t<std::is_scalar_v<U>, U>
             get() const {
                 stf_assert(valid_, "Attempted to access invalid ValidValue");
                 return val_;
@@ -74,7 +74,7 @@ namespace stf {
              * Gets the underlying value (const ref version)
              */
             template<typename U = T>
-            typename std::enable_if<!std::is_scalar<U>::value, const U&>::type
+            std::enable_if_t<std::negation_v<std::is_scalar<U>>, const U&>
             get() const {
                 stf_assert(valid_, "Attempted to access invalid ValidValue");
                 return val_;

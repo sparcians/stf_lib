@@ -66,8 +66,8 @@ namespace stf {
              * Gets the underlying raw pointer managed by an std::unique_ptr
              */
             template<typename T = PointerType>
-            typename std::enable_if<pointer_utils::is_unique_ptr<T>::value, typename std::pointer_traits<T>::element_type*>::type
-            get() {
+            std::enable_if_t<pointer_utils::is_unique_ptr_v<T>, typename std::pointer_traits<T>::element_type*>
+            get() const {
                 return buf_.get();
             }
 
@@ -75,8 +75,8 @@ namespace stf {
              * Gets the buffer if it is already a raw pointer
              */
             template<typename T = PointerType>
-            typename std::enable_if<std::is_pointer<T>::value, T>::type
-            get() {
+            std::enable_if_t<std::is_pointer_v<T>, T>
+            get() const {
                 return buf_;
             }
 
@@ -84,7 +84,7 @@ namespace stf {
              * Gets the buffer if it is already a raw pointer
              */
             template<typename T = PointerType>
-            typename std::enable_if<std::is_pointer<T>::value, const T>::type
+            std::enable_if_t<std::is_pointer_v<T>, const T>
             get() const {
                 return buf_;
             }
@@ -101,7 +101,7 @@ namespace stf {
              * Reinterprets the underlying buffer as the specified type
              */
             template<typename T, typename U = PointerType>
-            typename std::enable_if<!std::is_const<typename std::remove_pointer<U>::type>::value, T*>::type
+            std::enable_if_t<std::negation_v<std::is_const<typename std::remove_pointer_t<U>>>, T*>
             getPtrAs() {
                 return reinterpret_cast<T*>(get());
             }
@@ -400,7 +400,7 @@ namespace stf {
              * \param num Number of elements in the buffer
              */
             template<typename T = PointerType>
-            typename std::enable_if<!std::is_const<typename std::remove_pointer<T>::type>::value>::type
+            std::enable_if_t<std::negation_v<std::is_const<typename std::remove_pointer_t<T>>>>
             write(const void* data, const size_t size, const size_t num) {
                 const auto ptr = reinterpret_cast<const typename std::pointer_traits<PointerType>::element_type*>(data);
                 const size_t num_bytes = size * num;

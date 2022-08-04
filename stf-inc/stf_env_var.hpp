@@ -15,9 +15,14 @@ namespace stf {
      */
     class STFEnvVar {
         protected:
-            const std::string val_;
+            const std::string val_; /**< Value of the environment variable */
 
-            inline static std::string getVal_(const std::string& var_name, const std::string& default_value) {
+            /**
+             * Gets the value of the environment variable, returning default_value if it is not defined
+             * \param var_name Environment variable name
+             * \param default_value Default value if the variable is undefined
+             */
+            static inline std::string getVal_(const std::string& var_name, const std::string& default_value) {
                 const char* val = std::getenv(var_name.c_str());
                 if(!val) {
                     return default_value;
@@ -30,9 +35,8 @@ namespace stf {
             /**
              * Constructs an STFEnvVar
              * \param var_name Name of the environment variable
-             * \param allowed_values List of allowed values
              */
-            STFEnvVar(const std::string& var_name) :
+            explicit STFEnvVar(const std::string& var_name) :
                 STFEnvVar(var_name, "")
             {
             }
@@ -40,7 +44,6 @@ namespace stf {
             /**
              * Constructs an STFEnvVar
              * \param var_name Name of the environment variable
-             * \param allowed_values List of allowed values
              * \param default_value Default value that should be returned if the variable is unset
              */
             STFEnvVar(const std::string& var_name,
@@ -115,7 +118,7 @@ namespace stf {
              * \param var_name Name of the environment variable
              * \param default_value Default value that should be returned if the variable is unset
              */
-            STFBooleanEnvVar(const std::string& var_name,
+            explicit STFBooleanEnvVar(const std::string& var_name,
                              const bool default_value = false) :
                 STFValidatedEnvVar(var_name,
                                    {"0", "false", "1", "true"},

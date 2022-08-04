@@ -54,7 +54,7 @@ namespace stf {
     static inline void checkVersion(uint32_t major, uint32_t minor) {
         // the STF library provides backward compatibility for v0.5 and later version
         stf_assert(((major <= STF_CUR_VERSION_MAJOR) ||
-                    ((major <= STF_CUR_VERSION_MAJOR) && (minor <= STF_CUR_VERSION_MINOR))) &&
+                    ((major == STF_CUR_VERSION_MAJOR) && (minor <= STF_CUR_VERSION_MINOR))) &&
                    (major > STF_OLDEST_SUPPORTED_VERSION_MAJOR || minor >= STF_OLDEST_SUPPORTED_VERSION_MINOR),
                    "ERROR: trace STF version " << std::dec << major << '.' << minor << " is incompatible with the tool's version " << STF_CUR_VERSION_MAJOR << '.' << STF_CUR_VERSION_MINOR << '!');
     }

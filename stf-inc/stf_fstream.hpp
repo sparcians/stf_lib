@@ -196,7 +196,7 @@ namespace stf {
             /**
              * Gets the current instruction PC
              */
-            uint64_t getPC() const {
+            inline uint64_t getPC() const {
                 return pc_tracker_.getPC();
             }
 
@@ -205,14 +205,22 @@ namespace stf {
              * \param rec Record to update PC tracker with
              */
             template<typename RecordType>
-            void trackPC(const RecordType& rec) {
+            inline void trackPC(const RecordType& rec) {
                 pc_tracker_.track(rec);
             }
 
             /**
-             * Callback for all record types - just counts how many records have been read/written
+             * Callback for when any STFObject is read from the trace
              */
-            void recordCallback() {
+            template<typename T>
+            inline void readCallback() { // cppcheck-suppress functionStatic
+            }
+
+            /**
+             * Specialization for STFRecord - just counts how many records have been read/written
+             */
+            template<>
+            inline void readCallback<STFRecord>() {
                 ++num_records_read_;
             }
 
@@ -234,7 +242,7 @@ namespace stf {
             /**
              * Gets how many instruction record groups have been read/written
              */
-            size_t getNumInsts() const {
+            inline size_t getNumInsts() const {
                 return num_insts_;
             }
 
@@ -247,14 +255,14 @@ namespace stf {
             /**
              * Gets the vlen parameter
              */
-            vlen_t getVLen() const {
+            inline vlen_t getVLen() const {
                 return vlen_;
             }
 
             /**
              * Returns whether the trace uses 32-bit event records
              */
-            bool has32BitEvents() const {
+            inline bool has32BitEvents() const {
                 return has_32bit_events_;
             }
 
@@ -262,7 +270,7 @@ namespace stf {
              * Sets whether the trace uses 32-bit event records
              * \param has_32bit_events If true, the trace to be read/written uses 32-bit event records
              */
-            void set32BitEvents(const bool has_32bit_events) {
+            inline void set32BitEvents(const bool has_32bit_events) {
                 has_32bit_events_ = has_32bit_events;
             }
     };

@@ -77,7 +77,7 @@ namespace stf {
             try {
                 operator>>(rec);
 
-                stf_assert(rec->getDescriptor() == descriptors::internal::Descriptor::STF_IDENTIFIER && rec->as<STFIdentifierRecord>().isValid(),
+                stf_assert(rec->getId() == descriptors::internal::Descriptor::STF_IDENTIFIER && rec->as<STFIdentifierRecord>().isValid(),
                            "Specified file looks like an STF, but does not have a valid STF_IDENTIFIER record");
             }
             catch(const InvalidDescriptorException&) {
@@ -86,39 +86,39 @@ namespace stf {
 
             operator>>(rec);
 
-            stf_assert(rec->getDescriptor() == descriptors::internal::Descriptor::STF_VERSION,
+            stf_assert(rec->getId() == descriptors::internal::Descriptor::STF_VERSION,
                        "The second record must be the version");
 
-            grabRecordOwnership(version_, rec);
+            STFRecord::grabOwnership(version_, rec);
 
             do {
                 operator>>(rec);
-                switch(rec->getDescriptor()) {
+                switch(rec->getId()) {
                     case descriptors::internal::Descriptor::STF_COMMENT:
-                        header_comments_.emplace_back(grabRecordOwnership<CommentRecord>(rec));
+                        header_comments_.emplace_back(STFRecord::grabOwnership<CommentRecord>(rec));
                         break;
                     case descriptors::internal::Descriptor::STF_ISA:
                         stf_assert(!isa_, "Header has multiple ISA records");
-                        grabRecordOwnership(isa_, rec);
+                        STFRecord::grabOwnership(isa_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_INST_IEM:
                         stf_assert(!initial_iem_, "Header has multiple IEM records");
-                        grabRecordOwnership(initial_iem_, rec);
+                        STFRecord::grabOwnership(initial_iem_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_FORCE_PC:
                         stf_assert(!initial_pc_, "Header has multiple FORCE_PC records");
-                        grabRecordOwnership(initial_pc_, rec);
+                        STFRecord::grabOwnership(initial_pc_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_TRACE_INFO:
-                        trace_info_records_.emplace_back(grabRecordOwnership<TraceInfoRecord>(rec));
+                        trace_info_records_.emplace_back(STFRecord::grabOwnership<TraceInfoRecord>(rec));
                         break;
                     case descriptors::internal::Descriptor::STF_TRACE_INFO_FEATURE:
                         stf_assert(!trace_features_, "Header has multiple TRACE_INFO_FEATURE records");
-                        grabRecordOwnership(trace_features_, rec);
+                        STFRecord::grabOwnership(trace_features_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
                         stf_assert(!initial_process_id_, "Header has multiple PROCESS_ID_EXT records");
-                        grabRecordOwnership(initial_process_id_, rec);
+                        STFRecord::grabOwnership(initial_process_id_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
                         // This record is handled internally by the STFIFstream
@@ -141,11 +141,12 @@ namespace stf {
                     case descriptors::internal::Descriptor::STF_BUS_MASTER_CONTENT:
                     case descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK:
                     case descriptors::internal::Descriptor::STF_INST_MICROOP:
-                        stf_throw("Encountered unexpected STF record in header: " << rec->getDescriptor());
+                    case descriptors::internal::Descriptor::STF_TRANSACTION:
+                        stf_throw("Encountered unexpected STF record in header: " << rec->getId());
                         break;
                     // These records can't be constructed
                     case descriptors::internal::Descriptor::STF_RESERVED:
-                    case descriptors::internal::Descriptor::STF_RESERVED_END:
+                    case descriptors::internal::Descriptor::RESERVED_END:
                         __builtin_unreachable();
                 }
             }
@@ -172,10 +173,12 @@ namespace stf {
         return version_->getMinor();
     }
 
+    // cppcheck-suppress unusedFunction
     uint64_t STFReader::getInitialPC() const {
         return initial_pc_->getAddr();
     }
 
+    // cppcheck-suppress unusedFunction
     INST_IEM STFReader::getInitialIEM() const {
         return initial_iem_->getMode();
     }
@@ -184,18 +187,22 @@ namespace stf {
         return isa_->getISA();
     }
 
+    // cppcheck-suppress unusedFunction
     uint32_t STFReader::getInitialTGID() const {
         return initial_process_id_ ? initial_process_id_->getTGID() : 0;
     }
 
+    // cppcheck-suppress unusedFunction
     uint32_t STFReader::getInitialTID() const {
         return initial_process_id_ ? initial_process_id_->getTID() : 0;
     }
 
+    // cppcheck-suppress unusedFunction
     uint32_t STFReader::getInitialASID() const {
         return initial_process_id_ ? initial_process_id_->getASID() : 0;
     }
 
+    // cppcheck-suppress unusedFunction
     const TraceInfoRecord& STFReader::getLatestTraceInfo() const {
         return *trace_info_records_.back();
     }
@@ -216,6 +223,7 @@ namespace stf {
         return 0;
     }
 
+    // cppcheck-suppress unusedFunction
     void STFReader::copyHeader(STFWriter& stf_writer) const {
         stf_writer.addHeaderComments(header_comments_);
         stf_writer.setISA(isa_->getISA());
@@ -229,6 +237,7 @@ namespace stf {
         }
     }
 
+    // cppcheck-suppress unusedFunction
     void STFReader::dumpHeader(std::ostream& os) const {
         version_->format(os);
         os << std::endl;

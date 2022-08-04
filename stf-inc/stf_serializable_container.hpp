@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "format_utils.hpp"
+#include "type_utils.hpp"
 #include "util.hpp"
 
 namespace stf {
@@ -58,7 +59,7 @@ namespace stf {
              * \param writer STFOFstream to use
              */
             template<typename U = value_type>
-            inline typename std::enable_if<!std::is_trivially_copyable<U>::value>::type
+            inline std::enable_if_t<std::negation_v<std::is_trivially_copyable<U>>>
             pack(STFOFstream& writer) const {
                 writer << static_cast<SerializedSizeT>(this->size());
                 for(const auto& v: *this) {
@@ -71,7 +72,7 @@ namespace stf {
              * \param writer STFOFstream to use
              */
             template<typename U = value_type>
-            inline typename std::enable_if<std::is_trivially_copyable<U>::value>::type
+            inline std::enable_if_t<std::is_trivially_copyable_v<U>>
             pack(STFOFstream& writer) const {
                 writer << static_cast<SerializedSizeT>(this->size());
                 writer << static_cast<const ContainerT&>(*this);
@@ -82,7 +83,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             template<typename U = value_type>
-            inline typename std::enable_if<!std::is_trivially_copyable<U>::value>::type
+            inline std::enable_if_t<std::negation_v<std::is_trivially_copyable<U>>>
             unpack(STFIFstream& reader) {
                 SerializedSizeT size;
                 reader >> size;
@@ -98,7 +99,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             template<typename U = value_type>
-            inline typename std::enable_if<std::is_trivially_copyable<U>::value>::type
+            inline std::enable_if_t<std::is_trivially_copyable_v<U>>
             unpack(STFIFstream& reader) {
                 SerializedSizeT size;
                 reader >> size;
@@ -151,19 +152,19 @@ namespace stf {
     class SerializableVector : public SerializableContainer<std::vector<T>, SerializedSizeT> {
         private:
             template<typename U = T>
-            static inline typename std::enable_if<std::is_enum<U>::value>::type
+            static inline std::enable_if_t<std::is_enum_v<U>>
             formatElement_(std::ostream& os, const T element) {
                 os << element;
             }
 
             template<typename U = T>
-            static inline typename std::enable_if<!std::is_enum<U>::value && std::is_integral<U>::value>::type
+            static inline std::enable_if_t<std::conjunction_v<std::negation<std::is_enum<U>>, std::is_integral<U>>>
             formatElement_(std::ostream& os, const T element) {
                 stf::format_utils::formatHex(os, element);
             }
 
             template<typename U = T>
-            static inline typename std::enable_if<!std::is_enum<U>::value && !std::is_integral<U>::value>::type
+            static inline std::enable_if_t<std::negation_v<type_utils::is_integral_or_enum<U>>>
             formatElement_(std::ostream& os, const T element) {
                 os << element;
             }

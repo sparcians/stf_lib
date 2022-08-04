@@ -92,22 +92,24 @@ namespace stf {
         }
     }
 
-    void STFWriter::addHeaderComments(const std::vector<ConstUniqueRecordHandle<CommentRecord>>& comments) {
-        for(const auto& c: comments) {
-            header_comments_.emplace_back(*c);
-        }
+    void STFWriter::addHeaderComments(const std::vector<STFRecord::ConstHandle<CommentRecord>>& comments) {
+        std::transform(std::begin(comments),
+                       std::end(comments),
+                       std::back_inserter(header_comments_),
+                       [](const auto& c) { return *c; }
+        );
     }
 
     void STFWriter::setISA(ISA isa) {
-        isa_ = STFRecordPool::make<ISARecord>(isa);
+        isa_ = STFRecord::make<ISARecord>(isa);
     }
 
     void STFWriter::setHeaderIEM(INST_IEM iem) {
-        initial_iem_ = STFRecordPool::make<InstIEMRecord>(iem);
+        initial_iem_ = STFRecord::make<InstIEMRecord>(iem);
     }
 
     void STFWriter::setHeaderPC(uint64_t pc) {
-        initial_pc_ = STFRecordPool::make<ForcePCRecord>(pc);
+        initial_pc_ = STFRecord::make<ForcePCRecord>(pc);
     }
 
     void STFWriter::addTraceInfo(const TraceInfoRecord& rec) {
@@ -130,7 +132,7 @@ namespace stf {
                                      comment));
     }
 
-    void STFWriter::addTraceInfoRecords(const std::vector<ConstUniqueRecordHandle<TraceInfoRecord>>& records) {
+    void STFWriter::addTraceInfoRecords(const std::vector<STFRecord::ConstHandle<TraceInfoRecord>>& records) {
         for(const auto& rec: records) {
             addTraceInfo(*rec);
         }
@@ -138,7 +140,7 @@ namespace stf {
 
     void STFWriter::setTraceFeature(const TRACE_FEATURES trace_feature) {
         if(!trace_features_) {
-            trace_features_ = STFRecordPool::make<TraceInfoFeatureRecord>(trace_feature);
+            trace_features_ = STFRecord::make<TraceInfoFeatureRecord>(trace_feature);
         }
         else {
             trace_features_->setFeature(trace_feature);
@@ -158,7 +160,7 @@ namespace stf {
     }
 
     void STFWriter::setVLen(const vlen_t vlen) {
-        vlen_config_ = STFRecordPool::make<VLenConfigRecord>(vlen);
+        vlen_config_ = STFRecord::make<VLenConfigRecord>(vlen);
     }
 
     void STFWriter::flushHeader() {
@@ -225,6 +227,7 @@ namespace stf {
         }
     }
 
+    // cppcheck-suppress unusedFunction
     void STFWriter::finalizeHeader() {
         static const EndOfHeaderRecord END_OF_HEADER_RECORD = EndOfHeaderRecord();
         if(header_finalized_) {
@@ -281,7 +284,7 @@ namespace stf {
     }
 
     STFWriter& STFWriter::operator<<(const STFRecord& rec) {
-        const auto desc = rec.getDescriptor();
+        const auto desc = rec.getId();
         const auto encoded_desc = descriptors::conversion::toEncoded(desc);
         const bool last_was_memory_access = last_desc_ == descriptors::encoded::Descriptor::STF_INST_MEM_ACCESS;
         const bool last_was_bus_access = last_desc_ == descriptors::encoded::Descriptor::STF_BUS_MASTER_ACCESS;
@@ -339,10 +342,11 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_BUS_MASTER_CONTENT:
             case descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK:
             case descriptors::internal::Descriptor::STF_INST_MICROOP:
+            case descriptors::internal::Descriptor::STF_TRANSACTION:
                 stf_assert(headerFinalized(), "Attempted to write " << desc << " record before finalizing the header");
                 break;
             case descriptors::internal::Descriptor::STF_RESERVED:
-            case descriptors::internal::Descriptor::STF_RESERVED_END:
+            case descriptors::internal::Descriptor::RESERVED_END:
                 stf_throw("Attempted to write reserved record: " << desc);
                 break;
         }

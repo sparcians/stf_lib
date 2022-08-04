@@ -87,7 +87,7 @@ namespace stf {
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
             template <typename T>
-            inline typename std::enable_if<std::is_enum<T>::value, size_t>::type
+            inline std::enable_if_t<std::is_enum_v<T>, size_t>
             direct_read_(T& data, bool ignore_end_of_chunks = false) {
                 enums::int_t<T> val;
                 size_t num_bytes = direct_read_(&val, 1, ignore_end_of_chunks);
@@ -101,7 +101,7 @@ namespace stf {
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
             template <typename T>
-            inline typename std::enable_if<std::is_arithmetic<T>::value, size_t>::type
+            inline std::enable_if_t<std::is_arithmetic_v<T>, size_t>
             direct_read_(T& data, bool ignore_end_of_chunks = false) {
                 return direct_read_(&data, 1, ignore_end_of_chunks);
             }
@@ -149,7 +149,7 @@ namespace stf {
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
             template <typename T>
-            inline typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value, size_t>::type
+            inline std::enable_if_t<type_utils::is_arithmetic_or_enum_v<T>, size_t>
             direct_read_(std::vector<T>& data, bool ignore_end_of_chunks = false) {
                 size_t size;
                 direct_read_(size, ignore_end_of_chunks);
@@ -164,7 +164,7 @@ namespace stf {
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
             template <typename T>
-            inline typename std::enable_if<!(std::is_arithmetic<T>::value || std::is_enum<T>::value), size_t>::type
+            inline std::enable_if_t<std::negation_v<type_utils::is_arithmetic_or_enum<T>>, size_t>
             direct_read_(std::vector<T>& data, bool ignore_end_of_chunks = false) {
                 size_t size;
                 direct_read_(size, ignore_end_of_chunks);

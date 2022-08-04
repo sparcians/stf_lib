@@ -8,53 +8,13 @@
 
 namespace stf {
     /**
-     * \class TypeAwareSTFRecord
+     * \typedef TypeAwareSTFRecord
      *
      * STFRecord that can introspect its own type
      *
      */
     template<typename T>
-    class TypeAwareSTFRecord : public STFRecord, public TypeAwareSTFObject<TypeAwareSTFRecord<T>, STFRecord::id_type> {
-        private:
-            /**
-             * Packs a TypeAwareSTFRecord into an STFOFstream
-             * \param writer STFOFstream to use
-             */
-            inline void pack(STFOFstream& writer) const final {
-                static_cast<const T*>(this)->pack_impl(writer);
-            }
-
-        protected:
-            TypeAwareSTFRecord() :
-                STFRecord(getTypeId())
-            {
-            }
-
-        public:
-            using type_aware_object = TypeAwareSTFObject<TypeAwareSTFRecord<T>, STFRecord::id_type>;
-            using type_aware_object::getTypeId;
-
-            /**
-             * Makes a copy of this record
-             */
-            STFRecord::UniqueHandle clone() const final {
-                return STFRecordPool::construct<T>(*static_cast<const T*>(this));
-            }
-
-            inline ~TypeAwareSTFRecord() override {
-                static_assert(std::is_base_of<TypeAwareSTFRecord<T>, T>::value,
-                              "Template parameter passed to TypeAwareSTFRecord must inherit from TypeAwareSTFRecord");
-            }
-
-            /**
-             * Formats a record into an ostream
-             * \param os ostream to use
-             */
-            void format(std::ostream& os) const final {
-                os << getDescriptor() << ' ';
-                static_cast<const T*>(this)->format_impl(os);
-            }
-    };
+    using TypeAwareSTFRecord = TypeAwareSTFObject<T, STFRecord>;
 
     /**
      * \class GenericEmptyRecord
@@ -151,7 +111,7 @@ namespace stf {
              * \param os ostream to use
              */
             template<typename T = DataT>
-            inline typename std::enable_if<std::is_enum<T>::value>::type
+            inline std::enable_if_t<std::is_enum_v<T>>
             format_impl(std::ostream& os) const {
                 os << data_;
             }
@@ -161,7 +121,7 @@ namespace stf {
              * \param os ostream to use
              */
             template<typename T = DataT>
-            inline typename std::enable_if<!std::is_enum<T>::value>::type
+            inline std::enable_if_t<std::negation_v<std::is_enum<T>>>
             format_impl(std::ostream& os) const {
                 format_utils::formatHex(os, data_);
             }

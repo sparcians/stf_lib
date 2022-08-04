@@ -34,7 +34,7 @@ namespace stf {
     class RecordFilter {
         private:
             using IntDescriptor = descriptors::internal::Descriptor;
-            std::bitset<descriptors::internal::NUM_DESCRIPTORS> ignored_records_;
+            std::bitset<enums::size<IntDescriptor>()> ignored_records_;
 
         public:
             /**

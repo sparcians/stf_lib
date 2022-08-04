@@ -38,8 +38,8 @@ namespace stf {
      */
     class MemAccess {
         private:
-            const InstMemAccessRecord* access_;
-            const InstMemContentRecord* data_;
+            const InstMemAccessRecord* access_ = nullptr;
+            const InstMemContentRecord* data_ = nullptr;
 
         public:
             MemAccess() = default;
@@ -440,14 +440,43 @@ namespace stf {
                             using vec_iterator = typename VecType::const_iterator;
                             vec_iterator it_;
 
+                            inline void skipToVec_(const VecType* next_vec, const vec_iterator& next_it) {
+                                cur_vec_ = next_vec;
+                                it_ = next_it;
+                            }
+
+                            inline void skipToVec1_() {
+                                skipToVec_(parent_->vec1_, std::prev(cur_vec_->end()));
+                            }
+
+                            inline void skipToVec2_() {
+                                skipToVec_(parent_->vec2_, cur_vec_->begin());
+                            }
+
                             /**
                              * Advances iterator to the next vector if we've reached the end of the first vector
                              */
-                            inline void checkIterator_() {
+                            inline void checkIteratorFwd_() {
                                 if(STF_EXPECT_FALSE(cur_vec_ == parent_->vec1_ && it_ == parent_->vec1_->end())) {
-                                    cur_vec_ = parent_->vec2_;
-                                    it_ = parent_->vec2_->begin();
+                                    skipToVec2_();
                                 }
+                            }
+
+                            /**
+                             * Advances iterator to the previous vector if we've reached the beginning of the second vector while decrementing
+                             */
+                            inline bool checkIteratorRev_() {
+                                if(STF_EXPECT_FALSE(cur_vec_ == parent_->vec2_ && it_ == parent_->vec2_->begin())) {
+                                    skipToVec1_();
+                                    return true;
+                                }
+                                return false;
+                            }
+
+                            inline void checkParents_(const iterator& rhs) const {
+                                stf_assert((parent_ == rhs.parent_) ||
+                                           ((parent_->vec1_ == rhs.parent_->vec1_) && (parent_->vec2_ == rhs.parent_->vec2_)),
+                                           "Attempted to compare iterators from different vectors");
                             }
 
                             /**
@@ -464,12 +493,48 @@ namespace stf {
 
                         public:
                             /**
+                             * \typedef iterator_category
+                             * Uses the iterator_category of the underlying vector iterator
+                             */
+                            using iterator_category = typename vec_iterator::iterator_category;
+                            /**
+                             * \typedef difference_type
+                             * Uses the difference_type of the underlying vector iterator
+                             */
+                            using difference_type = typename vec_iterator::difference_type;
+                            /**
+                             * \typedef value_type
+                             * Uses the value_type of the underlying vector iterator
+                             */
+                            using value_type = typename vec_iterator::value_type;
+                            /**
+                             * \typedef pointer
+                             * Uses the pointer type of the underlying vector iterator
+                             */
+                            using pointer = typename vec_iterator::pointer;
+                            /**
+                             * \typedef reference
+                             * Uses the reference type of the underlying vector iterator
+                             */
+                            using reference = typename vec_iterator::reference;
+
+                        private:
+                            difference_type pos_() const {
+                                difference_type pos = it_ - cur_vec_->begin();
+                                if(cur_vec_ != parent_->vec1_) {
+                                    pos += parent_->vec1_->size();
+                                }
+                                return pos;
+                            }
+
+                        public:
+                            /**
                              * Constructs a begin iterator to the specified CombinedView
                              * \param parent Parent CombinedView object
                              */
                             static inline iterator constructBegin(const CombinedView* parent) {
                                 iterator it(parent, parent->vec1_, parent->vec1_->begin());
-                                it.checkIterator_();
+                                it.checkIteratorFwd_();
                                 return it;
                             }
 
@@ -482,21 +547,126 @@ namespace stf {
                             }
 
                             /**
-                             * Advances the iterator (prefix)
+                             * Increment operator (prefix)
                              */
                             inline iterator& operator++() {
                                 ++it_;
-                                checkIterator_();
+                                checkIteratorFwd_();
                                 return *this;
                             }
 
                             /**
-                             * Advances the iterator (postfix)
+                             * Increment operator (postfix)
                              */
-                            inline iterator operator++(int) {
+                            inline iterator operator++(int) { // cppcheck-suppress functionConst
                                 auto temp = *this;
                                 ++(*this);
                                 return temp;
+                            }
+
+                            /**
+                             * Decrement operator (prefix)
+                             */
+                            inline iterator& operator--() {
+                                it_ -= !checkIteratorRev_();
+                                return *this;
+                            }
+
+                            /**
+                             * Decrement operator (postfix)
+                             */
+                            inline iterator operator--(int) { // cppcheck-suppress functionConst
+                                auto temp = *this;
+                                --(*this);
+                                return temp;
+                            }
+
+                            /**
+                             * Increment assignment operator
+                             * \param n Amount to increment by
+                             */
+                            inline iterator& operator+=(const difference_type n) {
+                                const auto pos = it_ - cur_vec_->begin();
+                                const auto cur_vec_size = cur_vec_->size();
+                                if(n > 0) {
+                                    if(pos + n > cur_vec_size) {
+                                        stf_assert(cur_vec_ == parent_->vec1_,
+                                                   "Tried to seek past the end of the vector");
+                                        skipToVec2_();
+                                        it_ += n - (cur_vec_size - pos);
+                                    }
+                                    else {
+                                        it_ += n;
+                                        checkIteratorFwd_();
+                                    }
+                                }
+                                else if(n < 0) {
+                                    if(pos + n < 0) {
+                                        stf_assert(cur_vec_ == parent_->vec2_,
+                                                   "Tried to seek before the beginning of the vector");
+                                        skipToVec1_();
+                                        it_ += n + pos + 1;
+                                    }
+                                    else {
+                                        it_ += n + checkIteratorRev_();
+                                    }
+                                }
+                                return *this;
+                            }
+
+                            /**
+                             * Decrement assignment operator
+                             * \param n Amount to decrement by
+                             */
+                            inline iterator& operator-=(const difference_type n) {
+                                return *this += -n;
+                            }
+
+                            /**
+                             * Addition operator
+                             * \param n Amount to add to iterator
+                             */
+                            inline iterator operator+(const difference_type n) {
+                                auto temp = *this;
+                                temp += n;
+                                return temp;
+                            }
+
+                            /**
+                             * Addition operator
+                             * \param n Amount to add to iterator
+                             * \param it Iterator
+                             */
+                            friend inline iterator operator+(const difference_type n, const iterator& it) {
+                                return it + n;
+                            }
+
+                            /**
+                             * Subtraction operator
+                             * \param n Amount to subtract
+                             */
+                            inline iterator operator-(const difference_type n) {
+                                auto temp = *this;
+                                temp -= n;
+                                return temp;
+                            }
+
+                            /**
+                             * Difference operator
+                             * \param b Iterator
+                             * \param a Iterator
+                             */
+                            friend inline difference_type operator-(const iterator& b, const iterator& a) {
+                                b.checkParents_(a);
+                                return b.pos_() - a.pos_();
+                            }
+
+                            /**
+                             * Dereferences the iterator
+                             * \param n Offset to dereference from
+                             */
+                            inline reference operator[](const difference_type n) {
+                                return *(*this + n);
                             }
 
                             /**
@@ -516,15 +686,47 @@ namespace stf {
                             /**
                              * Equality operator
                              */
-                            inline bool operator==(const iterator& rhs) {
+                            inline bool operator==(const iterator& rhs) const {
                                 return cur_vec_ == rhs.cur_vec_ && it_ == rhs.it_;
                             }
 
                             /**
                              * Inequality operator
                              */
-                            inline bool operator!=(const iterator& rhs) {
+                            inline bool operator!=(const iterator& rhs) const {
                                 return cur_vec_ != rhs.cur_vec_ || it_ != rhs.it_;
+                            }
+
+                            /**
+                             * Less-than operator
+                             */
+                            inline bool operator<(const iterator& rhs) const {
+                                checkParents_(rhs);
+                                return pos_() < rhs.pos_();
+                            }
+
+                            /**
+                             * Less-than or equal-to operator
+                             */
+                            inline bool operator<=(const iterator& rhs) const {
+                                checkParents_(rhs);
+                                return pos_() <= rhs.pos_();
+                            }
+
+                            /**
+                             * Greater-than operator
+                             */
+                            inline bool operator>(const iterator& rhs) const {
+                                checkParents_(rhs);
+                                return pos_() > rhs.pos_();
+                            }
+
+                            /**
+                             * Greater-than or equal-to operator
+                             */
+                            inline bool operator>=(const iterator& rhs) const {
+                                checkParents_(rhs);
+                                return pos_() >= rhs.pos_();
                             }
                     };
 
@@ -754,6 +956,7 @@ namespace stf {
 
             /**
              * Checks whether this is a vector instruction. Used by STFInstReader while building the STFInst
+             * \param not_state If true, this is not a register state record
              * \param rec InstRegRecord used to check for vector register accesses
              */
             inline bool checkIfVector_(const bool not_state, const InstRegRecord& rec) {
@@ -774,8 +977,8 @@ namespace stf {
                  * \param lhs First STFRecord to compare
                  * \param rhs Second STFRecord to compare
                  */
-                bool operator()(const STFRecord* lhs, const STFRecord* rhs) {
-                    return descriptors::conversion::reverseEncodedCompare(lhs->getDescriptor(), rhs->getDescriptor());
+                bool operator()(const STFRecord* lhs, const STFRecord* rhs) const {
+                    return descriptors::conversion::reverseEncodedCompare(lhs->getId(), rhs->getId());
                 }
             };
 
@@ -885,7 +1088,7 @@ namespace stf {
                 for (const auto& vec_pair: orig_records_.sorted()) {
                     if(STF_EXPECT_FALSE(!extra_recs.empty() &&
                                         !descriptors::conversion::encodedCompare(vec_pair.first,
-                                                                                 extra_recs.top()->getDescriptor()))) {
+                                                                                 extra_recs.top()->getId()))) {
                             stf_writer << *extra_recs.top();
                     }
 
@@ -910,7 +1113,7 @@ namespace stf {
             /**
              * \brief Returns whether the instruction is kernel code
              */
-            bool isKernelCode() const {
+            bool isKernelCode() const { // cppcheck-suppress functionStatic
                 //FIXME: Needs to actually do something
                 return false;
             }
@@ -1307,7 +1510,7 @@ namespace stf {
                                                 const uint32_t tid,
                                                 const uint32_t tgid,
                                                 const bool is_skipped) {
-                    static constexpr bool is_compressed = std::is_same<InstRecordType, InstOpcode16Record>::value;
+                    static constexpr bool is_compressed = std::is_same_v<InstRecordType, InstOpcode16Record>;
 
                     inst.opcode_ = rec.getOpcode();
                     inst.pc_ = rec.getPC();

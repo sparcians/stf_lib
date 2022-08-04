@@ -1,5 +1,5 @@
 #include "stf_ofstream.hpp"
-#include "stf_record.hpp"
+#include "stf_object.hpp"
 
 namespace stf {
     STFOFstream& STFOFstream::operator<<(const std::string& data) {
@@ -7,8 +7,7 @@ namespace stf {
         return *this;
     }
 
-    STFOFstream& STFOFstream::operator<<(const STFRecord& rec) {
-        *this << descriptors::conversion::toEncoded(rec.getDescriptor());
+    STFOFstream& STFOFstream::operator<<(const STFBaseObject& rec) {
         rec.pack(*this);
         return *this;
     }

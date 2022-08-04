@@ -42,7 +42,7 @@ namespace stf {
          * \param pad_char padding character
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_integral<T>::value>::type
+        static inline std::enable_if_t<std::is_integral_v<T>>
         printDecLeft(T val, int width = 0, char pad_char = ' ') {
             format_utils::formatDecLeft(std::cout, val, width, pad_char);
         }
@@ -54,7 +54,7 @@ namespace stf {
          * \param pad_char padding character
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_integral<T>::value>::type
+        static inline std::enable_if_t<std::is_integral_v<T>>
         printHex(T val, int width = format_utils::numHexDigits<T>(), char pad_char = '0') {
             format_utils::formatHex(std::cout, val, width, pad_char);
         }
@@ -66,7 +66,7 @@ namespace stf {
          * \param pad_char padding character
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_integral<T>::value>::type
+        static inline std::enable_if_t<std::is_integral_v<T>>
         printDec(T val, int width = 0, char pad_char = '0') {
             format_utils::formatDec(std::cout, val, width, pad_char);
         }
@@ -85,7 +85,7 @@ namespace stf {
          * \param val value to format
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_integral<T>::value>::type
+        static inline std::enable_if_t<std::is_integral_v<T>>
         printVA(const T val) {
             format_utils::formatVA(std::cout, val);
         }
@@ -95,7 +95,7 @@ namespace stf {
          * \param val value to format
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_integral<T>::value>::type
+        static inline std::enable_if_t<std::is_integral_v<T>>
         printPA(const T val) {
             format_utils::formatPA(std::cout, val);
         }
@@ -105,7 +105,7 @@ namespace stf {
          * \param val value to format
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_integral<T>::value>::type
+        static inline std::enable_if_t<std::is_integral_v<T>>
         printTID(const T val) {
             format_utils::formatTID(std::cout, val);
         }
@@ -135,7 +135,7 @@ namespace stf {
          * \param precision number of digits to include after decimal point - omit for default precision
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_floating_point<T>::value>::type
+        static inline std::enable_if_t<std::is_floating_point_v<T>>
         printFloat(const T val, const int width = 0, const int precision = -1) {
             format_utils::formatFloat(std::cout, val, width, precision);
         }
@@ -147,7 +147,7 @@ namespace stf {
          * \param precision number of digits to include after decimal point - omit for default precision
          */
         template<typename T>
-        static inline typename std::enable_if<std::is_floating_point<T>::value>::type
+        static inline std::enable_if_t<std::is_floating_point_v<T>>
         printPercent(const T val, const int width = 0, const int precision = -1) {
             format_utils::formatPercent(std::cout, val, width, precision);
         }

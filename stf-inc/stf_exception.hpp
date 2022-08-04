@@ -44,7 +44,7 @@ namespace stf
                      * Constructs a stringstream, initializing it with the specified string
                      * \param str String value to initialize stringstream with
                      */
-                    stringstream(const std::string& str) :
+                    explicit stringstream(const std::string& str) :
                         ss_(str, std::ostringstream::ate)
                     {
                     }
@@ -54,9 +54,9 @@ namespace stf
                      * \param msg String message
                      */
                     template<class T>
-                    typename std::enable_if<std::is_same<T, std::string>::value ||
-                                            std::is_same<T, std::string_view>::value ||
-                                            !type_utils::is_iterable<T>::value, stringstream&>::type
+                    std::enable_if_t<std::disjunction_v<std::is_same<T, std::string>,
+                                                                 std::is_same<T, std::string_view>,
+                                                                 std::negation<type_utils::is_iterable<T>>>, stringstream&>
                     operator<<(const T & msg) {
                         ss_ << msg;
                         return *this;
@@ -67,9 +67,9 @@ namespace stf
                      * \param msg_vec Collection to format
                      */
                     template<typename Vector>
-                    typename std::enable_if<!std::is_same<Vector, std::string>::value &&
-                                            !std::is_same<Vector, std::string_view>::value &&
-                                            type_utils::is_iterable<Vector>::value, stringstream&>::type
+                    std::enable_if_t<std::conjunction_v<std::negation<std::is_same<Vector, std::string>>,
+                                                                 std::negation<std::is_same<Vector, std::string_view>>,
+                                                                 type_utils::is_iterable<Vector>>, stringstream&>
                     operator<<(const Vector& msg_vec) {
                         bool first = true;
                         *this << "[";

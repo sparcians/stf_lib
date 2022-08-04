@@ -28,7 +28,7 @@ cdef extern from "stf_descriptor.hpp" namespace "stf::descriptors::internal":
         _STF_VLEN_CONFIG 'stf::descriptors::internal::Descriptor::STF_VLEN_CONFIG'
         _STF_END_HEADER 'stf::descriptors::internal::Descriptor::STF_END_HEADER'
         _STF_RESERVED 'stf::descriptors::internal::Descriptor::STF_RESERVED'
-        _STF_RESERVED_END 'stf::descriptors::internal::Descriptor::STF_RESERVED_END'
+        _RESERVED_END 'stf::descriptors::internal::Descriptor::RESERVED_END'
 
 cpdef enum InternalDescriptor:
         STF_INST_REG = <uint8_t> _STF_INST_REG
@@ -56,4 +56,4 @@ cpdef enum InternalDescriptor:
         STF_VLEN_CONFIG = <uint8_t> _STF_VLEN_CONFIG
         STF_END_HEADER = <uint8_t> _STF_END_HEADER
         STF_RESERVED = <uint8_t> _STF_RESERVED
-        STF_RESERVED_END = <uint8_t> _STF_RESERVED_END
+        STF_RESERVED_END = <uint8_t> _RESERVED_END

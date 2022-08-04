@@ -53,6 +53,16 @@ namespace stf {
                                                                     DEFAULT_VEC_SIZE_>;
                     vec_type data_;
 
+                    void copyFrom_(const SmallVector& rhs) {
+                        std::transform(std::begin(rhs),
+                                       std::end(rhs),
+                                       std::back_inserter(data_),
+                                       [](const auto& ptr) {
+                                           return std::move(ptr->clone());
+                                       }
+                        );
+                    }
+
                 public:
                     /**
                      * \typedef iterator
@@ -70,6 +80,34 @@ namespace stf {
                         data_(1)
                     {
                     }
+
+                    /**
+                     * Copy constructor
+                     * \param rhs SmallVector to copy
+                     */
+                    SmallVector(const SmallVector& rhs) {
+                        copyFrom_(rhs);
+                    }
+
+                    /**
+                     * Assignment operator
+                     * \param rhs SmallVector to copy
+                     */
+                    SmallVector& operator=(const SmallVector& rhs) {
+                        clear();
+                        copyFrom_(rhs);
+                        return *this;
+                    }
+
+                    /**
+                     * Move constructor
+                     */
+                    SmallVector(SmallVector&&) = default;
+
+                    /**
+                     * Move assignment operator
+                     */
+                    SmallVector& operator=(SmallVector&&) = default;
 
                     /**
                      * Gets an iterator to the beginning of the vector
@@ -215,7 +253,7 @@ namespace stf {
                     class StaticVector {
                         private:
                             size_t size_ = 0;
-                            using ArrayType = std::array<value_type, descriptors::internal::NUM_DESCRIPTORS>;
+                            using ArrayType = enums::EnumArray<value_type, descriptors::internal::Descriptor>;
                             ArrayType arr_;
 
                         public:
@@ -227,6 +265,11 @@ namespace stf {
                                     arr_[i].first = static_cast<descriptors::internal::Descriptor>(i);
                                 }
                             }
+
+                            StaticVector(const StaticVector&) = default;
+                            StaticVector(StaticVector&&) = default;
+                            StaticVector& operator=(const StaticVector&) = default;
+                            StaticVector& operator=(StaticVector&&) = default;
 
                             inline bool empty() const {
                                 return size_ == 0;
@@ -308,7 +351,7 @@ namespace stf {
                     }
 
                     inline const STFRecord* emplace(STFRecord::UniqueHandle&& rec) {
-                        return vec_array_[static_cast<key_type>(rec->getDescriptor())].second.emplace_back(std::move(rec));
+                        return vec_array_[static_cast<key_type>(rec->getId())].second.emplace_back(std::move(rec));
                     }
 
                     inline auto& operator[](const key_type key) {
@@ -374,51 +417,6 @@ namespace stf {
             }
 
         public:
-            /**
-             * Default constructor
-             */
-            RecordMap() = default;
-
-            /**
-             * Copy constructor
-             * \param rhs RecordMap that is being copied
-             */
-            RecordMap(const RecordMap& rhs) {
-                for(const auto& p: rhs.map_) {
-                    auto& vec = map_[p.first];
-                    for(const auto& r: p.second) {
-                        vec.emplace_back(r->clone());
-                    }
-                }
-            }
-
-            /**
-             * Move constructor
-             */
-            RecordMap(RecordMap&&) = default;
-
-            /**
-             * Copy assignment operator
-             * \param rhs RecordMap that is being copied
-             */
-            RecordMap& operator=(const RecordMap& rhs) {
-                clear();
-
-                for(const auto& p: rhs.map_) {
-                    auto& vec = map_[p.first];
-                    for(const auto& r: p.second) {
-                        vec.emplace_back(r->clone());
-                    }
-                }
-
-                return *this;
-            }
-
-            /**
-             * Move assignment operator
-             */
-            RecordMap& operator=(RecordMap&&) = default;
-
             /**
              * \typedef const_iterator
              *

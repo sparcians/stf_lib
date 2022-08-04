@@ -14,7 +14,7 @@ namespace stf {
      */
     template<typename T, typename ... Ts>
     class __attribute__ ((packed)) PackedContainer {
-        static_assert(type_utils::are_trivially_copyable<T, Ts...>::value,
+        static_assert(type_utils::are_trivially_copyable_v<T, Ts...>,
                       "All types held in a PackedContainer must be trivially copyable!");
 
         private:

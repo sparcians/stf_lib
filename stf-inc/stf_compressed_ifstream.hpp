@@ -93,7 +93,7 @@ namespace stf {
             // Have to override the base class destructor to ensure that *our* close method gets called before destruction
             ~STFCompressedIFstream() override {
                 if(stream_) {
-                    close();
+                    STFCompressedIFstream::close();
                 }
             }
 

@@ -17,7 +17,6 @@
 #include "stf_item.hpp"
 #include "stf_reader.hpp"
 #include "stf_record.hpp"
-#include "stf_record_pointers.hpp"
 #include "stf_record_types.hpp"
 
 /**
@@ -340,7 +339,7 @@ namespace stf {
                 STFRecord::UniqueHandle urec;
                 operator>>(urec);
 
-                if(STF_EXPECT_FALSE(filter_.isFiltered(urec->getDescriptor()))) {
+                if(STF_EXPECT_FALSE(filter_.isFiltered(urec->getId()))) {
                     return nullptr;
                 }
 

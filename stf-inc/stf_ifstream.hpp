@@ -9,13 +9,13 @@
 
 #include "stf_enum_utils.hpp"
 #include "stf_fstream.hpp"
+#include "stf_factory_decl.hpp"
 #include "stf_packed_container.hpp"
-#include "stf_record_pointers.hpp"
-#include "stf_record_pool.hpp"
 #include "stf_vector_view.hpp"
+#include "type_utils.hpp"
 
 namespace stf {
-    class STFRecord;
+    class STFBaseObject;
 
     /**
      * \class STFIFstream
@@ -207,7 +207,7 @@ namespace stf {
              * Reads an enum value
              */
             template<typename T>
-            inline typename std::enable_if<std::is_enum<T>::value, T>::type read_() {
+            inline std::enable_if_t<std::is_enum_v<T>, T> read_() {
                 return static_cast<T>(read_<enums::int_t<T>>());
             }
 
@@ -215,7 +215,7 @@ namespace stf {
              * Reads an arithmetic value
              */
             template<typename T>
-            inline typename std::enable_if<std::is_arithmetic<T>::value, T>::type read_() {
+            inline std::enable_if_t<std::is_arithmetic_v<T>, T> read_() {
                 T val = 0;
                 readIntoPtr_(&val);
                 return val;
@@ -226,7 +226,7 @@ namespace stf {
              * \param data Value is read into this variable
              */
             template<typename T>
-            inline typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value, STFIFstream&>::type operator>>(T& data) {
+            inline std::enable_if_t<type_utils::is_arithmetic_or_enum_v<T>, STFIFstream&> operator>>(T& data) {
                 data = read_<T>();
                 return *this;
             }
@@ -236,7 +236,9 @@ namespace stf {
              * \param data Value is read into this variable
              */
             template<typename T>
-            inline typename std::enable_if<!(std::is_arithmetic<T>::value || std::is_enum<T>::value) && std::is_trivially_copyable<T>::value, STFIFstream&>::type operator>>(T& data) {
+            inline std::enable_if_t<std::conjunction_v<std::negation<type_utils::is_arithmetic_or_enum<T>>,
+                                                                std::is_trivially_copyable<T>>, STFIFstream&>
+            operator>>(T& data) {
                 readIntoPtr_(&data);
                 return *this;
             }
@@ -335,33 +337,38 @@ namespace stf {
                 STFFstream::open(filename, "rb");
             }
 
-            friend class STFRecord;
+            friend class STFBaseObject;
+            template<typename PoolType, typename Enum>
+            friend class Factory;
+
             template<typename T, typename SerializedSizeT>
             friend class SerializableContainer;
 
             /**
-             * Reads an STFRecord
-             * \param rec Record is read into this variable
+             * Reads an STFObject
+             * \param ptr Record is read into this pointer
              */
-            STFIFstream& operator>>(STFRecordConstUniqueHandle& rec);
+            template<typename T, typename Deleter>
+            inline STFIFstream& operator>>(std::unique_ptr<T, Deleter>& ptr) {
+                static_assert(std::is_base_of_v<STFBaseObject, T>,
+                              "Must be derived from STFBaseObject");
+                try {
+                    ptr = factory_lookup<std::remove_cv_t<T>>::factory::construct(*this);
+                }
+                catch(const InvalidDescriptorException&) {
+                    // Check to see if the invalid descriptor was because the file ended - if it was we'll raise a new exception
+                    checkStream_();
+                    // Otherwise, re-raise the current exception
+                    throw;
+                }
+                return *this;
+            }
 
             /**
              * Skips the stream forward by the given number of instructions
              * \param num_instructions Number of instructions to skip
              */
-            inline virtual void seek(size_t num_instructions) {
-                const size_t end_inst_num = num_insts_ + num_instructions;
-                STFRecordConstUniqueHandle rec;
-
-                try {
-                    while(operator bool() && (num_insts_ < end_inst_num)) {
-                        operator>>(rec);
-                    }
-                }
-                catch(const EOFException&) {
-                    stf_throw("Attempted to seek past the end of the trace");
-                }
-            }
+            virtual void seek(size_t num_instructions);
     };
 } // end namespace stf
 

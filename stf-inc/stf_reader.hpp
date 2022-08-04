@@ -34,7 +34,6 @@
 #endif
 
 namespace stf {
-    class STFRecord;
     class VersionRecord;
     class CommentRecord;
     class ISARecord;
@@ -52,17 +51,15 @@ namespace stf {
      */
     class STFReader : public STFReaderWriterBase {
         private:
-            friend class STFRecord;
-
             std::unique_ptr<STFIFstream> stream_;
-            ConstUniqueRecordHandle<VersionRecord> version_;
-            std::vector<ConstUniqueRecordHandle<CommentRecord>> header_comments_;
-            ConstUniqueRecordHandle<ISARecord> isa_;
-            ConstUniqueRecordHandle<InstIEMRecord> initial_iem_;
-            ConstUniqueRecordHandle<ForcePCRecord> initial_pc_;
-            ConstUniqueRecordHandle<ProcessIDExtRecord> initial_process_id_;
-            std::vector<ConstUniqueRecordHandle<TraceInfoRecord>> trace_info_records_;
-            ConstUniqueRecordHandle<TraceInfoFeatureRecord> trace_features_;
+            STFRecord::ConstHandle<VersionRecord> version_;
+            std::vector<STFRecord::ConstHandle<CommentRecord>> header_comments_;
+            STFRecord::ConstHandle<ISARecord> isa_;
+            STFRecord::ConstHandle<InstIEMRecord> initial_iem_;
+            STFRecord::ConstHandle<ForcePCRecord> initial_pc_;
+            STFRecord::ConstHandle<ProcessIDExtRecord> initial_process_id_;
+            std::vector<STFRecord::ConstHandle<TraceInfoRecord>> trace_info_records_;
+            STFRecord::ConstHandle<TraceInfoFeatureRecord> trace_features_;
 
             /**
              * Reads the STF header
@@ -179,7 +176,7 @@ namespace stf {
             /**
              * Gets the trace info records
              */
-            const std::vector<ConstUniqueRecordHandle<TraceInfoRecord>>& getTraceInfo() const {
+            const std::vector<STFRecord::ConstHandle<TraceInfoRecord>>& getTraceInfo() const {
                 return trace_info_records_;
             }
 
@@ -191,7 +188,7 @@ namespace stf {
             /**
              * Gets the trace feature record
              */
-            const ConstUniqueRecordHandle<TraceInfoFeatureRecord>& getTraceFeatures() const {
+            const STFRecord::ConstHandle<TraceInfoFeatureRecord>& getTraceFeatures() const {
                 return trace_features_;
             }
 
@@ -211,9 +208,9 @@ namespace stf {
 
             /**
              * Copies the header to the specifed STFWriter
-             * \param writer STFWriter to use
+             * \param stf_writer STFWriter to use
              */
-            void copyHeader(STFWriter& writer) const;
+            void copyHeader(STFWriter& stf_writer) const;
 
             /**
              * Gets the current PC

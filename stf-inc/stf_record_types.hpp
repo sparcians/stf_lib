@@ -11,7 +11,6 @@
 #include "format_utils.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_record.hpp"
-#include "stf_record_factory.hpp"
 #include "stf_record_interfaces.hpp"
 #include "stf_serializable_container.hpp"
 #include "stf_enums.hpp"
@@ -20,6 +19,7 @@
 #include "stf_vector_view.hpp"
 #include "stf_vlen.hpp"
 #include "util.hpp"
+#include "stf_protocol_data.hpp"
 
 namespace stf {
     /**
@@ -894,7 +894,7 @@ namespace stf {
             {
                 static_assert(sizeof...(content_data) > 0,
                               "Must specify at least one content data element");
-                static_assert(type_utils:: are_same<uint64_t, T...>::value,
+                static_assert(type_utils::are_same_v<uint64_t, T...>,
                               "Variadic EventRecord constructor is only valid for uint64_t");
             }
 
@@ -1222,7 +1222,7 @@ namespace stf {
              * \param vlen Vlen to use
              */
             template<typename VlenType>
-            inline static size_t calcVectorLen(const VlenType vlen) {
+            static inline size_t calcVectorLen(const VlenType vlen) {
                 constexpr auto VECTOR_DATA_SIZE = byte_utils::bitSize<decltype(data_)::value_type>();
                 constexpr auto SHIFT_AMT = math_utils::constexpr_log::log2(VECTOR_DATA_SIZE);
                 return (static_cast<size_t>(vlen) + VECTOR_DATA_SIZE - 1) >> SHIFT_AMT;
@@ -2204,6 +2204,79 @@ namespace stf {
             }
     };
 
+    /**
+     * \class TransactionRecord
+     *
+     * Represents a timestamped bus transaction in the trace
+     *
+     */
+    class TransactionRecord : public TypeAwareSTFRecord<TransactionRecord> {
+        private:
+            uint64_t transaction_id_;
+            uint64_t time_delta_;
+            protocols::ProtocolData::UniqueHandle protocol_data_;
+
+        public:
+            TransactionRecord() = default;
+
+            /**
+             * Unpacks a TransactionRecord from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            explicit TransactionRecord(STFIFstream& reader) {
+                unpack_impl(reader);
+            }
+
+            /**
+             * TransactionRecord copy constructor
+             * \param rhs Record to copy
+             */
+            TransactionRecord(const TransactionRecord& rhs) :
+                transaction_id_(rhs.transaction_id_),
+                time_delta_(rhs.time_delta_),
+                protocol_data_(rhs.protocol_data_->clone())
+            {
+            }
+
+            /**
+             * TransactionRecord move constructor
+             */
+            TransactionRecord(TransactionRecord&&) = default;
+
+            /**
+             * Packs an STFIdentifierRecord into an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            inline void pack_impl(STFOFstream& writer) const {
+                write_(writer,
+                       transaction_id_,
+                       time_delta_);
+                protocol_data_->pack(writer);
+            }
+
+            /**
+             * Unpacks an STFIdentifierRecord from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            __attribute__((always_inline))
+            inline void unpack_impl(STFIFstream& reader) {
+                read_(reader,
+                      transaction_id_,
+                      time_delta_);
+                reader >> protocol_data_;
+            }
+
+            /**
+             * Formats a TraceInfoRecord to an std::ostream
+             * \param os ostream to use
+             */
+            inline void format_impl(std::ostream& os) const {
+                os << "ID " << transaction_id_
+                   << "DELTA " << time_delta_
+                   << "PROTOCOL ";
+                protocol_data_->format(os);
+            }
+    };
 } // end namespace stf
 
 #endif

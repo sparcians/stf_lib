@@ -24,7 +24,7 @@ namespace stf {
          * Converts bytes to bits
          */
         template<typename T>
-        static constexpr T toBits(T bytes) {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, T> toBits(const T bytes) {
             constexpr T BYTES_TO_BITS = 8;
             return BYTES_TO_BITS * bytes;
         }
@@ -33,7 +33,7 @@ namespace stf {
          * Converts bytes to kilobytes
          */
         template<typename T>
-        static constexpr T toKB(T bytes) {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, T> toKB(const T bytes) {
             constexpr T KB_SHIFT = 10;
             return bytes >> KB_SHIFT;
         }
@@ -42,7 +42,7 @@ namespace stf {
          * Gets size of a type in bits
          */
         template<typename T>
-        static constexpr size_t bitSize() {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, size_t> bitSize() {
             return toBits(sizeof(T));
         }
 
@@ -50,7 +50,7 @@ namespace stf {
          * Gets a bitmask of a specified number of bits
          */
         template<typename T, size_t num_bits>
-        static constexpr T bitMask() {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, T> bitMask() {
             constexpr size_t MAX_BITS = bitSize<T>();
 
             static_assert(num_bits > 0 && num_bits <= MAX_BITS, "Mask must be >= 1 bit and <= sizeof(T) bits");
@@ -67,7 +67,7 @@ namespace stf {
          * Gets a bitmask of a specified number of bits
          */
         template<typename T>
-        inline T bitMask(const size_t num_bits) {
+        inline std::enable_if_t<std::is_integral_v<T>, T> bitMask(const size_t num_bits) {
             constexpr size_t MAX_BITS = bitSize<T>();
 
             stf_assert(num_bits > 0 && num_bits <= MAX_BITS, "Mask must be >= 1 bit and <= sizeof(T) bits");
@@ -86,6 +86,8 @@ namespace stf {
          */
         template<typename T>
         class BitExtractor {
+            static_assert(std::is_integral_v<T>, "BitExtractor can only be used on integral types");
+
             private:
                 /**
                  * \typedef U
@@ -115,7 +117,7 @@ namespace stf {
                      * Gets the bit at bit_idx from the specified value, optionally shifting it to dest_bit_idx
                      * \param val Value to extract the bit from
                      */
-                    static constexpr U get(const U val) {
+                    static constexpr U get(const U val) { // cppcheck-suppress passedByValue
                         U result = val & (U(1) << bit_idx);
 
 // Older (<10.0) GCC versions complain about shift assignment operators with -Wconversion
@@ -155,7 +157,7 @@ namespace stf {
                      * Gets the bits from [start_idx:end_idx] from the specified value, optionally shifting them to dest_start_idx
                      * \param val Value to extract the bits from
                      */
-                    static constexpr U get(const U val) {
+                    static constexpr U get(const U val) { // cppcheck-suppress passedByValue
                         constexpr U mask = bitMask<U, start_idx - end_idx + 1>() << end_idx;
                         U result = val & mask;
 
@@ -183,8 +185,8 @@ namespace stf {
                  * \param val Value to extract the bits from
                  */
                 template<typename ... BitArgs>
-                static constexpr typename std::enable_if<(std::is_base_of_v<BitParameterBase, BitArgs> && ...), U>::type
-                get(const U val) {
+                static constexpr std::enable_if_t<std::conjunction_v<std::is_base_of<BitParameterBase, BitArgs>...>, U>
+                get(const U val) { // cppcheck-suppress passedByValue
                     return (BitArgs::get(val) | ...);
                 }
         };
@@ -194,7 +196,7 @@ namespace stf {
          * \param val Value to extract bit range from
          */
         template<size_t start_idx, size_t end_idx, typename T>
-        static constexpr T getBitRange(const T val) {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, T> getBitRange(const T val) {
             return BitExtractor<T>::template BitRange<start_idx, end_idx>::get(val);
         }
 
@@ -203,7 +205,7 @@ namespace stf {
          * \param val Value to extract bit range from
          */
         template<size_t start_idx, size_t end_idx, size_t dest_start_idx, typename T>
-        static constexpr T getBitRange(const T val) {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, T> getBitRange(const T val) {
             return BitExtractor<T>::template BitRange<start_idx, end_idx, dest_start_idx>::get(val);
         }
 
@@ -212,7 +214,7 @@ namespace stf {
          * \param val Value to extract bit from
          */
         template<size_t bit_idx, typename T>
-        static constexpr T getBit(const T val) {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, T> getBit(const T val) {
             return BitExtractor<T>::template Bit<bit_idx>::get(val);
         }
 
@@ -221,7 +223,7 @@ namespace stf {
          * \param val Value to extract bit range from
          */
         template<size_t bit_idx, size_t dest_bit_idx, typename T>
-        static constexpr T getBit(const T val) {
+        static constexpr std::enable_if_t<std::is_integral_v<T>, T> getBit(const T val) {
             return BitExtractor<T>::template Bit<bit_idx, dest_bit_idx>::get(val);
         }
 
@@ -230,7 +232,9 @@ namespace stf {
          * \param val Value to sign extend
          */
         template<size_t Width, typename DestT, typename T>
-        static constexpr typename std::enable_if<sizeof(T) <= sizeof(DestT), DestT>::type
+        static constexpr std::enable_if_t<std::conjunction_v<std::is_integral<DestT>,
+                                                                      std::is_integral<T>,
+                                                                      type_utils::fits_in<T, DestT>>, DestT>
         signExtend(const T val) {
             struct Converter {
                 DestT to_extend:Width;
@@ -280,7 +284,7 @@ namespace stf {
              * \param n value to get log2 from
              */
             template<typename T>
-            static constexpr T log2(T n) {
+            static constexpr std::enable_if_t<std::is_integral_v<T>, T> log2(T n) {
                 return (n < 2) ? 0 : 1 + log2(n/2);
             }
 
@@ -289,7 +293,7 @@ namespace stf {
              * \param n value to get log2 from
              */
             template<typename T>
-            static constexpr T floor_log2(const T n) {
+            static constexpr std::enable_if_t<std::is_integral_v<T>, T> floor_log2(const T n) {
                 return static_cast<T>(byte_utils::bitSize<T>()) - static_cast<T>(__builtin_clz(n)) - 1;
             }
         };
@@ -298,7 +302,7 @@ namespace stf {
          * Sets mask bits in dest if cond is true
          */
         template<typename T>
-        inline T conditionalValue() {
+        inline std::enable_if_t<type_utils::is_integral_or_enum_v<T>, T> conditionalValue() {
             return static_cast<T>(0);
         }
 
@@ -306,18 +310,20 @@ namespace stf {
          * Sets mask bits in dest if cond is true
          */
         template<typename T>
-        inline T conditionalValue(const bool enable, const T val) {
+        inline std::enable_if_t<type_utils::is_integral_or_enum_v<T>, T> conditionalValue(const bool enable, const T val) {
             return static_cast<T>(-enable & val);
         }
 
         template<typename T, typename ... Ts>
-        inline typename std::enable_if<sizeof...(Ts) == 0, T>::type
+        inline std::enable_if_t<std::conjunction_v<type_utils::is_integral_or_enum<T>, type_utils::is_pack_empty<Ts...>>, T>
         conditionalValue(const bool enable1, const T val1, const Ts ... args) {
             return conditionalValue(enable1, val1);
         }
 
         template<typename T, typename ... Ts>
-        inline typename std::enable_if<sizeof...(Ts) != 0, T>::type
+        inline std::enable_if_t<std::conjunction_v<type_utils::is_integral_or_enum<T>,
+                                                            std::negation<type_utils::is_pack_empty<Ts...>>,
+                                                            type_utils::is_integral_or_enum<Ts>...>, T>
         conditionalValue(const bool enable1, const T val1, const Ts ... args) {
             return static_cast<T>(conditionalValue(enable1, val1) | conditionalValue(args...));
         }
@@ -326,7 +332,8 @@ namespace stf {
          * Sets mask bits in dest if cond is true
          */
         template<typename T, typename U>
-        inline void conditionalSet(T& dest, const U mask, const bool cond) {
+        inline std::enable_if_t<std::conjunction_v<type_utils::is_integral_or_enum<T>, type_utils::is_integral_or_enum<U>>>
+        conditionalSet(T& dest, const U mask, const bool cond) {
             dest = static_cast<std::remove_reference_t<decltype(dest)>>(dest | conditionalValue(cond, mask));
         }
     } // end namespace math_utils
@@ -340,6 +347,9 @@ namespace stf {
         template <typename T> struct is_unique_ptr<std::unique_ptr<T>> : std::true_type {};
         template <typename T, typename Deleter> struct is_unique_ptr<std::unique_ptr<T, Deleter>> : std::true_type {};
 
+        template <typename T>
+        inline constexpr bool is_unique_ptr_v = is_unique_ptr<T>::value;
+
         /**
          * \struct is_shared_ptr
          * Determines whether a type is an std::shared_ptr
@@ -352,14 +362,14 @@ namespace stf {
          * Determines whether a type is a smart pointer
          */
         template <typename T>
-        struct is_smart_ptr : std::bool_constant<is_unique_ptr<T>::value || is_shared_ptr<T>::value> {};
+        struct is_smart_ptr : std::disjunction<is_unique_ptr<T>, is_shared_ptr<T>> {};
 
         /**
          * \struct is_ptr
          * Determines whether a type is a pointer
          */
         template <typename T>
-        struct is_ptr : std::bool_constant<is_smart_ptr<T>::value || std::is_pointer<T>::value> {};
+        struct is_ptr : std::disjunction<is_smart_ptr<T>, std::is_pointer<T>> {};
 
     } // end namespace pointer_utils
 } // end namespace stf

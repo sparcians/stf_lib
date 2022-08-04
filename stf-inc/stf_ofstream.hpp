@@ -10,9 +10,10 @@
 #include "stf_enum_utils.hpp"
 #include "stf_fstream.hpp"
 #include "stf_vector_view.hpp"
+#include "type_utils.hpp"
 
 namespace stf {
-    class STFRecord;
+    class STFBaseObject;
 
     /**
      * \class STFOFstream
@@ -50,7 +51,7 @@ namespace stf {
              * \param val Value to write
              */
             template<typename T>
-            inline typename std::enable_if<std::is_arithmetic<T>::value>::type write_(const T val) {
+            inline std::enable_if_t<std::is_arithmetic_v<T>> write_(const T val) {
                 writeFromPtr_(&val, 1);
             }
 
@@ -59,7 +60,7 @@ namespace stf {
              * \param val Value to write
              */
             template<typename T>
-            inline typename std::enable_if<std::is_enum<T>::value>::type write_(const T val) {
+            inline std::enable_if_t<std::is_enum_v<T>> write_(const T val) {
                 *this << enums::to_int(val);
             }
 
@@ -68,7 +69,7 @@ namespace stf {
              * \param data Data to write
              */
             template<typename T>
-            typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value, STFOFstream&>::type operator<<(const T data) {
+            std::enable_if_t<type_utils::is_arithmetic_or_enum_v<T>, STFOFstream&> operator<<(const T data) {
                 write_<T>(data);
                 return *this;
             }
@@ -78,7 +79,9 @@ namespace stf {
              * \param data Data to write
              */
             template<typename T>
-            inline typename std::enable_if<!(std::is_arithmetic<T>::value || std::is_enum<T>::value) && std::is_trivially_copyable<T>::value, STFOFstream&>::type operator<<(const T& data) {
+            inline std::enable_if_t<std::conjunction_v<std::negation<type_utils::is_arithmetic_or_enum<T>>,
+                                                                std::is_trivially_copyable<T>>, STFOFstream&>
+            operator<<(const T& data) {
                 writeFromPtr_(&data, 1);
                 return *this;
             }
@@ -177,9 +180,10 @@ namespace stf {
              * \note This is virtual in order to allow subclasses to modify their behavior based on record type
              * \param rec Record to write
              */
-            virtual STFOFstream& operator<<(const STFRecord& rec);
+            virtual STFOFstream& operator<<(const STFBaseObject& rec);
 
-            friend class STFRecord;
+            friend class STFBaseObject;
+
             template<typename T, typename SerializedSizeT>
             friend class SerializableContainer;
     };

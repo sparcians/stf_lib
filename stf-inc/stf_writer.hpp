@@ -28,11 +28,9 @@
 #include "stf_reader_writer_base.hpp"
 #include "stf_reg_def.hpp"
 #include "stf_record.hpp"
-#include "stf_record_pointers.hpp"
 #include "util.hpp"
 
 namespace stf {
-    class STFRecord;
     class VersionRecord;
     class CommentRecord;
     class ISARecord;
@@ -64,22 +62,22 @@ namespace stf {
             std::vector<CommentRecord> header_comments_;
             bool header_comments_written_ = false;
 
-            UniqueRecordHandle<ISARecord> isa_;
+            STFRecord::Handle<ISARecord> isa_;
             bool isa_written_ = false;
 
-            UniqueRecordHandle<InstIEMRecord> initial_iem_;
+            STFRecord::Handle<InstIEMRecord> initial_iem_;
             bool initial_iem_written_ = false;
 
-            UniqueRecordHandle<ForcePCRecord> initial_pc_;
+            STFRecord::Handle<ForcePCRecord> initial_pc_;
             bool initial_pc_written_ = false;
 
             std::vector<TraceInfoRecord> trace_info_records_;
             bool trace_info_records_written_ = false;
 
-            UniqueRecordHandle<TraceInfoFeatureRecord> trace_features_;
+            STFRecord::Handle<TraceInfoFeatureRecord> trace_features_;
             bool trace_features_written_ = false;
 
-            UniqueRecordHandle<VLenConfigRecord> vlen_config_;
+            STFRecord::Handle<VLenConfigRecord> vlen_config_;
             bool vlen_config_written_ = false;
 
             bool header_started_ = false;
@@ -149,7 +147,7 @@ namespace stf {
              * Adds comments to the header
              * \param comments comments to add
              */
-            void addHeaderComments(const std::vector<ConstUniqueRecordHandle<CommentRecord>>& comments);
+            void addHeaderComments(const std::vector<STFRecord::ConstHandle<CommentRecord>>& comments);
 
             /**
              * Sets header ISA
@@ -199,7 +197,7 @@ namespace stf {
              * Adds trace info records to header
              * \param records trace info records to add
              */
-            void addTraceInfoRecords(const std::vector<ConstUniqueRecordHandle<TraceInfoRecord>>& records);
+            void addTraceInfoRecords(const std::vector<STFRecord::ConstHandle<TraceInfoRecord>>& records);
 
             /**
              * Adds trace feature to header

@@ -3,7 +3,7 @@
 from libc.stdint cimport *
 from libcpp.pair cimport pair
 from stfpy.stf_lib.boost_small_vector cimport small_vector
-from stfpy.stf_lib.stf_record cimport STFRecordConstUniqueHandle
+from stfpy.stf_lib.stf_record cimport STFRecordUniqueHandle
 from stfpy.stf_lib.stf_descriptor cimport _InternalDescriptor
 
 cdef extern from "<array>" namespace "std":
@@ -20,18 +20,18 @@ cdef extern from "stf_record_map.hpp" namespace "stf":
     cdef cppclass RecordMap:
         cppclass SmallVector:
             ctypedef size_t _DEFAULT_VEC_SIZE "1"
-            ctypedef small_vector[STFRecordConstUniqueHandle, _DEFAULT_VEC_SIZE].const_iterator const_iterator
+            ctypedef small_vector[STFRecordUniqueHandle, _DEFAULT_VEC_SIZE].const_iterator const_iterator
             const_iterator begin()
             const_iterator end()
             bint empty()
             size_t size()
-            const STFRecordConstUniqueHandle& at()
-            const STFRecordConstUniqueHandle& operator[]()
+            const STFRecordUniqueHandle& at()
+            const STFRecordUniqueHandle& operator[]()
 
         cppclass ArrayMap:
             ctypedef pair[_InternalDescriptor, SmallVector] value_type
             cppclass StaticVector:
-                ctypedef size_t _ARRAY_TYPE_SIZE "stf::descriptors::internal::STF_RESERVED_END"
+                ctypedef size_t _ARRAY_TYPE_SIZE "stf::descriptors::internal::RESERVED_END"
                 ctypedef array[value_type, _ARRAY_TYPE_SIZE].const_iterator const_iterator
             ctypedef StaticVector.const_iterator const_iterator
 

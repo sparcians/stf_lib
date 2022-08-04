@@ -24,7 +24,6 @@
 #include "stf_filter_types.hpp"
 #include "stf_inst.hpp"
 #include "stf_record.hpp"
-#include "stf_record_pointers.hpp"
 #include "stf_record_types.hpp"
 
 /**
@@ -88,15 +87,15 @@ namespace stf {
              * The separate PTE trace file has header records - VERSION, COMMENT, TRACE_INFO;
              * and PTE_ASID and PTE records; One ASID associates with the following PTEs.
              */
-            bool readPte_(ConstUniqueRecordHandle<PageTableWalkRecord> &pte) {
+            bool readPte_(STFRecord::ConstHandle<PageTableWalkRecord> &pte) {
                 if(pte_end_) {
                     return false;
                 }
 
                 STFRecord::UniqueHandle rec;
                 while(pte_reader_ >> rec) {
-                    if(STF_EXPECT_FALSE(rec->getDescriptor() == IntDescriptor::STF_PAGE_TABLE_WALK)) {
-                        grabRecordOwnership(pte, rec);
+                    if(STF_EXPECT_FALSE(rec->getId() == IntDescriptor::STF_PAGE_TABLE_WALK)) {
+                        STFRecord::grabOwnership(pte, rec);
                         break;
                     }
                 }
@@ -160,7 +159,7 @@ namespace stf {
                         continue;
                     }
 
-                    const auto desc = rec->getDescriptor();
+                    const auto desc = rec->getId();
                     stf_assert(desc != IntDescriptor::STF_INST_MEM_CONTENT,
                                "Saw MemContentRecord without accompanying MemAccessRecord");
 
@@ -184,7 +183,7 @@ namespace stf {
                         // after INST_MEM_ACCESS of the same memory access
                         const auto content_rec = readRecord_(inst);
                         if(STF_EXPECT_TRUE(content_rec != nullptr)) {
-                            stf_assert(content_rec->getDescriptor() == IntDescriptor::STF_INST_MEM_CONTENT,
+                            stf_assert(content_rec->getId() == IntDescriptor::STF_INST_MEM_CONTENT,
                                        "Invalid trace: memory access must be followed by memory content");
 
                             const auto access_type = rec->template as<InstMemAccessRecord>().getType();
@@ -269,6 +268,7 @@ namespace stf {
                             case IntDescriptor::STF_PAGE_TABLE_WALK:
                             case IntDescriptor::STF_BUS_MASTER_ACCESS:
                             case IntDescriptor::STF_BUS_MASTER_CONTENT:
+                            case IntDescriptor::STF_TRANSACTION:
                                 break;
 
                             // These descriptors *should* never be seen since they are header-only
@@ -288,7 +288,7 @@ namespace stf {
                             case IntDescriptor::STF_INST_MEM_ACCESS: // handled earlier
                             case IntDescriptor::STF_INST_MEM_CONTENT: // handled earlier
                             case IntDescriptor::STF_RESERVED: // cannot be constructed
-                            case IntDescriptor::STF_RESERVED_END: // cannot be constructed
+                            case IntDescriptor::RESERVED_END: // cannot be constructed
                                 __builtin_unreachable();
                         };
                     }
@@ -409,7 +409,7 @@ namespace stf {
                 private:
                     STFInstReaderBase *sir_ = nullptr;        // the instruction reader
                     bool end_ = true;                  // whether this is an end iterator
-                    ConstUniqueRecordHandle<PageTableWalkRecord> pte_; // store the current PTE content
+                    STFRecord::ConstHandle<PageTableWalkRecord> pte_; // store the current PTE content
                     size_t index_ = 0;            // index to the PTEs
 
                 public:

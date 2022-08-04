@@ -80,7 +80,10 @@ namespace stf {
                     case Descriptor::STF_INST_MICROOP:
                         os << "INST_MICROOP";
                         return os;
-                    case Descriptor::STF_RESERVED_END:
+                    case Descriptor::STF_TRANSACTION:
+                        os << "TRANSACTION";
+                        return os;
+                    case Descriptor::RESERVED_END:
                         os << "RESERVED_END";
                         return os;
                 };

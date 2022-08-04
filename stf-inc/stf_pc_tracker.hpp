@@ -33,7 +33,7 @@ namespace stf {
              * Updates the target PC for branch-like records
              */
             template<typename RecType, typename STFRecordType>
-            typename std::enable_if<std::is_same<STFRecordType, STFRecord>::value>::type
+            std::enable_if_t<std::is_same_v<STFRecordType, STFRecord>>
             setTargetPC_(const STFRecordType& rec) {
                 setTargetPC_(rec.template as<RecType>().getAddr());
             }

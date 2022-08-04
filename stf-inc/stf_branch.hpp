@@ -1,6 +1,7 @@
 #ifndef __STF_BRANCH_HPP__
 #define __STF_BRANCH_HPP__
 
+#include <algorithm>
 #include <array>
 #include <ostream>
 #include "stf_exception.hpp"
@@ -59,6 +60,7 @@ namespace stf {
                                    "Attempted to read an invalid register");
 
                         for(const auto& reg: regs_) {
+                            // cppcheck-suppress useStlAlgorithm
                             if(reg.reg == reg_num) {
                                 return reg.val;
                             }
@@ -72,13 +74,13 @@ namespace stf {
                      * \param reg_num Register number of the operand
                      */
                     inline bool hasOperand(const Registers::STF_REG reg_num) const {
-                        for(const auto& reg: regs_) {
-                            if(reg.reg == reg_num) {
-                                return true;
+                        return std::any_of(
+                            regs_.begin(),
+                            regs_.end(),
+                            [&reg_num](const auto& reg) {
+                                return reg.reg == reg_num;
                             }
-                        }
-
-                        return false;
+                        );
                     }
 
                     /**
@@ -86,9 +88,7 @@ namespace stf {
                      */
                     inline void clear() {
                         wr_index_ = 0;
-                        for(auto& reg: regs_) {
-                            reg = {Registers::STF_REG::STF_REG_INVALID, 0};
-                        }
+                        std::fill(regs_.begin(), regs_.end(), RegPair{Registers::STF_REG::STF_REG_INVALID, 0});
                     }
 
                     /**

@@ -25,7 +25,6 @@
 #include "stf_filter_types.hpp"
 #include "stf_reader.hpp"
 #include "stf_record.hpp"
-#include "stf_record_pointers.hpp"
 #include "stf_record_types.hpp"
 
 /**
@@ -156,7 +155,7 @@ namespace stf {
                         continue;
                     }
 
-                    const auto desc = rec->getDescriptor();
+                    const auto desc = rec->getId();
 
                     if(STF_EXPECT_FALSE(desc == IntDescriptor::STF_EVENT)) {
                         // Branches don't fault

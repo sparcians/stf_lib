@@ -45,7 +45,7 @@ namespace stf {
              * \param data Data to write
              */
             template <typename T>
-            typename std::enable_if<std::is_arithmetic<T>::value>::type
+            std::enable_if_t<std::is_arithmetic_v<T>>
             direct_write_(const T data) {
                 direct_write_(&data, 1);
             }
@@ -55,7 +55,7 @@ namespace stf {
              * \param data Data to write
              */
             template <typename T>
-            typename std::enable_if<!std::is_arithmetic<T>::value>::type
+            std::enable_if_t<std::negation_v<std::is_arithmetic<T>>>
             direct_write_(const T& data) {
                 direct_write_(&data, 1);
             }
@@ -76,7 +76,7 @@ namespace stf {
              * \param size Number of elements to write
              */
             template <typename T>
-            typename std::enable_if<std::is_arithmetic<T>::value>::type
+            std::enable_if_t<std::is_arithmetic_v<T>>
             direct_write_(const std::vector<T>& data, size_t size) {
                 direct_write_(size);
                 direct_write_(data.data(), size);
@@ -88,7 +88,7 @@ namespace stf {
              * \param size Number of elements to write
              */
             template <typename T>
-            typename std::enable_if<!std::is_arithmetic<T>::value>::type
+            std::enable_if_t<std::negation_v<std::is_arithmetic<T>>>
             direct_write_(const std::vector<T>& data, size_t size) {
                 direct_write_(size);
                 for(size_t i = 0; i < size; ++i) {
@@ -197,7 +197,7 @@ namespace stf {
                 STFCompressedOFstream(args...)
             {
                 setChunkSize(chunk_size);
-                open(filename);
+                STFCompressedOFstream::open(filename);
             }
 
             /**
@@ -214,7 +214,7 @@ namespace stf {
             // Have to override the base class destructor to ensure that *our* close method gets called before destruction
             ~STFCompressedOFstream() override {
                 if(stream_) {
-                    close();
+                    STFCompressedOFstream::close();
                 }
             }
 
@@ -306,15 +306,6 @@ namespace stf {
                     compressChunk_();
                     next_chunk_end_ += inst_chunk_size_;
                 }
-            }
-            /**
-             * Writes an STFRecord
-             * \param rec Record to write
-             */
-            STFCompressedOFstream& operator<<(const STFRecord& rec) override {
-                // Compress the record
-                STFOFstream::operator<<(rec);
-                return *this;
             }
     };
 } // end namespace stf

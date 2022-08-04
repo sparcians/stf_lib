@@ -7,6 +7,7 @@
 #include "stf_writer.hpp"
 
 namespace stf {
+    // cppcheck-suppress unusedFunction
     bool STFRegState::regStateUpdate(const InstRegRecord& rec) {
         if(rec.isVector()) {
             return regStateVectorUpdate(rec.getReg(), rec.getVectorData());
@@ -107,6 +108,7 @@ namespace stf {
         return it->second.getVectorData();
     }
 
+    // cppcheck-suppress unusedFunction
     void STFRegState::writeRegState(STFWriter& stf_writer) const {
         for (const auto& r: regstate) {
             stf_writer << r.second;

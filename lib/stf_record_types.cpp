@@ -6,34 +6,15 @@
 
 #include "format_utils.hpp"
 #include "stf_enums.hpp"
+#include "stf_factory.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_record.hpp"
-#include "stf_record_factory.hpp"
-#include "stf_record_pool.hpp"
 #include "stf_record_types.hpp"
 #include "stf_reg_def.hpp"
 #include "stf_serializable_container.hpp"
 #include "stf_writer.hpp"
 
-#define REGISTER_RECORD(desc, cls) \
-    namespace RecordFactoryRegistrations { \
-        inline static STFRecordConstUniqueHandle cls##_FactoryMethod(STFIFstream& strm) { \
-            return STFRecordPool::construct<cls>(strm); \
-        } \
-        template<> \
-        class RecordFactoryRegistration<cls> { \
-            public: \
-                explicit RecordFactoryRegistration(descriptors::encoded::Descriptor) { \
-                    RecordFactory::get_().registerRecordFactory_(descriptors::encoded::Descriptor::desc, cls##_FactoryMethod); \
-                    STFRecordPool::registerDeleter<cls>(descriptors::internal::Descriptor::desc); \
-                } \
-        }; \
-        static const RecordFactoryRegistration<cls> registration_##cls(descriptors::encoded::Descriptor::desc); \
-    } \
-    template<> \
-    descriptors::internal::Descriptor TypeAwareSTFRecord<cls>::type_aware_object::getTypeId() { \
-        return descriptors::internal::Descriptor::desc; \
-    }
+#define REGISTER_RECORD(desc, cls) REGISTER_WITH_FACTORY(RecordFactory, desc, cls)
 
 namespace stf {
     REGISTER_RECORD(STF_IDENTIFIER, STFIdentifierRecord)
@@ -190,5 +171,7 @@ namespace stf {
     REGISTER_RECORD(STF_TRACE_INFO, TraceInfoRecord)
 
     REGISTER_RECORD(STF_TRACE_INFO_FEATURE, TraceInfoFeatureRecord)
+
+    REGISTER_RECORD(STF_TRANSACTION, TransactionRecord)
 
 } // end namespace stf

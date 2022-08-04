@@ -77,8 +77,8 @@ namespace stf {
              */
             template<typename OStream,
                      typename charT = char,
-                     class traits = std::char_traits<charT>,
-                     bool = std::is_base_of<std::basic_ios<charT, traits>, OStream>::value>
+                     typename traits = std::char_traits<charT>,
+                     bool = std::is_base_of_v<std::basic_ios<charT, traits>, OStream>>
             class FlagSaver {
                 private:
                     OStream& os_;
@@ -124,7 +124,7 @@ namespace stf {
                      * Constructs a FlagSaver
                      * \param os Stream whose flags will be saved
                      */
-                    explicit FlagSaver(OStream& os) :
+                    explicit FlagSaver(OStream& os) : // cppcheck-suppress uninitMemberVar
                         os_(os),
                         flags_()
                     {
@@ -207,7 +207,7 @@ namespace stf {
              * \param pad_char padding character
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatDecLeft(OStream&& os, const T val, const int width = 0, const char pad_char = ' ') {
                 FlagSaver flags(os);
                 os << std::dec;
@@ -222,7 +222,7 @@ namespace stf {
              * \param pad_char padding character
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatHex(OStream&& os, const T val, const int width = numHexDigits<T>(), const char pad_char = '0') {
                 FlagSaver flags(os);
                 os << std::hex;
@@ -252,7 +252,7 @@ namespace stf {
              * \param pad_char padding character
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatDec(OStream&& os, const T val, const int width = 0, const char pad_char = '0') {
                 FlagSaver flags(os);
                 os << std::dec;
@@ -295,7 +295,7 @@ namespace stf {
              * \param val value to format
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatVA(OStream&& os, const T val) {
                 formatHex(os, val, VA_WIDTH);
             }
@@ -306,7 +306,7 @@ namespace stf {
              * \param val value to format
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatPA(OStream&& os, const T val) {
                 formatHex(os, val, PA_WIDTH);
             }
@@ -317,7 +317,7 @@ namespace stf {
              * \param val value to format
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatData(OStream&& os, const T val) {
                 formatHex(os, val, DATA_WIDTH);
             }
@@ -328,7 +328,7 @@ namespace stf {
              * \param val value to format
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatOpcode(OStream&& os, const T val) {
                 formatHex(os, val, OPCODE_WIDTH);
             }
@@ -339,7 +339,7 @@ namespace stf {
              * \param val value to format
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_integral<T>::value>::type
+            static inline std::enable_if_t<std::is_integral_v<T>>
             formatTID(OStream&& os, const T val) {
                 formatHex(os, val, TID_WIDTH);
             }
@@ -377,7 +377,7 @@ namespace stf {
              * \param precision number of digits to include after decimal point - omit for default precision
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_floating_point<T>::value>::type
+            static inline std::enable_if_t<std::is_floating_point_v<T>>
             formatFloat(OStream&& os, const T val, const int width = 0, const int precision = -1) {
                 FlagSaver flags(os);
                 if(precision >= 0) {
@@ -394,7 +394,7 @@ namespace stf {
              * \param precision number of digits to include after decimal point - omit for default precision
              */
             template<typename OStream, typename T>
-            static inline typename std::enable_if<std::is_floating_point<T>::value>::type
+            static inline std::enable_if_t<std::is_floating_point_v<T>>
             formatPercent(OStream&& os, const T val, const int width = 0, const int precision = -1) {
                 formatFloat(os, 100.0*val, width, precision);
                 os << '%';

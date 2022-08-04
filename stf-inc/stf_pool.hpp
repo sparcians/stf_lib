@@ -11,28 +11,11 @@
 #include <boost/container/static_vector.hpp>
 #pragma pop_macro("S1")
 #undef BOOST_POOL_NO_MT
+#include "type_utils.hpp"
 #include "util.hpp"
-
-#include "stf_object.hpp"
 
 namespace stf {
     class STFIFstream;
-
-    /**
-     * \struct PoolDeleter
-     * Functor struct used to delete objects allocated by STFPool
-     */
-    template<typename BaseObjectType, typename PoolType>
-    struct PoolDeleter {
-        /**
-         * Deletes an Object
-         * \param obj Object to delete
-         */
-        __attribute__((always_inline))
-        inline void operator()(const BaseObjectType* obj) {
-            PoolType::deleter(obj);
-        }
-    };
 
     /**
      * \class STFPool
@@ -41,11 +24,67 @@ namespace stf {
      *
      * NOT thread-safe
      */
-    template<typename BaseObjectType, typename Enum, size_t NUM_OBJECTS>
+    template<typename BaseObjectType, typename Enum>
     class STFPool {
+        public:
+            /**
+             * \struct Deleter
+             * Functor struct used to delete objects allocated by STFPool
+             */
+            struct Deleter {
+                /**
+                 * Deletes an Object
+                 * \param obj Object to delete
+                 */
+                __attribute__((always_inline))
+                inline void operator()(const BaseObjectType* obj) const {
+                    STFPool::deleter(obj);
+                }
+            };
+
+    private:
+            template<typename T>
+            using DeleterPointer = std::unique_ptr<T, Deleter>;
+
+    public:
+            /**
+             * \typedef base_type
+             * Base class of objects constructed by this pool
+             */
+            using base_type = BaseObjectType;
+
+            /**
+             * \typedef BaseObjectPointer
+             * Pointer to a base class object
+             */
+            using BaseObjectPointer = DeleterPointer<BaseObjectType>;
+
+            /**
+             * \typedef ConstBaseObjectPointer
+             * Pointer to a const base class object
+             */
+            using ConstBaseObjectPointer = DeleterPointer<const BaseObjectType>;
+
+            /**
+             * \typedef ObjectPointer
+             * Pointer to a constructed object
+             */
+            template<typename ObjectType>
+            using ObjectPointer = DeleterPointer<ObjectType>;
+
+            /**
+             * \typedef ConstObjectPointer
+             * Pointer to a const constructed object
+             */
+            template<typename ObjectType>
+            using ConstObjectPointer = ObjectPointer<const ObjectType>;
+
         private:
             template<typename ObjectType>
             class STFObjectCache {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "STFObjectCache type is not derived from the pool base class");
+
                 private:
                     using FuncType = void(*)(const ObjectType*);
 
@@ -56,9 +95,9 @@ namespace stf {
                     size_t num_hits_ = 0;
                     mutable size_t num_misses_ = 0;
 #endif
-                    std::array<FuncType, NUM_OBJECTS> deleters_;
+                    enums::EnumArray<FuncType, Enum> deleters_;
 
-                    std::array<boost::container::static_vector<ObjectType*, MAX_SIZE_>, NUM_OBJECTS> cache_;
+                    enums::EnumArray<boost::container::static_vector<ObjectType*, MAX_SIZE_>, Enum> cache_;
 
                     bool deleters_initialized_ = false;
 
@@ -69,7 +108,7 @@ namespace stf {
                                   << "Misses: " << num_misses_ << std::endl;
 #endif
                         for(size_t i = 0; i < cache_.size(); ++i) {
-                            const auto deleter = getDeleter_(i);
+                            const auto cur_deleter = getDeleter_(i);
 #ifdef DEBUG_CACHE
                             auto& cache_entry = cache_[i];
                             std::cerr << "Cache entry: " << Enum(i) << std::endl
@@ -78,7 +117,7 @@ namespace stf {
 #else
                             for(auto& obj: cache_[i]) {
 #endif
-                                deleter(obj);
+                                cur_deleter(obj);
                             }
                         }
                     }
@@ -100,7 +139,7 @@ namespace stf {
 
                 public:
                     __attribute__((always_inline))
-                    inline static STFObjectCache& get() {
+                    static inline STFObjectCache& get() {
                         static STFObjectCache cache;
                         return cache;
                     }
@@ -137,7 +176,7 @@ namespace stf {
                     }
 
                     __attribute__((always_inline))
-                    inline void deleter(const ObjectType* obj) {
+                    inline void deleter(const ObjectType* obj) const {
                         getDeleter_(obj)(obj);
                     }
 
@@ -156,23 +195,27 @@ namespace stf {
             using PoolAllocator = boost::fast_pool_allocator<ObjectType>;
 
             /**
-             * Gets the pool allocator for the specified record type
+             * Gets the pool allocator for the specified object type
              */
             template<typename ObjectType>
             __attribute__((always_inline))
             static inline PoolAllocator<ObjectType>& getPool_() {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Pool allocated type is not derived from the pool base class");
                 static thread_local PoolAllocator<ObjectType> pool;
                 return pool;
             }
 
             /**
-             * Constructs a record of the specified type, returning it as another type
-             * \param args Arguments to pass to record constructor
+             * Constructs a object of the specified type, returning it as another type
+             * \param args Arguments to pass to object constructor
              */
             template<typename ReturnType, typename ObjectType, typename ... Args>
             __attribute__((always_inline))
-            static inline typename std::enable_if<sizeof...(Args) != 1 || !type_utils::are_same<STFIFstream, std::remove_reference_t<Args>...>::value, ReturnType>::type
+            static inline std::enable_if_t<std::negation_v<std::conjunction<type_utils::is_pack_size<1, Args...>, type_utils::are_same<STFIFstream, std::remove_reference_t<Args>...>>>, ReturnType>
             construct_(Args&&... args) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Pool allocated type is not derived from the pool base class");
                 auto& pool = getPool_<ObjectType>();
                 auto ptr = pool.allocate();
                 stf_assert(ptr, "Failed to allocate new object from pool");
@@ -181,14 +224,17 @@ namespace stf {
             }
 
             /**
-             * Constructs a record of the specified type, returning it as another type
-             * \param args Arguments to pass to record constructor
+             * Constructs a object of the specified type, returning it as another type
+             * \param args Arguments to pass to object constructor
              */
             template<typename ReturnType, typename ObjectType, typename ... Args>
             __attribute__((always_inline))
-            static inline typename std::enable_if<sizeof...(Args) == 1 && type_utils::are_same<STFIFstream, std::remove_reference_t<Args>...>::value, ReturnType>::type
+            static inline std::enable_if_t<std::conjunction_v<type_utils::is_pack_size<1, Args...>,
+                                                                       type_utils::are_same<STFIFstream, std::remove_reference_t<Args>...>>, ReturnType>
             construct_(Args&&... args) {
-                auto ptr = STFObjectCache<BaseObjectType>::get().pop(TypeAwareSTFObject<ObjectType, Enum>::getTypeId());
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Pool allocated type is not derived from the pool base class");
+                auto ptr = STFObjectCache<BaseObjectType>::get().pop(ObjectType::getTypeId());
                 if(STF_EXPECT_FALSE(!ptr)) {
                     auto& pool = getPool_<ObjectType>();
                     auto new_ptr = pool.allocate();
@@ -205,6 +251,8 @@ namespace stf {
             template<typename ObjectType>
             __attribute__((always_inline))
             static inline void deleter_(const BaseObjectType* obj) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Pool allocated type is not derived from the pool base class");
                 const auto ptr = const_cast<ObjectType*>(static_cast<const ObjectType*>(obj));
                 auto& pool = getPool_<ObjectType>();
                 pool.destroy(ptr);
@@ -228,33 +276,111 @@ namespace stf {
             }
 
             /**
-             * Constructs a record of the specified type, returning it as an STFRecordConstUniqueHandle
-             * \param args Arguments to pass to record constructor
+             * Constructs a object of the specified type, returning it as a ConstBaseObjectPointer
+             * \param args Arguments to pass to object constructor
              */
             template<typename ObjectType, typename ... Args>
             __attribute__((always_inline))
-            static inline std::unique_ptr<const BaseObjectType, PoolDeleter<BaseObjectType, STFPool>> construct(Args&&... args) {
-                return construct_<std::unique_ptr<const BaseObjectType, PoolDeleter<BaseObjectType, STFPool>>, ObjectType, Args...>(args...);
+            static inline ConstBaseObjectPointer construct(Args&&... args) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Pool allocated type is not derived from the pool base class");
+                return construct_<ConstBaseObjectPointer, ObjectType, Args...>(std::forward<Args>(args)...);
             }
 
             /**
-             * Constructs a record of the specified type, returning it as a UniqueRecordHandle
-             * \param args Arguments to pass to record constructor
+             * Constructs a object of the specified type, returning it as an ObjectPointer
+             * \param args Arguments to pass to object constructor
              */
             template<typename ObjectType, typename ... Args>
             __attribute__((always_inline))
-            static inline std::unique_ptr<ObjectType, PoolDeleter<BaseObjectType, STFPool>> make(Args&&... args) {
-                return construct_<std::unique_ptr<ObjectType, PoolDeleter<BaseObjectType, STFPool>>, ObjectType, Args...>(args...);
+            static inline ObjectPointer<ObjectType> make(Args&&... args) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Pool allocated type is not derived from the pool base class");
+                return construct_<ObjectPointer<ObjectType>, ObjectType, Args...>(std::forward<Args>(args)...);
             }
 
             /**
-             * Registers a deleter method in the STFRecordCache for a particular record type
-             * \param object_id Descriptor for the record type being registered
+             * Registers a deleter method in the STFObjectCache for a particular object type
+             * \param object_id Descriptor for the object type being registered
              */
             template<typename ObjectType>
             __attribute__((always_inline))
             static inline void registerDeleter(const Enum object_id) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Pool allocated type is not derived from the pool base class");
                 STFObjectCache<BaseObjectType>::get().registerDeleter(object_id, &STFPool::deleter_<ObjectType>);
+            }
+
+            /**
+             * Grabs ownership of the specified object, casting it to the desired type in the process
+             * \param base_ptr Object to grab ownership of
+             */
+            template<typename ObjectType>
+            static inline ConstObjectPointer<ObjectType> grabOwnership(ConstBaseObjectPointer&& base_ptr) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Converted type is not derived from the pool base class");
+                const auto base_deleter = base_ptr.get_deleter();
+                return ConstObjectPointer<ObjectType>(static_cast<const ObjectType*>(base_ptr.release()), base_deleter);
+            }
+
+            /**
+             * Grabs ownership of the specified object, casting it to the desired type in the process
+             * \param base_ptr Object to grab ownership of
+             */
+            template<typename ObjectType>
+            static inline ObjectPointer<ObjectType> grabOwnership(BaseObjectPointer&& base_ptr) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Converted type is not derived from the pool base class");
+                const auto base_deleter = base_ptr.get_deleter();
+                return ObjectPointer<ObjectType>(static_cast<ObjectType*>(base_ptr.release()), base_deleter);
+            }
+
+            /**
+             * Grabs ownership of the specified object, casting it to the desired type in the process
+             * \param base_ptr Object to grab ownership of
+             */
+            template<typename ObjectType>
+            static inline ConstObjectPointer<ObjectType> grabOwnership(ConstBaseObjectPointer& base_ptr) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Converted type is not derived from the pool base class");
+                const auto base_deleter = base_ptr.get_deleter();
+                return ConstObjectPointer<ObjectType>(static_cast<const ObjectType*>(base_ptr.release()), base_deleter);
+            }
+
+            /**
+             * Grabs ownership of the specified object, casting it to the desired type in the process
+             * \param base_ptr Object to grab ownership of
+             */
+            template<typename ObjectType>
+            static inline ObjectPointer<ObjectType> grabOwnership(BaseObjectPointer& base_ptr) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Converted type is not derived from the pool base class");
+                const auto base_deleter = base_ptr.get_deleter();
+                return ObjectPointer<ObjectType>(static_cast<ObjectType*>(base_ptr.release()), base_deleter);
+            }
+
+            /**
+             * Grabs ownership of the specified object, casting it to the desired type in the process
+             * \param new_ptr Future owner of the object
+             * \param base_ptr Object to grab ownership of
+             */
+            template<typename ObjectType>
+            static inline void grabOwnership(ConstObjectPointer<ObjectType>& new_ptr, ConstBaseObjectPointer& base_ptr) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Converted type is not derived from the pool base class");
+                new_ptr = std::move(grabOwnership<ObjectType>(base_ptr));
+            }
+
+            /**
+             * Grabs ownership of the specified object, casting it to the desired type in the process
+             * \param new_ptr Future owner of the object
+             * \param base_ptr Object to grab ownership of
+             */
+            template<typename ObjectType>
+            static inline void grabOwnership(ObjectPointer<ObjectType>& new_ptr, BaseObjectPointer& base_ptr) {
+                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
+                              "Converted type is not derived from the pool base class");
+                new_ptr = std::move(grabOwnership<ObjectType>(base_ptr));
             }
     };
 

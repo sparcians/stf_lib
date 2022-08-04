@@ -1,48 +1,47 @@
 #ifndef __STF_PROTOCOL_DATA_HPP__
 #define __STF_PROTOCOL_DATA_HPP__
 
-#include "stf_ofstream.hpp"
-#include "stf_protocol_id.hpp"
+#include "stf_object.hpp"
+#include "stf_pool.hpp"
+#include "stf_factory.hpp"
 
 namespace stf {
-    class ProtocolData {
-        protected:
-            const ProtocolId protocol_id_;
+    namespace protocols {
+        enum class ProtocolId : uint8_t {
+            TILELINK,
+            RESERVED_END // Must be at the end
+        };
 
-        public:
-            ProtocolData(const ProtocolId protocol_id) :
-                protocol_id_(protocol_id)
-            {
-            }
+        std::ostream& operator<<(std::ostream& os, ProtocolId id);
 
-            virtual inline ~ProtocolData() = default;
+        /**
+         * \class ProtocolData
+         *
+         * Represents the data associated with a transaction
+         */
+        class ProtocolData : public STFObject<ProtocolData, ProtocolId> {
+            public:
+                /**
+                 * Constructs a ProtocolData
+                 *
+                 * \param protocol_id ID of the underlying protocol type
+                 */
+                explicit ProtocolData(const protocols::ProtocolId protocol_id) :
+                    STFObject(protocol_id)
+                {
+                }
+        };
 
-            virtual void pack(STFOFstream& writer) const = 0;
-    };
+        /**
+         * \typedef TypeAwareProtocolData
+         *
+         * ProtocolData class that knows its own type
+         */
+        template<typename T>
+        using TypeAwareProtocolData = TypeAwareSTFObject<T, ProtocolData>;
 
-    template<typename T>
-    class TypeAwareProtocolData : public ProtocolData {
-        private:
-            inline void pack(STFOFstream& writer) const final {
-                static_cast<const T*>(this)->pack_impl(writer);
-            }
-
-        public:
-            static ProtocolId getProtocolId();
-
-        protected:
-            TypeAwareProtocolData() :
-                ProtocolData(getProtocolId())
-            {
-            }
-
-        public:
-            inline ~TypeAwareProtocolData() override {
-                static_assert(std::is_base_of<TypeAwareProtocolData<T>, T>::value,
-                              "Template parameter passed to TypeAwareProtocolData must inherit from TypeAwareProtocolData");
-            }
-
-    };
+    } // end namespace protocols
+    DECLARE_FACTORY(ProtocolFactory, protocols::ProtocolData)
 } // end namespace stf
 
 #endif
