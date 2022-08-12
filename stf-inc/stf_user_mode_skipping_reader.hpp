@@ -2,6 +2,7 @@
 #define __STF_USER_MODE_SKIPPING_READER_HPP__
 
 #include "stf_buffered_reader.hpp"
+#include "stf_reader.hpp"
 
 namespace stf {
 
@@ -10,7 +11,7 @@ namespace stf {
      * \brief A buffered STF reader that can skip past non-user mode code
      */
     template<typename ItemType, typename FilterType, typename ReaderType>
-    class STFUserModeSkippingReader : public STFBufferedReader<ItemType, FilterType, ReaderType> {
+    class STFUserModeSkippingReader : public STFBufferedReader<ItemType, FilterType, ReaderType, STFReader> {
         private:
             const bool only_user_mode_ = false; /**< skips non-user-mode instructions if true */
             bool skipping_enabled_ = false; /**< Marks all items read as skipped while true */
@@ -21,7 +22,7 @@ namespace stf {
              * \typedef BufferedReader
              * Parent STFBufferedReader type
              */
-            using BufferedReader = STFBufferedReader<ItemType, FilterType, ReaderType>;
+            using BufferedReader = STFBufferedReader<ItemType, FilterType, ReaderType, STFReader>;
             /// \cond DOXYGEN_IGNORED
             friend BufferedReader;
             /// \endcond
@@ -61,7 +62,7 @@ namespace stf {
              */
             __attribute__((hot, always_inline))
             inline void checkSkipping_(const bool is_mode_change, const bool is_change_to_user) {
-                if(STF_EXPECT_FALSE(is_mode_change && only_user_mode_)) {
+                if(STF_EXPECT_FALSE(is_mode_change && only_user_mode_)) { // cppcheck-suppress knownArgument
                     disable_skipping_on_next_item_ |= is_change_to_user;
                     skipping_enabled_ |= !is_change_to_user;
                 }
@@ -113,8 +114,6 @@ namespace stf {
             {
                 // Does NOT call open() by default - must be handled by subclass
             }
-
-            using BufferedReader::open;
     };
 } // end namespace stf
 

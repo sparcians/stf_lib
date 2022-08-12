@@ -113,7 +113,7 @@ namespace stf
             { }
 
             /// Destroy!
-            ~STFException() noexcept override = default;
+            inline ~STFException() noexcept override = default;
 
             /**
              * \brief Overload from std::exception

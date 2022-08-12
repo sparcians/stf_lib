@@ -268,7 +268,6 @@ namespace stf {
                             case IntDescriptor::STF_PAGE_TABLE_WALK:
                             case IntDescriptor::STF_BUS_MASTER_ACCESS:
                             case IntDescriptor::STF_BUS_MASTER_CONTENT:
-                            case IntDescriptor::STF_TRANSACTION:
                                 break;
 
                             // These descriptors *should* never be seen since they are header-only
@@ -280,6 +279,12 @@ namespace stf {
                             case IntDescriptor::STF_VLEN_CONFIG:
                             case IntDescriptor::STF_END_HEADER:
                                 stf_throw("Saw an unexpected record outside of the header: " << desc);
+
+                            // These descriptors should only be in transaction traces
+                            case IntDescriptor::STF_PROTOCOL_ID: // STFRecord throws
+                            case IntDescriptor::STF_TRANSACTION: // STFRecord throws
+                            case IntDescriptor::STF_TRANSACTION_DEPENDENCY: // STFRecord throws
+                                stf_throw("Saw a transaction record " << desc << " in an instruction trace");
 
                             // These descriptors *will* never be seen here
                             case IntDescriptor::STF_INST_REG: // handled earlier
@@ -600,7 +605,7 @@ namespace stf {
             /**
              * \brief Closes the file
              */
-            int close() {
+            int close() final {
                 last_iem_ = INST_IEM::STF_INST_IEM_INVALID;
                 pte_reader_.close();
                 return ParentReader::close();

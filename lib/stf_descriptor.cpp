@@ -35,6 +35,9 @@ namespace stf {
                     case Descriptor::STF_VLEN_CONFIG:
                         os << "VLEN_CONFIG";
                         return os;
+                    case Descriptor::STF_PROTOCOL_ID:
+                        os << "PROTOCOL_ID";
+                        return os;
                     case Descriptor::STF_END_HEADER:
                         os << "END_HEADER";
                         return os;
@@ -82,6 +85,9 @@ namespace stf {
                         return os;
                     case Descriptor::STF_TRANSACTION:
                         os << "TRANSACTION";
+                        return os;
+                    case Descriptor::STF_TRANSACTION_DEPENDENCY:
+                        os << "TRANSACTION_DEP";
                         return os;
                     case Descriptor::RESERVED_END:
                         os << "RESERVED_END";

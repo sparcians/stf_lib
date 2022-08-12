@@ -371,6 +371,57 @@ namespace stf {
     };
 
     /**
+     * \class ProtocolIdRecord
+     *
+     * Indicates what protocol is used in a transaction trace
+     */
+    class ProtocolIdRecord : public GenericSingleDataRecord<ProtocolIdRecord, protocols::ProtocolId> {
+        public:
+            ProtocolIdRecord() = default;
+
+            /**
+             * Constructs ProtocolIdRecord
+             * \param strm STFIFstream to read from
+             */
+            explicit ProtocolIdRecord(STFIFstream& strm) {
+                unpack_impl(strm);
+            }
+
+            /**
+             * Constructs a ProtocolIdRecord
+             * \param protocol_id protocol ID value
+             */
+            explicit ProtocolIdRecord(const protocols::ProtocolId protocol_id) :
+                GenericSingleDataRecord(protocol_id)
+            {
+            }
+
+            /**
+             * Packs the record into an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            inline void pack_impl(STFOFstream& writer) const {
+                writer.setProtocolId(getId());
+                GenericSingleDataRecord::pack_impl(writer);
+            }
+
+            /**
+             * Unpacks the record from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            __attribute__((always_inline))
+            inline void unpack_impl(STFIFstream& reader) {
+                GenericSingleDataRecord::unpack_impl(reader);
+                reader.setProtocolId(getId());
+            }
+
+            /**
+             * Gets the protocol id
+             */
+            protocols::ProtocolId getId() const { return GenericSingleDataRecord::getData_(); }
+    };
+
+    /**
      * \class EndOfHeaderRecord
      *
      * Marks end of STF header
@@ -1884,10 +1935,10 @@ namespace stf {
              * \param minor_minor_version minor minor version
              * \param comment comment
              */
-            TraceInfoRecord(STF_GEN generator,
-                            uint8_t major_version,
-                            uint8_t minor_version,
-                            uint8_t minor_minor_version,
+            TraceInfoRecord(const STF_GEN generator,
+                            const uint8_t major_version,
+                            const uint8_t minor_version,
+                            const uint8_t minor_minor_version,
                             const std::string& comment) :
                 generator_(generator),
                 major_version_(major_version),
@@ -2212,9 +2263,22 @@ namespace stf {
      */
     class TransactionRecord : public TypeAwareSTFRecord<TransactionRecord> {
         private:
+            inline static uint64_t next_transaction_id_ = 0;
+
             uint64_t transaction_id_;
             uint64_t time_delta_;
             protocols::ProtocolData::UniqueHandle protocol_data_;
+
+            /**
+             * Constructs a TransactionRecord
+             * \param reader STFIFstream to use
+             */
+            explicit TransactionRecord(const uint64_t transaction_id, const uint64_t time_delta, protocols::ProtocolData::UniqueHandle&& protocol_data) :
+                transaction_id_(transaction_id),
+                time_delta_(time_delta),
+                protocol_data_(std::move(protocol_data))
+            {
+            }
 
         public:
             TransactionRecord() = default;
@@ -2252,6 +2316,7 @@ namespace stf {
                        transaction_id_,
                        time_delta_);
                 protocol_data_->pack(writer);
+                writer.markerRecordCallback();
             }
 
             /**
@@ -2264,6 +2329,7 @@ namespace stf {
                       transaction_id_,
                       time_delta_);
                 reader >> protocol_data_;
+                reader.markerRecordCallback();
             }
 
             /**
@@ -2271,10 +2337,162 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << "ID " << transaction_id_
-                   << "DELTA " << time_delta_
-                   << "PROTOCOL ";
+                format_utils::formatLabel(os, "ID");
+                format_utils::formatDec(os, transaction_id_);
+                os << std::endl;
+                format_utils::formatLabel(os, "DELTA");
+                format_utils::formatDec(os, time_delta_);
+                os << std::endl;
+                format_utils::formatLabel(os, "PROTOCOL");
                 protocol_data_->format(os);
+            }
+
+            /**
+             * Creates a new TransactionRecord. Automatically assigns the ID to the next sequential value.
+             * \param time_delta Time delta between the previous transaction and this one
+             * \param protocol_data Protocol data to populate this transaction
+             */
+            static inline TransactionRecord createNext(const uint64_t time_delta, protocols::ProtocolData::UniqueHandle&& protocol_data) {
+                return TransactionRecord(++next_transaction_id_, time_delta, std::move(protocol_data));
+            }
+
+            /**
+             * Creates a new TransactionRecord. Automatically assigns the ID to the next sequential value.
+             * \param protocol_data Protocol data to populate this transaction
+             */
+            static inline TransactionRecord createNext(protocols::ProtocolData::UniqueHandle&& protocol_data) {
+                return createNext(0, std::move(protocol_data));
+            }
+
+            /**
+             * Sets the protocol data
+             * \param protocol_data Protocol data to attach to this transaction
+             */
+            inline void setProtocolData(protocols::ProtocolData::UniqueHandle&& protocol_data) {
+                protocol_data_ = std::move(protocol_data);
+            }
+
+            /**
+             * Gets the transaction ID
+             */
+            inline uint64_t getTransactionId() const {
+                return transaction_id_;
+            }
+
+            /**
+             * Gets the time delta
+             */
+            inline uint64_t getTimeDelta() const {
+                return time_delta_;
+            }
+
+            /**
+             * Gets the protocol data
+             */
+            inline const auto& getProtocolData() const {
+                return protocol_data_;
+            }
+
+            /**
+             * Gets the protocol data, cast to a specific protocol type
+             */
+            template<typename T>
+            inline const auto& getProtocolAs() const {
+                return protocol_data_->as<T>();
+            }
+    };
+
+    /**
+     * \class TransactionDependencyRecord
+     *
+     * Represents a timestamped bus transaction in the trace
+     *
+     */
+    class TransactionDependencyRecord : public TypeAwareSTFRecord<TransactionDependencyRecord> {
+        private:
+            uint64_t dependency_id_;
+            uint64_t time_delta_;
+
+        public:
+            TransactionDependencyRecord() = default;
+
+            /**
+             * Unpacks a TransactionDependencyRecord from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            explicit TransactionDependencyRecord(STFIFstream& reader) {
+                unpack_impl(reader);
+            }
+
+            /**
+             * Unpacks a TransactionDependencyRecord from an STFIFstream
+             * \param dependency_id Transaction dependency ID
+             * \param time_delta Delta between this dependency and the previous transaction
+             */
+            explicit TransactionDependencyRecord(const uint64_t dependency_id,
+                                                 const uint64_t time_delta = 0) :
+                dependency_id_(dependency_id),
+                time_delta_(time_delta)
+            {
+            }
+
+            /**
+             * Constructs a TransactionDependencyRecord
+             * \param transaction_record TransactionRecord that provides the dependency ID
+             * \param time_delta Delta between this dependency and the previous transaction
+             */
+            explicit TransactionDependencyRecord(const TransactionRecord& transaction_record,
+                                                 const uint64_t time_delta = 0) :
+                TransactionDependencyRecord(transaction_record.getTransactionId(), time_delta)
+            {
+            }
+
+            /**
+             * Packs an STFIdentifierRecord into an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            inline void pack_impl(STFOFstream& writer) const {
+                write_(writer,
+                       dependency_id_,
+                       time_delta_);
+            }
+
+            /**
+             * Unpacks an STFIdentifierRecord from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            __attribute__((always_inline))
+            inline void unpack_impl(STFIFstream& reader) {
+                read_(reader,
+                      dependency_id_,
+                      time_delta_);
+            }
+
+            /**
+             * Formats a TraceInfoRecord to an std::ostream
+             * \param os ostream to use
+             */
+            inline void format_impl(std::ostream& os) const {
+                format_utils::formatLabel(os, "DEPENDENCY ID");
+                format_utils::formatDec(os, dependency_id_);
+                os << std::endl;
+                format_utils::formatLabel(os, "DELTA");
+                format_utils::formatDec(os, time_delta_);
+                os << std::endl;
+            }
+
+            /**
+             * Gets the dependency ID
+             */
+            inline uint64_t getDependencyId() const {
+                return dependency_id_;
+            }
+
+            /**
+             * Gets the time delta
+             */
+            inline uint64_t getTimeDelta() const {
+                return time_delta_;
             }
     };
 } // end namespace stf

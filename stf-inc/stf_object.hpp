@@ -242,21 +242,39 @@ namespace stf {
             virtual UniqueHandle clone() const = 0;
 
             /**
-             * Returns a reference to this object as the desired type
+             * Returns a pointer to this object as the desired type
              */
             template<typename T>
-            std::enable_if_t<std::is_base_of_v<BaseType, T>, T&>
-            as() {
-                return static_cast<T&>(*this);
+            inline std::enable_if_t<std::is_base_of_v<BaseType, T>, T*>
+            as_ptr() {
+                return static_cast<T*>(this);
+            }
+
+            /**
+             * Returns a pointer to this object as the desired type
+             */
+            template<typename T>
+            inline std::enable_if_t<std::is_base_of_v<BaseType, T>, const T*>
+            as_ptr() const {
+                return static_cast<const T*>(this);
             }
 
             /**
              * Returns a reference to this object as the desired type
              */
             template<typename T>
-            std::enable_if_t<std::is_base_of_v<BaseType, T>, const T&>
+            inline std::enable_if_t<std::is_base_of_v<BaseType, T>, T&>
+            as() {
+                return *as_ptr<T>();
+            }
+
+            /**
+             * Returns a reference to this object as the desired type
+             */
+            template<typename T>
+            inline std::enable_if_t<std::is_base_of_v<BaseType, T>, const T&>
             as() const {
-                return static_cast<const T&>(*this);
+                return *as_ptr<T>();
             }
 
             /**
@@ -304,7 +322,7 @@ namespace stf {
                         "BaseType must inherit from STFObject");
 
             inline void pack(STFOFstream& writer) const final {
-                write_(writer, ObjectIdConverter::toTrace(getTypeId()));
+                static_cast<const Type*>(this)->writeTraceId(writer);
                 static_cast<const Type*>(this)->pack_impl(writer);
             }
 
@@ -324,10 +342,27 @@ namespace stf {
             static IdType getTypeId();
 
             /**
+             * Writes the object ID to the trace
+             * \param writer Writer to use
+             */
+            inline static void writeTraceId(STFOFstream& writer) {
+                write_(writer, ObjectIdConverter::toTrace(getTypeId()));
+            }
+
+            /**
              * Helper function that can clone any STFObject
              */
             inline typename PoolType::ConstBaseObjectPointer clone() const final {
                 return BaseType::pool_type::template construct<Type>(*static_cast<const Type*>(this));
+            }
+
+            /**
+             * Constructs a record of the specified type, returning it as a Handle
+             * \param args Arguments to pass to record constructor
+             */
+            template<typename ... Args>
+            static inline auto make(Args&&... args) {
+                return STFObject<BaseType, IdType>::template make<Type>(std::forward<Args>(args)...);
             }
 
             /**

@@ -383,10 +383,10 @@ namespace stf {
                 direct_read_(magic_str, Decompressor::getMagic().size(), true);
                 stf_assert(Decompressor::getMagic().compare(magic_str.data()) == 0, "Not a " << Decompressor::getMagic() << " file");
 
-                // Read the number of instructions per chunk
-                direct_read_(inst_chunk_size_, true);
+                // Read the number of marker records per chunk
+                direct_read_(marker_record_chunk_size_, true);
 
-                stf_assert(inst_chunk_size_ > 0, "Invalid instruction chunk size. Trace file may be corrupt.");
+                stf_assert(marker_record_chunk_size_ > 0, "Invalid chunk size. Trace file may be corrupt.");
 
                 // Get the end of the last chunk
                 direct_read_(end_of_last_chunk_, true);
@@ -414,7 +414,7 @@ namespace stf {
                 in_buf_.initSize(block_size_);
                 out_buf_.initSize(block_size_);
 
-                next_chunk_end_ = inst_chunk_size_;
+                next_chunk_end_ = marker_record_chunk_size_;
                 if(chunk_indices_.empty()) {
                     next_chunk_index_it_ = chunk_indices_.end();
                 }

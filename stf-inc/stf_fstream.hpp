@@ -12,6 +12,7 @@
 
 #include "stf_exception.hpp"
 #include "stf_pc_tracker.hpp"
+#include "stf_protocol_id.hpp"
 #include "stf_vlen.hpp"
 
 namespace stf {
@@ -29,12 +30,13 @@ namespace stf {
             static bool atexit_handler_registered_; /**< Flag used to indicate whether atexit handler has already been registered */
             vlen_t vlen_ = 0; /**< Vector vlen parameter - if 0, the parameter has not been set and
                                    attempting to read/write a vector register record will cause an error */
+            protocols::ProtocolId protocol_id_ = protocols::ProtocolId::RESERVED_END;
 
         protected:
             FILE* stream_ = nullptr; /**< Underlying file stream */
             PCTracker pc_tracker_; /**< Tracks the current and next instruction PC */
             size_t num_records_read_ = 0; /**< Number of records seen so far */
-            size_t num_insts_ = 0; /**< Number of instructions seen so far */
+            size_t num_marker_records_ = 0; /**< Number of marker records seen so far */
             bool has_32bit_events_ = false; /**< If true, EventRecord event values are packed into 32 bits */
 
             STFFstream() = default;
@@ -63,7 +65,7 @@ namespace stf {
             /**
              * Calls fstat() on the stream and returns the result
              */
-            struct stat getFileStat_() const {
+            inline struct stat getFileStat_() const {
                 stf_assert(!used_popen_, "Cannot get block size of a stream input.");
                 stf_assert(stream_, "Attempted to query blocksize without opening a file first.");
 
@@ -76,7 +78,7 @@ namespace stf {
             /**
              * Gets the block size of the filesystem we are reading from
              */
-            size_t getFSBlockSize_() const {
+            inline size_t getFSBlockSize_() const {
                 struct stat stat_result = getFileStat_();
                 return static_cast<size_t>(stat_result.st_blksize);
             }
@@ -89,7 +91,7 @@ namespace stf {
             /**
              * Registers this instance with the atexit handler
              */
-            void registerExitHandler_() {
+            inline void registerExitHandler_() {
                 // Ensuring that open_streams_mutex_, lock_open_streams_, and open_streams_
                 // are instantiated before we register the atexit handler
                 std::lock_guard<std::mutex> l(open_streams_mutex_);
@@ -109,7 +111,7 @@ namespace stf {
             STFFstream(const STFFstream&) = delete;
             void operator=(const STFFstream&) = delete;
 
-            virtual ~STFFstream() {
+            virtual inline ~STFFstream() {
                 if (stream_) {
                     STFFstream::close();
                 }
@@ -118,7 +120,7 @@ namespace stf {
             /**
              * Returns whether the stream is valid
              */
-            explicit virtual operator bool() const {
+            virtual inline explicit operator bool() const {
                 return stream_;
             }
 
@@ -164,8 +166,7 @@ namespace stf {
             /**
              * \brief close the trace reader/writer
              */
-            virtual int close()
-            {
+            virtual inline int close() {
                 int retcode = 0;
                 if (stream_) {
                     if(stream_ == stdout) {
@@ -182,7 +183,7 @@ namespace stf {
                     stream_ = nullptr;
                 }
                 num_records_read_ = 0;
-                num_insts_ = 0;
+                num_marker_records_ = 0;
 
                 // If we aren't closing this from the atexit handler, go ahead and remove ourselves
                 // from open_streams_
@@ -227,23 +228,15 @@ namespace stf {
             /**
              * Gets how many records have been read/written
              */
-            size_t getNumRecords() const {
+            inline size_t getNumRecords() const {
                 return num_records_read_;
             }
 
             /**
-             * Callback for instruction opcode record types - just counts how many instruction record groups have been read/written
+             * Callback for marker records
              */
-            virtual void instructionRecordCallback() {
-                // If this was an instruction record, increment the instruction count
-                ++num_insts_;
-            }
-
-            /**
-             * Gets how many instruction record groups have been read/written
-             */
-            inline size_t getNumInsts() const {
-                return num_insts_;
+            virtual inline void markerRecordCallback() {
+                ++num_marker_records_;
             }
 
             /**
@@ -272,6 +265,28 @@ namespace stf {
              */
             inline void set32BitEvents(const bool has_32bit_events) {
                 has_32bit_events_ = has_32bit_events;
+            }
+
+            /**
+             * Gets the current number of marker records read from the trace
+             */
+            inline size_t getNumMarkerRecords() const {
+                return num_marker_records_;
+            }
+
+            /**
+             * Sets the protocol ID for a transaction trace
+             * \param protocol_id Protocol ID value to set
+             */
+            inline void setProtocolId(const protocols::ProtocolId protocol_id) {
+                protocol_id_ = protocol_id;
+            }
+
+            /**
+             * Gets the protocol ID for a transaction trace
+             */
+            inline protocols::ProtocolId getProtocolId() const {
+                return protocol_id_;
             }
     };
 } // end namespace stf

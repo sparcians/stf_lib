@@ -16,7 +16,7 @@ namespace stf {
      */
     class STFCompressedChunkedBase {
         public:
-            static constexpr size_t DEFAULT_CHUNK_SIZE = 100000; /**< Default chunk size, in number of instructions */
+            static constexpr size_t DEFAULT_CHUNK_SIZE = 100000; /**< Default chunk size, in number of marker records */
 
         protected:
             /**
@@ -86,8 +86,8 @@ namespace stf {
                     }
             };
 
-            size_t inst_chunk_size_ = DEFAULT_CHUNK_SIZE; /**< Number of instructions per compressed chunk */
-            size_t next_chunk_end_ = 0; /**< The number of instructions that will have been seen when this chunk ends */
+            size_t marker_record_chunk_size_ = DEFAULT_CHUNK_SIZE; /**< Number of marker records per compressed chunk */
+            size_t next_chunk_end_ = 0; /**< The number of marker records that will have been seen when this chunk ends */
             std::vector<ChunkOffset> chunk_indices_; /**< Holds file offsets for each compressed chunk */
 
             STFCompressedChunkedBase() = default;

@@ -365,10 +365,31 @@ namespace stf {
             }
 
             /**
-             * Skips the stream forward by the given number of instructions
-             * \param num_instructions Number of instructions to skip
+             * Reads an STFObject that we already know the ID for. Used primarily for reading ProtocolData objects.
+             * \param object_id Pre-defined ID value of object
+             * \param ptr Record is read into this pointer
              */
-            virtual void seek(size_t num_instructions);
+            template<typename EnumT, typename T, typename Deleter>
+            inline void readFromId(const EnumT object_id, std::unique_ptr<T, Deleter>& ptr) {
+                static_assert(std::is_base_of_v<STFBaseObject, T>,
+                              "Must be derived from STFBaseObject");
+                try {
+                    // We already got the protocol ID when we read the trace header
+                    ptr = factory_lookup<std::remove_cv_t<T>>::factory::construct(*this, object_id);
+                }
+                catch(const InvalidDescriptorException&) {
+                    // Check to see if the invalid descriptor was because the file ended - if it was we'll raise a new exception
+                    checkStream_();
+                    // Otherwise, re-raise the current exception
+                    throw;
+                }
+            }
+
+            /**
+             * Skips the stream forward by the given number of marker records
+             * \param num_marker_records Number of marker records to skip
+             */
+            virtual void seek(size_t num_marker_records);
     };
 } // end namespace stf
 

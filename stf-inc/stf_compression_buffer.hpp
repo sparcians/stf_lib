@@ -59,7 +59,7 @@ namespace stf {
             /**
              * Default destructor
              */
-            inline virtual ~STFCompressionBufferBase() = default;
+            virtual inline ~STFCompressionBufferBase() = default;
 
         public:
             /**
@@ -238,7 +238,7 @@ namespace stf {
              * Can be overridden for e.g. exponential instead of linear growth
              * \param new_size Desired size to store
              */
-            inline virtual size_t getNextSize_(const size_t new_size) {
+            virtual inline size_t getNextSize_(const size_t new_size) {
                 return allocation_granule_ * (1 + ((new_size - 1) / allocation_granule_));
             }
 

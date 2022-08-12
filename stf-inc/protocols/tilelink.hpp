@@ -1,12 +1,15 @@
 #ifndef __STF_TILELINK_HPP__
 #define __STF_TILELINK_HPP__
 
+#include "stf_record_types.hpp"
 #include "stf_protocol_data.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_serializable_container.hpp"
 #include "format_utils.hpp"
 
 namespace stf {
+    class TransactionRecord;
+
     namespace protocols {
         namespace tilelink {
             enum class ChannelType : uint8_t {
@@ -63,12 +66,71 @@ namespace stf {
                     SerializableVector<uint8_t, uint16_t> data_;
 
                 public:
+                    DataChannel() = default;
+
                     /**
                      * Constructs a tilelink::DataChannel from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::DataChannel object from
                      */
                     explicit DataChannel(STFIFstream& reader) {
                         unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::DataChannel
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param data TileLink data field
+                     */
+                    DataChannel(const uint8_t code,
+                                const uint8_t param,
+                                const uint8_t size,
+                                const uint64_t source,
+                                std::vector<uint8_t>&& data) :
+                        code_(code),
+                        param_(param),
+                        size_(size),
+                        source_(source),
+                        data_(std::move(data))
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::DataChannel
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param data TileLink data field
+                     */
+                    DataChannel(const uint8_t code,
+                                const uint8_t param,
+                                const uint8_t size,
+                                const uint64_t source,
+                                const std::vector<uint8_t>& data) :
+                        code_(code),
+                        param_(param),
+                        size_(size),
+                        source_(source),
+                        data_(data)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::DataChannel without populating the data field
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     */
+                    DataChannel(const uint8_t code,
+                                const uint8_t param,
+                                const uint8_t size,
+                                const uint64_t source) :
+                        DataChannel(code, param, size, source, {})
+                    {
                     }
 
                     /**
@@ -92,6 +154,7 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
+                        os << std::endl;
                         format_utils::formatLabel(os, "CODE");
                         format_utils::formatHex(os, code_);
                         os << std::endl;
@@ -105,41 +168,41 @@ namespace stf {
                         format_utils::formatHex(os, source_);
                         os << std::endl;
                         format_utils::formatLabel(os, "DATA");
-                        os << data_ << std::endl;
+                        os << data_;
                     }
 
                     /**
                      * Gets the code field
                      */
-                    auto getCode() const {
+                    inline auto getCode() const {
                         return code_;
                     }
 
                     /**
                      * Gets the param field
                      */
-                    auto getParam() const {
+                    inline auto getParam() const {
                         return param_;
                     }
 
                     /**
                      * Gets the size field
                      */
-                    auto getSize() const {
+                    inline auto getSize() const {
                         return size_;
                     }
 
                     /**
                      * Gets the source id
                      */
-                    auto getSource() const {
+                    inline auto getSource() const {
                         return source_;
                     }
 
                     /**
                      * Gets the data values
                      */
-                    const auto& getData() const {
+                    inline const auto& getData() const {
                         return data_;
                     }
             };
@@ -155,14 +218,71 @@ namespace stf {
                     uint64_t address_;
 
                 public:
+                    AddressChannel() = default;
+
                     /**
                      * Constructs a tilelink::AddressChannel from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::AddressChannel object from
                      */
-                    explicit AddressChannel(STFIFstream& reader) :
-                        DataChannel<T>(reader)
-                    {
+                    explicit AddressChannel(STFIFstream& reader) {
                         unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::AddressChannel
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     */
+                    AddressChannel(const uint8_t code,
+                                   const uint8_t param,
+                                   const uint8_t size,
+                                   const uint64_t source,
+                                   const uint64_t address,
+                                   const std::vector<uint8_t>& data) :
+                        DataChannel<T>(code, param, size, source, data),
+                        address_(address)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::AddressChannel
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     */
+                    AddressChannel(const uint8_t code,
+                                   const uint8_t param,
+                                   const uint8_t size,
+                                   const uint64_t source,
+                                   const uint64_t address,
+                                   std::vector<uint8_t>&& data) :
+                        DataChannel<T>(code, param, size, source, data),
+                        address_(address)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::AddressChannel without populating the data field
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     */
+                    AddressChannel(const uint8_t code,
+                                   const uint8_t param,
+                                   const uint8_t size,
+                                   const uint64_t source,
+                                   const uint64_t address) :
+                        AddressChannel(code, param, size, source, address, {})
+                    {
                     }
 
                     /**
@@ -170,6 +290,7 @@ namespace stf {
                      * \param reader STFIFstream to use
                      */
                     inline void unpack_impl(STFIFstream& reader) {
+                        DataChannel<T>::unpack_impl(reader);
                         TypeAwareChannel<T>::read_(reader, address_);
                     }
 
@@ -187,16 +308,16 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
+                        os << std::endl;
                         format_utils::formatLabel(os, "ADDRESS");
                         format_utils::formatVA(os, address_);
                         DataChannel<T>::format_impl(os);
-                        os << std::endl;
                     }
 
                     /**
                      * Gets the address value
                      */
-                    auto getAddress() const {
+                    inline auto getAddress() const {
                         return address_;
                     }
             };
@@ -212,12 +333,23 @@ namespace stf {
                     uint64_t sink_;
 
                 public:
+                    SinkChannel() = default;
+
                     /**
                      * Constructs a tilelink::SinkChannel from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::SinkChannel object from
                      */
                     explicit SinkChannel(STFIFstream& reader) {
                         unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::SinkChannel
+                     * \param sink TileLink sink field
+                     */
+                    explicit SinkChannel(const uint64_t sink) :
+                        sink_(sink)
+                    {
                     }
 
                     /**
@@ -241,15 +373,15 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
+                        os << std::endl;
                         format_utils::formatLabel(os, "SINK");
                         format_utils::formatHex(os, sink_);
-                        os << std::endl;
                     }
 
                     /**
                      * Gets the sink ID
                      */
-                    auto getSink() const {
+                    inline auto getSink() const {
                         return sink_;
                     }
             };
@@ -265,14 +397,75 @@ namespace stf {
                     SerializableVector<uint8_t, uint16_t> mask_;
 
                 public:
+                    MaskedChannel() = default;
+
                     /**
                      * Constructs a tilelink::MaskedChannel from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::MaskedChannel object from
                      */
-                    explicit MaskedChannel(STFIFstream& reader) :
-                        AddressChannel<T>(reader)
-                    {
+                    explicit MaskedChannel(STFIFstream& reader) {
                         unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::MaskedChannel
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     * \param mask TileLink mask field
+                     */
+                    MaskedChannel(const uint8_t code,
+                                  const uint8_t param,
+                                  const uint8_t size,
+                                  const uint64_t source,
+                                  const uint64_t address,
+                                  const std::vector<uint8_t>& data,
+                                  const std::vector<uint8_t>& mask) :
+                        AddressChannel<T>(code, param, size, source, address, data),
+                        mask_(mask)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::MaskedChannel
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     * \param mask TileLink mask field
+                     */
+                    MaskedChannel(const uint8_t code,
+                                  const uint8_t param,
+                                  const uint8_t size,
+                                  const uint64_t source,
+                                  const uint64_t address,
+                                  std::vector<uint8_t>&& data,
+                                  std::vector<uint8_t>&& mask) :
+                        AddressChannel<T>(code, param, size, source, address, data),
+                        mask_(std::move(mask))
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::MaskedChannel without populating the data or mask fields
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     */
+                    MaskedChannel(const uint8_t code,
+                                  const uint8_t param,
+                                  const uint8_t size,
+                                  const uint64_t source,
+                                  const uint64_t address) :
+                        MaskedChannel(code, param, size, source, address, {}, {})
+                    {
                     }
 
                     /**
@@ -280,6 +473,7 @@ namespace stf {
                      * \param reader STFIFstream to use
                      */
                     inline void unpack_impl(STFIFstream& reader) {
+                        AddressChannel<T>::unpack_impl(reader);
                         TypeAwareChannel<T>::read_(reader, mask_);
                     }
 
@@ -298,14 +492,15 @@ namespace stf {
                      */
                     inline void format_impl(std::ostream& os) const {
                         AddressChannel<T>::format_impl(os);
+                        os << std::endl;
                         format_utils::formatLabel(os, "MASK");
-                        os << mask_ << std::endl;
+                        os << mask_;
                     }
 
                     /**
                      * Gets the mask values
                      */
-                    const auto& getMask() const {
+                    inline const auto& getMask() const {
                         return mask_;
                     }
             };
@@ -320,8 +515,66 @@ namespace stf {
                      * Constructs a tilelink::ChannelA from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::ChannelA object from
                      */
-                    explicit ChannelA(STFIFstream& reader) :
-                        MaskedChannel(reader)
+                    explicit ChannelA(STFIFstream& reader) {
+                        unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelA
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     * \param mask TileLink mask field
+                     */
+                    ChannelA(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address,
+                             const std::vector<uint8_t>& data,
+                             const std::vector<uint8_t>& mask) :
+                        MaskedChannel<ChannelA>(code, param, size, source, address, data, mask)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelA
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     * \param mask TileLink mask field
+                     */
+                    ChannelA(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address,
+                             std::vector<uint8_t>&& data,
+                             std::vector<uint8_t>&& mask) :
+                        MaskedChannel<ChannelA>(code, param, size, source, address, data, mask)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelA without populating the data or mask fields
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     */
+                    ChannelA(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address) :
+                        ChannelA(code, param, size, source, address, {}, {})
                     {
                     }
 
@@ -330,7 +583,6 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
-                        format_utils::formatLabel(os, "CHANNEL A");
                         MaskedChannel::format_impl(os);
                     }
             };
@@ -345,8 +597,66 @@ namespace stf {
                      * Constructs a tilelink::ChannelB from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::ChannelB object from
                      */
-                    explicit ChannelB(STFIFstream& reader) :
-                        MaskedChannel(reader)
+                    explicit ChannelB(STFIFstream& reader) {
+                        unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelB
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     * \param mask TileLink mask field
+                     */
+                    ChannelB(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address,
+                             const std::vector<uint8_t>& data,
+                             const std::vector<uint8_t>& mask) :
+                        MaskedChannel<ChannelB>(code, param, size, source, address, data, mask)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelB
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     * \param mask TileLink mask field
+                     */
+                    ChannelB(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address,
+                             std::vector<uint8_t>&& data,
+                             std::vector<uint8_t>&& mask) :
+                        MaskedChannel<ChannelB>(code, param, size, source, address, data, mask)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelB without populating the data or mask fields
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     */
+                    ChannelB(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address) :
+                        ChannelB(code, param, size, source, address, {}, {})
                     {
                     }
 
@@ -355,7 +665,6 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
-                        format_utils::formatLabel(os, "CHANNEL B");
                         MaskedChannel::format_impl(os);
                     }
             };
@@ -370,8 +679,62 @@ namespace stf {
                      * Constructs a tilelink::ChannelC from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::ChannelC object from
                      */
-                    explicit ChannelC(STFIFstream& reader) :
-                        AddressChannel(reader)
+                    explicit ChannelC(STFIFstream& reader) {
+                        unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelC
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     */
+                    ChannelC(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address,
+                             const std::vector<uint8_t>& data) :
+                        AddressChannel<ChannelC>(code, param, size, source, address, data)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelC
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     * \param data TileLink data field
+                     */
+                    ChannelC(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address,
+                             std::vector<uint8_t>&& data) :
+                        AddressChannel<ChannelC>(code, param, size, source, address, data)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelC without populating the data field
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param address TileLink address field
+                     */
+                    ChannelC(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t address) :
+                        ChannelC(code, param, size, source, address, {})
                     {
                     }
 
@@ -380,7 +743,6 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
-                        format_utils::formatLabel(os, "CHANNEL C");
                         AddressChannel::format_impl(os);
                     }
             };
@@ -395,9 +757,64 @@ namespace stf {
                      * Constructs a tilelink::ChannelD from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::ChannelD object from
                      */
-                    explicit ChannelD(STFIFstream& reader) :
-                        DataChannel(reader),
-                        SinkChannel(reader)
+                    explicit ChannelD(STFIFstream& reader) {
+                        unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelD
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param sink TileLink sink field
+                     * \param data TileLink data field
+                     */
+                    ChannelD(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t sink,
+                             const std::vector<uint8_t>& data) :
+                        DataChannel<ChannelD>(code, param, size, source, data),
+                        SinkChannel(sink)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelD
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param sink TileLink sink field
+                     * \param data TileLink data field
+                     */
+                    ChannelD(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t sink,
+                             std::vector<uint8_t>&& data) :
+                        DataChannel<ChannelD>(code, param, size, source, data),
+                        SinkChannel(sink)
+                    {
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelD without populating the data field
+                     * \param code TileLink code field
+                     * \param param TileLink param field
+                     * \param size TileLink size field
+                     * \param source TileLink source field
+                     * \param sink TileLink sink field
+                     */
+                    ChannelD(const uint8_t code,
+                             const uint8_t param,
+                             const uint8_t size,
+                             const uint64_t source,
+                             const uint64_t sink) :
+                        ChannelD(code, param, size, source, sink, {})
                     {
                     }
 
@@ -424,7 +841,6 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
-                        format_utils::formatLabel(os, "CHANNEL D");
                         SinkChannel::format_impl(os);
                         DataChannel::format_impl(os);
                     }
@@ -440,8 +856,16 @@ namespace stf {
                      * Constructs a tilelink::ChannelE from an STFIFstream
                      * \param reader STFIFstream to read the tilelink::ChannelE object from
                      */
-                    explicit ChannelE(STFIFstream& reader) :
-                        SinkChannel(reader)
+                    explicit ChannelE(STFIFstream& reader) {
+                        unpack_impl(reader);
+                    }
+
+                    /**
+                     * Constructs a tilelink::ChannelE without populating the data field
+                     * \param sink TileLink sink field
+                     */
+                    explicit ChannelE(const uint64_t sink) :
+                        SinkChannel(sink)
                     {
                     }
 
@@ -466,7 +890,6 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
-                        format_utils::formatLabel(os, "CHANNEL E");
                         SinkChannel::format_impl(os);
                     }
             };
@@ -487,6 +910,43 @@ namespace stf {
                  */
                 explicit TileLink(STFIFstream& reader) {
                     unpack_impl(reader);
+                }
+
+                /**
+                 * Constructs a TileLink protocol with the given channel data
+                 * \param channel_data Channel data to use
+                 */
+                explicit TileLink(tilelink::Channel::UniqueHandle&& channel_data) :
+                    channel_data_(std::move(channel_data))
+                {
+                }
+
+                /**
+                 * Constructs a TileLink channel wrapped in a TileLink protocol object, wrapped in a TransactionRecord
+                 * \param time_delta Time delta to use
+                 * \param args Arguments passed to channel data constructor
+                 */
+                template<typename ChannelType, typename ... Args>
+                inline static TransactionRecord makeTransactionWithDelta(const uint64_t time_delta, Args&&... args) {
+                    return TransactionRecord::createNext(
+                        time_delta,
+                        TileLink::pool_type::construct<TileLink>(
+                            ChannelType::pool_type::template construct<ChannelType>(std::forward<Args>(args)...)
+                        )
+                    );
+                }
+
+                /**
+                 * Constructs a TileLink channel wrapped in a TileLink protocol object, wrapped in a TransactionRecord
+                 * \param args Arguments passed to channel data constructor
+                 */
+                template<typename ChannelType, typename ... Args>
+                inline static TransactionRecord makeTransaction(Args&&... args) {
+                    return TransactionRecord::createNext(
+                        TileLink::pool_type::construct<TileLink>(
+                            ChannelType::pool_type::template construct<ChannelType>(std::forward<Args>(args)...)
+                        )
+                    );
                 }
 
                 /**
@@ -523,8 +983,7 @@ namespace stf {
                  * Formats a TileLink object to an std::ostream
                  * \param os ostream to use
                  */
-                void format_impl(std::ostream& os) const {
-                    format_utils::formatLabel(os, "TILELINK");
+                inline void format_impl(std::ostream& os) const {
                     os << std::endl;
                     format_utils::formatLabel(os, "CHANNEL");
                     channel_data_->format(os);
@@ -533,7 +992,7 @@ namespace stf {
                 /**
                  * Gets the channel type for this TileLink transaction
                  */
-                auto getChannelType() const {
+                inline auto getChannelType() const {
                     return channel_data_->getId();
                 }
 
@@ -541,7 +1000,7 @@ namespace stf {
                  * Casts the channel data to the specified type
                  */
                 template<typename T>
-                const auto& getChannelAs() const {
+                inline const auto& getChannelAs() const {
                     return channel_data_->as<T>();
                 }
         };

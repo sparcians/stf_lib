@@ -2,6 +2,7 @@
 #define __STF_READER_WRITER_BASE_HPP__
 
 #include <cstdio>
+#include <memory>
 #include <sstream>
 #include <string_view>
 
@@ -13,11 +14,14 @@ namespace stf {
      *
      * Common base class for STFReader and STFWriter.
      */
+    template<typename StreamType>
     class STFReaderWriterBase {
         private:
             STF_FILE_TYPE file_type_; /**< File type */
 
         protected:
+            std::unique_ptr<StreamType> stream_; /**< Stream object */
+
             /**
              * Checks whether the file extension matches the given extension
              * \param filename filename to check
@@ -28,7 +32,7 @@ namespace stf {
             }
 
             STFReaderWriterBase() = default;
-            virtual ~STFReaderWriterBase() = default;
+            virtual inline ~STFReaderWriterBase() = default;
 
             /**
              * Gets and remembers the file type based on the file extension
@@ -37,6 +41,20 @@ namespace stf {
             STF_FILE_TYPE getFileType_(const std::string_view filename) {
                 file_type_ = guessFileType(filename);
                 return file_type_;
+            }
+
+            /**
+             * Returns the number of marker records read/written so far. Marker records are used for calculating seek offsets and compressed chunk boundaries.
+             */
+            inline size_t getNumMarkerRecords_() const {
+                return stream_->getNumMarkerRecords();
+            }
+
+            /**
+             * Returns the total number of records read/written so far
+             */
+            inline size_t getNumRecords_() const {
+                return stream_->getNumRecords();
             }
 
         public:
@@ -117,6 +135,13 @@ namespace stf {
              */
             static inline bool isCompressedFile(std::string_view filename) {
                 return isCompressedFile(guessFileType(filename));
+            }
+
+            /**
+             * Returns whether the underlying stream is still valid
+             */
+            inline explicit operator bool() const {
+                return stream_ && *stream_;
             }
     };
 

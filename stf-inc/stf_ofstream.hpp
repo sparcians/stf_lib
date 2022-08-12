@@ -29,8 +29,10 @@ namespace stf {
              * \param size Size of a single element in data
              * \param num Number of elements in data
              */
-            inline virtual size_t fwrite_(const void* data, size_t size, size_t num) {
-                return fwrite(data, size, num, stream_);
+            virtual inline size_t fwrite_(const void* data, size_t size, size_t num) {
+                const auto res = fwrite(data, size, num, stream_);
+                fflush(stream_);
+                return res;
             }
 
             /**

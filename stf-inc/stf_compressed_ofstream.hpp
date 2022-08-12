@@ -193,7 +193,7 @@ namespace stf {
              * \param args Optional arguments that will be passed to the underlying compressor
              */
             template<typename ... CompressorArgs>
-            explicit STFCompressedOFstream(const std::string_view filename, const size_t chunk_size, CompressorArgs... args) :
+            STFCompressedOFstream(const std::string_view filename, const size_t chunk_size, CompressorArgs... args) :
                 STFCompressedOFstream(args...)
             {
                 setChunkSize(chunk_size);
@@ -212,7 +212,7 @@ namespace stf {
             }
 
             // Have to override the base class destructor to ensure that *our* close method gets called before destruction
-            ~STFCompressedOFstream() override {
+            inline ~STFCompressedOFstream() override {
                 if(stream_) {
                     STFCompressedOFstream::close();
                 }
@@ -221,17 +221,17 @@ namespace stf {
             /**
              * Sets the chunk size
              * \note Once the stream is open this cannot be changed
-             * \param chunk_size Number of instructions per chunk
+             * \param chunk_size Number of marker records per chunk
              */
             void setChunkSize(const size_t chunk_size) {
                 stf_assert(!stream_, "Must set chunk size before opening file.");
-                inst_chunk_size_ = chunk_size;
+                marker_record_chunk_size_ = chunk_size;
             }
 
             /**
              * Opens a file using the specified chunk size
              * \param filename Filename to open
-             * \param chunk_size Number of instructions per chunk
+             * \param chunk_size Number of marker records per chunk
              */
             void open(const std::string_view filename, const size_t chunk_size) {
                 setChunkSize(chunk_size);
@@ -251,8 +251,8 @@ namespace stf {
                 // Write the magic string for the compressor
                 direct_write_(Compressor::getMagic().data(), Compressor::getMagic().size());
 
-                // Write the number of instructions per chunk
-                direct_write_(inst_chunk_size_);
+                // Write the number of marker records per chunk
+                direct_write_(marker_record_chunk_size_);
 
                 // Write a placeholder value for the end of the last chunk (since we don't know how much data we're going to have)
                 direct_write_(ZERO);
@@ -269,7 +269,7 @@ namespace stf {
                 // ...but also make sure it can fit a reasonable amount of compressed data
                 out_buf_.fit(Compressor::getInitialBoundedSize());
 
-                next_chunk_end_ = inst_chunk_size_;
+                next_chunk_end_ = marker_record_chunk_size_;
             }
 
             /**
@@ -293,18 +293,18 @@ namespace stf {
                 // Write the chunk offsets to the end of the file
                 direct_write_(chunk_indices_, chunk_indices_.size() - 1);
                 // Write the end of the last chunk into the spot we reserved when we opened the file
-                fseek(stream_, Compressor::getMagic().size() + sizeof(inst_chunk_size_), SEEK_SET);
+                fseek(stream_, Compressor::getMagic().size() + sizeof(marker_record_chunk_size_), SEEK_SET);
                 direct_write_(end);
                 return STFOFstream::close();
             }
 
-            void instructionRecordCallback() override {
-                STFOFstream::instructionRecordCallback();
+            void markerRecordCallback() override {
+                STFOFstream::markerRecordCallback();
 
                 // If we've crossed the chunk boundary, close the current chunk and start a new one
-                if(STF_EXPECT_FALSE(num_insts_ >= next_chunk_end_)) {
+                if(STF_EXPECT_FALSE(num_marker_records_ >= next_chunk_end_)) {
                     compressChunk_();
-                    next_chunk_end_ += inst_chunk_size_;
+                    next_chunk_end_ += marker_record_chunk_size_;
                 }
             }
     };

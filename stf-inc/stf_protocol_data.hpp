@@ -3,17 +3,11 @@
 
 #include "stf_object.hpp"
 #include "stf_pool.hpp"
+#include "stf_protocol_id.hpp"
 #include "stf_factory.hpp"
 
 namespace stf {
     namespace protocols {
-        enum class ProtocolId : uint8_t {
-            TILELINK,
-            RESERVED_END // Must be at the end
-        };
-
-        std::ostream& operator<<(std::ostream& os, ProtocolId id);
-
         /**
          * \class ProtocolData
          *
@@ -33,14 +27,40 @@ namespace stf {
         };
 
         /**
-         * \typedef TypeAwareProtocolData
+         * \class TypeAwareProtocolData
          *
          * ProtocolData class that knows its own type
          */
         template<typename T>
-        using TypeAwareProtocolData = TypeAwareSTFObject<T, ProtocolData>;
+        class TypeAwareProtocolData : public TypeAwareSTFObject<T, ProtocolData> {
+            public:
+                using TypeAwareSTFObject<T, ProtocolData>::getTypeId;
+
+                /**
+                 * Specialization for ProtocolData subclasses. Since the protocol ID is captured in the header,
+                 * we don't need to write it for each ProtocolData record.
+                 * \param writer Writer to use
+                 */
+                inline static void writeTraceId(STFOFstream& writer) {
+                    // We don't need to write the protocol ID since it's captured in
+                    // a ProtocolIdRecord in the header.
+                    // Just make sure that the protocol we're writing matches the header record.
+                    stf_assert(getTypeId() == writer.getProtocolId(),
+                               "Attempted to write protocol " << getTypeId() <<
+                               " to a trace configured for " << writer.getProtocolId());
+                }
+        };
 
     } // end namespace protocols
+
+    class STFIFstream;
+    /**
+     * Specialization of STFIFstream::operator>> for ProtocolData objects. Needed since protocol ID is set globally in the trace instead of on a per-record basis.
+     * \param strm STFIFstream to read from
+     * \param ptr Record is read into this pointer
+     */
+    STFIFstream& operator>>(STFIFstream& strm, protocols::ProtocolData::UniqueHandle& ptr);
+
     DECLARE_FACTORY(ProtocolFactory, protocols::ProtocolData)
 } // end namespace stf
 

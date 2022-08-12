@@ -33,14 +33,14 @@ namespace stf {
             using base_class::endChunk_;
 
             // From STFCompressedChunkedBase
-            using base_class::inst_chunk_size_;
+            using base_class::marker_record_chunk_size_;
             using base_class::next_chunk_end_;
             using base_class::chunk_indices_;
 
             // From STFFstream
             using base_class::stream_;
             using base_class::pc_tracker_;
-            using base_class::num_insts_;
+            using base_class::num_marker_records_;
 
             /**
              * Asynchronously read and decompress the next chunk in the file
@@ -59,6 +59,7 @@ namespace stf {
         public:
             STFCompressedIFstreamSingleThreaded() = default;
 
+
             /**
              * Constructs an STFCompressedIFstreamSingleThreaded
              *
@@ -71,27 +72,27 @@ namespace stf {
             }
 
             /**
-             * Seeks by the specified number of instructions
-             * \param num_instructions Number of instructions to seek by
+             * Seeks by the specified number of marker records
+             * \param num_markers Number of marker records to seek by
              */
-            inline void seek(size_t num_instructions) final {
+            inline void seek(size_t num_markers) final {
                 // If the seek point comes before the next chunk boundary, just seek normally within the chunk
-                if(num_insts_ + num_instructions >= next_chunk_end_) {
+                if(num_marker_records_ + num_markers >= next_chunk_end_) {
                     // Throw away what's currently in the buffer since we're moving to a new chunk
                     out_buf_.consume();
 
                     in_buf_.reset();
                     endChunk_();
 
-                    const auto chunk_idx = (num_insts_ + num_instructions) / inst_chunk_size_;
+                    const auto chunk_idx = (num_marker_records_ + num_markers) / marker_record_chunk_size_;
                     if(STF_EXPECT_FALSE(chunk_idx >= chunk_indices_.size())) {
                         stf_throw("Attempted to seek past the end of the trace");
                     }
 
-                    num_instructions = (num_insts_ + num_instructions) % inst_chunk_size_;
+                    num_markers = (num_marker_records_ + num_markers) % marker_record_chunk_size_;
                     next_chunk_index_it_ = std::next(chunk_indices_.begin(), static_cast<ssize_t>(chunk_idx));
-                    num_insts_ = chunk_idx * inst_chunk_size_;
-                    next_chunk_end_ = num_insts_ + inst_chunk_size_;
+                    num_marker_records_ = chunk_idx * marker_record_chunk_size_;
+                    next_chunk_end_ = num_marker_records_ + marker_record_chunk_size_;
 
                     fseek(stream_, next_chunk_index_it_->getOffset(), SEEK_SET);
                     last_read_pos_ = next_chunk_index_it_->getOffset();
@@ -104,18 +105,18 @@ namespace stf {
                     readChunk_(next_chunk_index_it_, current_chunk->getUncompressedChunkSize(), out_buf_);
                 }
 
-                STFIFstream::seek(num_instructions);
+                STFIFstream::seek(num_markers);
             }
 
             /**
-             * Callback for instruction opcode records
+             * Callback for marker records
              */
-            inline void instructionRecordCallback() final {
-                STFIFstream::instructionRecordCallback();
+            inline void markerRecordCallback() final {
+                STFIFstream::markerRecordCallback();
 
                 // If we cross a chunk boundary, move on to the next chunk
-                if(STF_EXPECT_FALSE(num_insts_ >= next_chunk_end_)) {
-                    next_chunk_end_ += inst_chunk_size_;
+                if(STF_EXPECT_FALSE(num_marker_records_ >= next_chunk_end_)) {
+                    next_chunk_end_ += marker_record_chunk_size_;
 
                     // Start decompressing the next chunk
                     readNextChunk_();

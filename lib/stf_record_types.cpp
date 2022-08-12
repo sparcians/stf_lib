@@ -37,6 +37,8 @@ namespace stf {
 
     REGISTER_RECORD(STF_VLEN_CONFIG, VLenConfigRecord)
 
+    REGISTER_RECORD(STF_PROTOCOL_ID, ProtocolIdRecord)
+
     REGISTER_RECORD(STF_END_HEADER, EndOfHeaderRecord)
 
     STFOFstream& operator<<(STFOFstream& writer, const PageTableWalkRecord::PTE& rec) {
@@ -173,5 +175,7 @@ namespace stf {
     REGISTER_RECORD(STF_TRACE_INFO_FEATURE, TraceInfoFeatureRecord)
 
     REGISTER_RECORD(STF_TRANSACTION, TransactionRecord)
+
+    REGISTER_RECORD(STF_TRANSACTION_DEPENDENCY, TransactionDependencyRecord)
 
 } // end namespace stf

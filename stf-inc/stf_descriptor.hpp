@@ -32,6 +32,7 @@ namespace stf {
                 STF_PROCESS_ID_EXT              = 8,            /**< Process ID EXTENSION */
                 STF_FORCE_PC                    = 9,            /**< Initial PC and trace stitching */
                 STF_VLEN_CONFIG                 = 10,           /**< Sets the vector vlen parameter */
+                STF_PROTOCOL_ID                 = 11,
 
                 STF_END_HEADER                  = 19,           /**< End of header record */
 
@@ -56,6 +57,7 @@ namespace stf {
                 STF_INST_OPCODE16               = 241,          /**< 2 byte instruction */
 
                 STF_TRANSACTION                 = 250,
+                STF_TRANSACTION_DEPENDENCY      = 251,
 
                 RESERVED_END                                /**< Reserved for error detection, end of descriptor  */
             };
@@ -98,8 +100,10 @@ namespace stf {
                 STF_TRACE_INFO_FEATURE,
                 STF_VERSION,
                 STF_VLEN_CONFIG,
+                STF_PROTOCOL_ID,
                 STF_END_HEADER,
                 STF_TRANSACTION,
+                STF_TRANSACTION_DEPENDENCY,
                 STF_RESERVED,
                 RESERVED_END // MUST ALWAYS BE AT THE END
             };
@@ -163,6 +167,7 @@ namespace stf {
                                 INIT_DESC_ARRAY(STF_PROCESS_ID_EXT)
                                 INIT_DESC_ARRAY(STF_FORCE_PC)
                                 INIT_DESC_ARRAY(STF_VLEN_CONFIG)
+                                INIT_DESC_ARRAY(STF_PROTOCOL_ID)
                                 INIT_DESC_ARRAY(STF_END_HEADER)
                                 INIT_DESC_ARRAY(STF_INST_PC_TARGET)
                                 INIT_DESC_ARRAY(STF_INST_REG)
@@ -178,6 +183,7 @@ namespace stf {
                                 INIT_DESC_ARRAY(STF_INST_OPCODE32)
                                 INIT_DESC_ARRAY(STF_INST_OPCODE16)
                                 INIT_DESC_ARRAY(STF_TRANSACTION)
+                                INIT_DESC_ARRAY(STF_TRANSACTION_DEPENDENCY)
                                 INIT_DESC_ARRAY(RESERVED_END)
                             };
 

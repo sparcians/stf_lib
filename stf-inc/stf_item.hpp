@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace stf {
-    template<typename ItemType, typename FilterType, typename ReaderType>
+    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType>
     class STFBufferedReader;
 
     template<typename ItemType, typename FilterType, typename ReaderType>
@@ -107,7 +107,7 @@ namespace stf {
                     item.setIndex_(index);
                 }
 
-                template<typename ItemType, typename FilterType, typename ReaderType>
+                template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType>
                 friend class stf::STFBufferedReader;
         };
 

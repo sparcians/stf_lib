@@ -239,8 +239,8 @@ namespace stf {
             template<typename OStream>
             static inline void formatHex(OStream&& os,
                                          const uint8_t val,
-                                         const int width,
-                                         const char pad_char) {
+                                         const int width = numHexDigits<uint8_t>(),
+                                         const char pad_char = '0') {
                 formatHex(os, static_cast<uint16_t>(val), width, pad_char);
             }
 
@@ -257,6 +257,21 @@ namespace stf {
                 FlagSaver flags(os);
                 os << std::dec;
                 formatWidth_(os, val, width, pad_char);
+            }
+
+            /**
+             * Formats the given uint8_t in decimal to the specified width, padding with the specified character
+             * \param os ostream to write result to
+             * \param val value to format
+             * \param width width to format to
+             * \param pad_char padding character
+             */
+            template<typename OStream>
+            static inline void formatDec(OStream&& os,
+                                         const uint8_t val,
+                                         const int width = 0,
+                                         const char pad_char = '0') {
+                formatDec(os, static_cast<uint16_t>(val), width, pad_char);
             }
 
             /**

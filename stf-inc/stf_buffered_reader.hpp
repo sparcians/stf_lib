@@ -15,7 +15,7 @@
 #include "stf_enums.hpp"
 #include "stf_exception.hpp"
 #include "stf_item.hpp"
-#include "stf_reader.hpp"
+#include "stf_reader_base.hpp"
 #include "stf_record.hpp"
 #include "stf_record_types.hpp"
 
@@ -30,8 +30,18 @@ namespace stf {
      * \class STFBufferedReader
      * \brief The STFBufferedReader provides an iterator to a buffered stream of objects constructed from a trace
      */
-    template<typename ItemType, typename FilterType, typename ReaderType>
-    class STFBufferedReader: public STFReader {
+    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType>
+    class STFBufferedReader: public BaseReaderType {
+        private:
+            static_assert(std::is_base_of_v<STFReaderBase, BaseReaderType>,
+                          "BaseReaderType must inherit from STFReaderBase");
+
+            void resetBuffer_() {
+                buf_.reset();
+                head_ = 0;
+                tail_ = 0;
+            }
+
         protected:
             /**
              * \typedef IntDescriptor
@@ -53,8 +63,8 @@ namespace stf {
             using BufferT = ItemType[]; // NOLINT: Use C-array here so we can use [] operator on the unique_ptr
             std::unique_ptr<BufferT> buf_; /**< Circular buffer */
 
-            size_t head_;         /**< index of head of current item in circular buffer */
-            size_t tail_;         /**< index of tail of current item in circular buffer */
+            size_t head_ = 0;         /**< index of head of current item in circular buffer */
+            size_t tail_ = 0;         /**< index of tail of current item in circular buffer */
             size_t num_items_read_ = 0; /**< Counts number of items read from the buffer */
             bool buffer_is_empty_ = true; /**< True if the buffer contains no items */
             size_t num_skipped_items_ = 0; /**< Counts number of skipped items so that item indices can be adjusted */
@@ -337,7 +347,7 @@ namespace stf {
             __attribute__((hot, always_inline))
             inline const STFRecord* readRecord_(ItemType& item) {
                 STFRecord::UniqueHandle urec;
-                operator>>(urec);
+                BaseReaderType::operator>>(urec);
 
                 if(STF_EXPECT_FALSE(filter_.isFiltered(urec->getId()))) {
                     return nullptr;
@@ -598,20 +608,16 @@ namespace stf {
              */
             void open(const std::string_view filename,
                       const bool force_single_threaded_stream = false) {
-                STFReader::open(filename, force_single_threaded_stream);
-                buf_.reset();
-                head_ = 0;
-                tail_ = 0;
+                BaseReaderType::open(filename, force_single_threaded_stream);
+                resetBuffer_();
             }
 
             /**
              * \brief Closes the file
              */
-            int close() {
-                buf_.reset();
-                head_ = 0;
-                tail_ = 0;
-                return STFReader::close();
+            int close() override {
+                resetBuffer_();
+                return BaseReaderType::close();
             }
 
             /**
@@ -646,19 +652,12 @@ namespace stf {
                 else {
                     // We don't need to seek the reader past items we've already read
                     const size_t num_to_skip = num_items - num_buffered;
-                    STFReader::seek(num_to_skip);
+                    BaseReaderType::seek(num_to_skip);
                     head_ = 0;
                     tail_ = 0;
                     initItemBuffer_();
                     it = begin();
                 }
-            }
-
-            /**
-             * Returns the number of records read so far
-             */
-            inline size_t numRecordsRead() const {
-                return STFReader::numRecordsRead();
             }
 
             /**

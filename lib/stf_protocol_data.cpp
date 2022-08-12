@@ -1,4 +1,5 @@
 #include "stf_enum_utils.hpp"
+#include "stf_ifstream.hpp"
 #include "stf_protocol_data.hpp"
 
 namespace stf {
@@ -17,5 +18,10 @@ namespace stf {
 
                 return os;
         }
+    }
+
+    STFIFstream& operator>>(STFIFstream& strm, protocols::ProtocolData::UniqueHandle& ptr) {
+        strm.readFromId(strm.getProtocolId(), ptr);
+        return strm;
     }
 }

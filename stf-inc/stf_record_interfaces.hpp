@@ -295,7 +295,7 @@ namespace stf {
             inline void pack_impl(STFOFstream& writer) const {
                 writer.trackPC(*static_cast<const ClassT*>(this));
                 GenericSingleDataRecord<ClassT, OpcodeT>::pack_impl(writer);
-                writer.instructionRecordCallback();
+                writer.markerRecordCallback();
             }
 
             /**
@@ -307,7 +307,7 @@ namespace stf {
                 GenericSingleDataRecord<ClassT, OpcodeT>::unpack_impl(reader);
                 reader.trackPC(*static_cast<ClassT*>(this));
                 pc_ = reader.getPC();
-                reader.instructionRecordCallback();
+                reader.markerRecordCallback();
             }
 
             /**

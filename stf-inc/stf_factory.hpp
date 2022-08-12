@@ -78,13 +78,11 @@ namespace stf {
 
             /**
              * Constructs an instance of the record type associated with the given descriptors::encoded::Descriptor
-             * \param desc descriptors::encoded::Descriptor to construct
+             * \param strm STFIFstream to read data from
+             * \param object_id ID of type to construct
              */
             __attribute__((always_inline))
-            inline PtrType construct_(STFIFstream& strm) {
-                Enum object_id;
-                strm >> object_id;
-
+            inline PtrType construct_(STFIFstream& strm, const Enum object_id) {
                 try {
                     const auto& callback = factory_callbacks_[convertToIndex_(object_id)];
                     if(STF_EXPECT_FALSE(!callback)) {
@@ -97,6 +95,17 @@ namespace stf {
                 catch(const std::out_of_range&) {
                     invalid_descriptor_throw("Attempted to construct invalid object: " << object_id);
                 }
+            }
+
+            /**
+             * Constructs an instance of the record type associated with the given descriptors::encoded::Descriptor
+             * \param strm STFIFstream to read data from
+             */
+            __attribute__((always_inline))
+            inline PtrType construct_(STFIFstream& strm) {
+                Enum object_id;
+                strm >> object_id;
+                return construct_(strm, object_id);
             }
 
             Factory() = default;
@@ -123,6 +132,16 @@ namespace stf {
             __attribute__((always_inline))
             static inline PtrType construct(STFIFstream& strm) {
                 return get_().construct_(strm);
+            }
+
+            /**
+             * Constructs an STFObject from a trace
+             * \param strm Stream to extract data from
+             * \param object_id Manually-specified ID of class to construct
+             */
+            __attribute__((always_inline))
+            static inline PtrType construct(STFIFstream& strm, const Enum object_id) {
+                return get_().construct_(strm, object_id);
             }
     };
 

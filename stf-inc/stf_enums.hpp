@@ -8,9 +8,6 @@
 #include "stf_enum_utils.hpp"
 
 namespace stf {
-    class STFWriter;
-    class STFReader;
-
     /**
      * \enum STF_FILE_TYPE
      * \brief Supported STF file types
@@ -141,7 +138,8 @@ namespace stf {
         STF_CONTAIN_MULTI_CORE              = 0x00010000, /**< Trace contains multiple cores */
         STF_CONTAIN_PTE_HW_AD               = 0x00020000, /**< Trace contains PTE hardware addresses */
         STF_CONTAIN_VEC                     = 0x00040000, /**< Trace contains vector instructions */
-        STF_CONTAIN_EVENT64                 = 0x00080000  /**< Trace contains 64 bit event records */
+        STF_CONTAIN_EVENT64                 = 0x00080000, /**< Trace contains 64 bit event records */
+        STF_CONTAIN_TRANSACTIONS            = 0x00100000, /**< Trace contains timed transactions */
     };
 
     /**
