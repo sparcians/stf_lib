@@ -185,6 +185,28 @@ namespace stf {
         return deleters_[object_id]; \
     }
 
+#define __TEST_NAMESPACE(name, ns, msg) \
+    struct __TEST_NAMESPACE_##name;  \
+    static_assert(std::is_same_v<__TEST_NAMESPACE_##name, ::ns::__TEST_NAMESPACE_##name>, msg);
+
+#define __PAUSE_NAMESPACE(name, ns) \
+    __TEST_NAMESPACE(name, ns, "Not currently in " #ns " namespace") \
+    } \
+
+#define __RESUME_NAMESPACE(ns) \
+    namespace ns {
+
+/**
+ * \def NAMESPACE_WRAP
+ *
+ * Ensures that body is instantiated inside the stf namespace
+ *
+ */
+#define NAMESPACE_WRAP(name, ns, body) \
+    __PAUSE_NAMESPACE(name, stf::ns) \
+    body \
+    __RESUME_NAMESPACE(ns)
+
 /**
  * \def REGISTER_WITH_FACTORY
  *
@@ -192,9 +214,7 @@ namespace stf {
  *
  */
 #define REGISTER_WITH_FACTORY(object_type, cls) \
-    struct __TEST_NAMESPACE_STF;  \
-    static_assert(std::is_same_v<__TEST_NAMESPACE_STF, ::stf::__TEST_NAMESPACE_STF>, \
-                  "REGISTER_WITH_FACTORY should only be used in the stf namespace"); \
+    __TEST_NAMESPACE(STF, stf, "REGISTER_WITH_FACTORY should only be used in the stf namespace") \
     template<> \
     template<> \
     inline constexpr object_type::factory_type::Constructor object_type::factory_type::genConstructor_<ObjectIdConverter::toTrace(cls::getTypeId())>() { \

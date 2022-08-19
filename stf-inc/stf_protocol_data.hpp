@@ -70,6 +70,7 @@ namespace stf {
  *
  * Registers a new protocol data type
  */
-#define REGISTER_PROTOCOL(cls) REGISTER_WITH_FACTORY(protocols::ProtocolData, protocols::cls)
+#define REGISTER_PROTOCOL(cls) \
+    NAMESPACE_WRAP(protocols, protocols, REGISTER_WITH_FACTORY(protocols::ProtocolData, protocols::cls)) \
 
 #endif

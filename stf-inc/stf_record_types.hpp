@@ -90,6 +90,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(STFIdentifierRecord)
+
     /**
      * \class VersionRecord
      *
@@ -159,6 +161,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(VersionRecord)
+
     /**
      * \class CommentRecord
      *
@@ -225,6 +229,8 @@ namespace stf {
             friend std::ostream& operator<<(std::ostream& os, const CommentRecord& comment);
     };
 
+    REGISTER_RECORD(CommentRecord)
+
     /**
      * \class ISARecord
      *
@@ -256,6 +262,8 @@ namespace stf {
              */
             ISA getISA() const { return GenericSingleDataRecord::getData_(); }
     };
+
+    REGISTER_RECORD(ISARecord)
 
     /**
      * \class InstIEMRecord
@@ -290,6 +298,8 @@ namespace stf {
             INST_IEM getMode() const { return GenericSingleDataRecord::getData_(); }
     };
 
+    REGISTER_RECORD(InstIEMRecord)
+
     /**
      * \class ForcePCRecord
      *
@@ -317,6 +327,8 @@ namespace stf {
             {
             }
     };
+
+    REGISTER_RECORD(ForcePCRecord)
 
     /**
      * \class VLenConfigRecord
@@ -371,6 +383,8 @@ namespace stf {
             vlen_t getVLen() const { return GenericSingleDataRecord::getData_(); }
     };
 
+    REGISTER_RECORD(VLenConfigRecord)
+
     /**
      * \class ProtocolIdRecord
      *
@@ -422,6 +436,8 @@ namespace stf {
             protocols::ProtocolId getId() const { return GenericSingleDataRecord::getData_(); }
     };
 
+    REGISTER_RECORD(ProtocolIdRecord)
+
     /**
      * \class EndOfHeaderRecord
      *
@@ -440,6 +456,8 @@ namespace stf {
                 unpack_impl(strm);
             }
     };
+
+    REGISTER_RECORD(EndOfHeaderRecord)
 
     /**
      * \class PageTableWalkRecord
@@ -720,6 +738,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(PageTableWalkRecord)
+
     /**
      * Writes a PageTableWalkRecord::PTE to an STFOFstream
      */
@@ -818,6 +838,7 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(ProcessIDExtRecord)
 
     /**
      * \class EventRecord
@@ -1020,6 +1041,8 @@ namespace stf {
             inline void format_impl(std::ostream& os) const;
     };
 
+    REGISTER_RECORD(EventRecord)
+
     /**
      * Prints an EventRecord::TYPE to an std::ostream
      * \param os std::ostream to print to
@@ -1060,6 +1083,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(EventPCTargetRecord)
+
     /**
      * \class InstPCTargetRecord
      *
@@ -1087,6 +1112,8 @@ namespace stf {
             {
             }
     };
+
+    REGISTER_RECORD(InstPCTargetRecord)
 
     /**
      * \class InstRegRecord
@@ -1451,6 +1478,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(InstRegRecord)
+
     /**
      * \class InstMemContentRecord
      *
@@ -1483,6 +1512,8 @@ namespace stf {
              */
             uint64_t getData() const { return GenericSingleDataRecord::getData_(); }
     };
+
+    REGISTER_RECORD(InstMemContentRecord)
 
     /**
      * \class InstMemAccessRecord
@@ -1607,6 +1638,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(InstMemAccessRecord)
+
     /**
      * \class InstOpcode32Record
      *
@@ -1635,6 +1668,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(InstOpcode32Record)
+
     /**
      * \class InstOpcode16Record
      *
@@ -1662,6 +1697,8 @@ namespace stf {
             {
             }
     };
+
+    REGISTER_RECORD(InstOpcode16Record)
 
     /**
      * \class InstMicroOpRecord
@@ -1733,6 +1770,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(InstMicroOpRecord)
+
     /**
      * \class InstReadyRegRecord
      *
@@ -1765,6 +1804,8 @@ namespace stf {
              */
             uint16_t getReg() const { return GenericSingleDataRecord::getData_(); }
     };
+
+    REGISTER_RECORD(InstReadyRegRecord)
 
     /**
      * \class BusMasterAccessRecord
@@ -1845,6 +1886,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(BusMasterAccessRecord)
+
     /**
      * \class BusMasterContentRecord
      *
@@ -1877,6 +1920,8 @@ namespace stf {
              */
             uint64_t getData() const { return GenericSingleDataRecord::getData_(); }
     };
+
+    REGISTER_RECORD(BusMasterContentRecord)
 
     /**
      * \class TraceInfoRecord
@@ -2135,6 +2180,7 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(TraceInfoRecord)
 
     /**
      * Writes a TraceInfoRecord to an ostream
@@ -2255,6 +2301,8 @@ namespace stf {
                 return getFeatures() & enums::to_int(feature);
             }
     };
+
+    REGISTER_RECORD(TraceInfoFeatureRecord)
 
     /**
      * \class TransactionRecord
@@ -2403,6 +2451,8 @@ namespace stf {
             }
     };
 
+    REGISTER_RECORD(TransactionRecord)
+
     /**
      * \class TransactionDependencyRecord
      *
@@ -2497,32 +2547,6 @@ namespace stf {
             }
     };
 
-    REGISTER_RECORD(STFIdentifierRecord)
-    REGISTER_RECORD(VersionRecord)
-    REGISTER_RECORD(CommentRecord)
-    REGISTER_RECORD(ISARecord)
-    REGISTER_RECORD(InstIEMRecord)
-    REGISTER_RECORD(ForcePCRecord)
-    REGISTER_RECORD(VLenConfigRecord)
-    REGISTER_RECORD(ProtocolIdRecord)
-    REGISTER_RECORD(EndOfHeaderRecord)
-    REGISTER_RECORD(PageTableWalkRecord)
-    REGISTER_RECORD(ProcessIDExtRecord)
-    REGISTER_RECORD(EventRecord)
-    REGISTER_RECORD(EventPCTargetRecord)
-    REGISTER_RECORD(InstPCTargetRecord)
-    REGISTER_RECORD(InstRegRecord)
-    REGISTER_RECORD(InstMemContentRecord)
-    REGISTER_RECORD(InstMemAccessRecord)
-    REGISTER_RECORD(InstOpcode32Record)
-    REGISTER_RECORD(InstOpcode16Record)
-    REGISTER_RECORD(InstMicroOpRecord)
-    REGISTER_RECORD(InstReadyRegRecord)
-    REGISTER_RECORD(BusMasterAccessRecord)
-    REGISTER_RECORD(BusMasterContentRecord)
-    REGISTER_RECORD(TraceInfoRecord)
-    REGISTER_RECORD(TraceInfoFeatureRecord)
-    REGISTER_RECORD(TransactionRecord)
     REGISTER_RECORD(TransactionDependencyRecord)
 } // end namespace stf
 
