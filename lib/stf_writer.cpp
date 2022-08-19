@@ -194,7 +194,7 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_TRANSACTION_DEPENDENCY:
                 stf_throw("Attempted to write transaction record " << desc << " in an instruction trace");
             case descriptors::internal::Descriptor::STF_RESERVED:
-            case descriptors::internal::Descriptor::RESERVED_END:
+            case descriptors::internal::Descriptor::__RESERVED_END:
                 stf_throw("Attempted to write reserved record: " << desc);
         }
 

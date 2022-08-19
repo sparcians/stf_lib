@@ -64,15 +64,6 @@ namespace stf {
             STFReaderBase() = default;
 
             /**
-             * Constructs an STFReader and opens the specified file
-             * \param filename file to open
-             * \param force_single_threaded_stream If true, forces single threaded mode
-             */
-            explicit STFReaderBase(const std::string_view filename, const bool force_single_threaded_stream = false) {
-                open(filename, force_single_threaded_stream);
-            }
-
-            /**
              * \brief Check STF and trace versions for compatibility
              * \return true if the STF libray supports the trace; otherwise false
              */

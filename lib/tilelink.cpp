@@ -6,6 +6,9 @@ namespace stf {
         namespace tilelink {
             std::ostream& operator<<(std::ostream& os, const ChannelType id) {
                 switch(id) {
+                    case ChannelType::__RESERVED_START:
+                        os << "RESERVED_START";
+                        return os;
                     case ChannelType::CHANNEL_A:
                         os << "CHANNEL_A";
                         return os;
@@ -21,7 +24,7 @@ namespace stf {
                     case ChannelType::CHANNEL_E:
                         os << "CHANNEL_E";
                         return os;
-                    case ChannelType::RESERVED_END:
+                    case ChannelType::__RESERVED_END:
                         os << "RESERVED_END";
                         return os;
                 };

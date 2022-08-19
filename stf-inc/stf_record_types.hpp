@@ -9,6 +9,7 @@
 #include <vector>
 #include "boost_small_vector.hpp"
 #include "format_utils.hpp"
+#include "stf_descriptor.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_record.hpp"
 #include "stf_record_interfaces.hpp"
@@ -28,7 +29,7 @@ namespace stf {
      * Indicates the beginning of an STF file
      *
      */
-    class STFIdentifierRecord : public TypeAwareSTFRecord<STFIdentifierRecord> {
+    class STFIdentifierRecord : public TypeAwareSTFRecord<STFIdentifierRecord, descriptors::internal::Descriptor::STF_IDENTIFIER> {
         private:
             static constexpr std::string_view IDENT_STR_ = "STF";
             std::array<char, 3> str_;
@@ -95,7 +96,7 @@ namespace stf {
      * Defines STF version
      *
      */
-    class VersionRecord : public TypeAwareSTFRecord<VersionRecord> {
+    class VersionRecord : public TypeAwareSTFRecord<VersionRecord, descriptors::internal::Descriptor::STF_VERSION> {
         private:
             uint32_t major_ = 0;              /**< major verion number */
             uint32_t minor_ = 0;              /**< minor version number */
@@ -164,7 +165,7 @@ namespace stf {
      * Defines comment
      *
      */
-    class CommentRecord : public TypeAwareSTFRecord<CommentRecord> {
+    class CommentRecord : public TypeAwareSTFRecord<CommentRecord, descriptors::internal::Descriptor::STF_COMMENT> {
         private:
             SerializableString<uint32_t> data_;                /**< the comment */
 
@@ -229,7 +230,7 @@ namespace stf {
      *
      * Record used to hold an ISA family
      */
-    class ISARecord : public GenericSingleDataRecord<ISARecord, ISA> {
+    class ISARecord : public GenericSingleDataRecord<ISARecord, ISA, descriptors::internal::Descriptor::STF_ISA> {
         public:
             ISARecord() = default;
 
@@ -262,7 +263,7 @@ namespace stf {
      * Defines instruction encoding mode
      *
      */
-    class InstIEMRecord : public GenericSingleDataRecord<InstIEMRecord, INST_IEM> {
+    class InstIEMRecord : public GenericSingleDataRecord<InstIEMRecord, INST_IEM, descriptors::internal::Descriptor::STF_INST_IEM> {
         public:
             InstIEMRecord() = default;
 
@@ -295,7 +296,7 @@ namespace stf {
      * Initializes PC
      *
      */
-    class ForcePCRecord : public GenericPCTargetRecord<ForcePCRecord> {
+    class ForcePCRecord : public GenericPCTargetRecord<ForcePCRecord, descriptors::internal::Descriptor::STF_FORCE_PC> {
         public:
             ForcePCRecord() = default;
 
@@ -322,7 +323,7 @@ namespace stf {
      *
      * Sets vlen parameter for a trace
      */
-    class VLenConfigRecord : public GenericSingleDataRecord<VLenConfigRecord, vlen_t> {
+    class VLenConfigRecord : public GenericSingleDataRecord<VLenConfigRecord, vlen_t, descriptors::internal::Descriptor::STF_VLEN_CONFIG> {
         public:
             VLenConfigRecord() = default;
 
@@ -375,7 +376,7 @@ namespace stf {
      *
      * Indicates what protocol is used in a transaction trace
      */
-    class ProtocolIdRecord : public GenericSingleDataRecord<ProtocolIdRecord, protocols::ProtocolId> {
+    class ProtocolIdRecord : public GenericSingleDataRecord<ProtocolIdRecord, protocols::ProtocolId, descriptors::internal::Descriptor::STF_PROTOCOL_ID> {
         public:
             ProtocolIdRecord() = default;
 
@@ -427,7 +428,7 @@ namespace stf {
      * Marks end of STF header
      *
      */
-    class EndOfHeaderRecord : public GenericEmptyRecord<EndOfHeaderRecord> {
+    class EndOfHeaderRecord : public GenericEmptyRecord<EndOfHeaderRecord, descriptors::internal::Descriptor::STF_END_HEADER> {
         public:
             EndOfHeaderRecord() = default;
 
@@ -445,7 +446,7 @@ namespace stf {
      *
      * Contains all page table entries necessary to perform a table walk for VA -> PA translation
      */
-    class PageTableWalkRecord : public TypeAwareSTFRecord<PageTableWalkRecord> {
+    class PageTableWalkRecord : public TypeAwareSTFRecord<PageTableWalkRecord, descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK> {
         public:
             /**
              * \enum ATTR
@@ -741,7 +742,7 @@ namespace stf {
      *  Extendted Process ID Record.
      *
      */
-    class ProcessIDExtRecord : public TypeAwareSTFRecord<ProcessIDExtRecord> {
+    class ProcessIDExtRecord : public TypeAwareSTFRecord<ProcessIDExtRecord, descriptors::internal::Descriptor::STF_PROCESS_ID_EXT> {
         private:
             uint32_t tgid_;              /**< process ID */
             uint32_t tid_;               /**< thread ID */
@@ -824,7 +825,7 @@ namespace stf {
      * Event number
      *
      */
-    class EventRecord : public TypeAwareSTFRecord<EventRecord> {
+    class EventRecord : public TypeAwareSTFRecord<EventRecord, descriptors::internal::Descriptor::STF_EVENT> {
         public:
             static constexpr uint64_t INTERRUPT_MASK = (1ULL << 63); /**< Interrupt mask */
             static constexpr uint64_t SPECIAL_MASK = (1ULL << 62); /**< Special event mask */
@@ -1037,7 +1038,7 @@ namespace stf {
      * Defines new PC target of an event
      *
      */
-    class EventPCTargetRecord : public GenericPCTargetRecord<EventPCTargetRecord> {
+    class EventPCTargetRecord : public GenericPCTargetRecord<EventPCTargetRecord, descriptors::internal::Descriptor::STF_EVENT_PC_TARGET> {
         public:
             EventPCTargetRecord() = default;
 
@@ -1065,7 +1066,7 @@ namespace stf {
      * Defines new PC target of a taken branch
      *
      */
-    class InstPCTargetRecord : public GenericPCTargetRecord<InstPCTargetRecord> {
+    class InstPCTargetRecord : public GenericPCTargetRecord<InstPCTargetRecord, descriptors::internal::Descriptor::STF_INST_PC_TARGET> {
         public:
             InstPCTargetRecord() = default;
 
@@ -1094,7 +1095,7 @@ namespace stf {
      * MSB of the register number indicates source (0) or destination (1)
      *
      */
-    class InstRegRecord : public TypeAwareSTFRecord<InstRegRecord> {
+    class InstRegRecord : public TypeAwareSTFRecord<InstRegRecord, descriptors::internal::Descriptor::STF_INST_REG> {
         public:
             /**
              * \typedef ValueType
@@ -1456,7 +1457,7 @@ namespace stf {
      * Defines memory data of load/store
      *
      */
-    class InstMemContentRecord : public GenericSingleDataRecord<InstMemContentRecord, uint64_t> {
+    class InstMemContentRecord : public GenericSingleDataRecord<InstMemContentRecord, uint64_t, descriptors::internal::Descriptor::STF_INST_MEM_CONTENT> {
         public:
             InstMemContentRecord() = default;
 
@@ -1489,7 +1490,7 @@ namespace stf {
      * Defines memory access address, size, and attributes
      *
      */
-    class InstMemAccessRecord : public TypeAwareSTFRecord<InstMemAccessRecord> {
+    class InstMemAccessRecord : public TypeAwareSTFRecord<InstMemAccessRecord, descriptors::internal::Descriptor::STF_INST_MEM_ACCESS> {
         private:
             uint64_t address_ = 0;                              /**< memory access address */
             uint16_t size_ = 0;                                 /**< memory access size */
@@ -1612,7 +1613,7 @@ namespace stf {
      * Defines 32-bit instruction opcode
      *
      */
-    class InstOpcode32Record : public GenericOpcodeRecord<InstOpcode32Record, uint32_t> {
+    class InstOpcode32Record : public GenericOpcodeRecord<InstOpcode32Record, uint32_t, descriptors::internal::Descriptor::STF_INST_OPCODE32> {
         public:
             InstOpcode32Record() = default;
 
@@ -1640,7 +1641,7 @@ namespace stf {
      * Defines 16-bit instruction opcode
      *
      */
-    class InstOpcode16Record : public GenericOpcodeRecord<InstOpcode16Record, uint16_t> {
+    class InstOpcode16Record : public GenericOpcodeRecord<InstOpcode16Record, uint16_t, descriptors::internal::Descriptor::STF_INST_OPCODE16> {
         public:
             InstOpcode16Record() = default;
 
@@ -1668,7 +1669,7 @@ namespace stf {
      * Defines instruction micro-op
      *
      */
-    class InstMicroOpRecord : public TypeAwareSTFRecord<InstMicroOpRecord> {
+    class InstMicroOpRecord : public TypeAwareSTFRecord<InstMicroOpRecord, descriptors::internal::Descriptor::STF_INST_MICROOP> {
         private:
             uint8_t size_;               /**< size of the micro-op */
             uint32_t microop_;           /**< micro-op */
@@ -1738,7 +1739,7 @@ namespace stf {
      * Mark destination register as ready
      *
      */
-    class InstReadyRegRecord : public GenericSingleDataRecord<InstReadyRegRecord, uint16_t> {
+    class InstReadyRegRecord : public GenericSingleDataRecord<InstReadyRegRecord, uint16_t, descriptors::internal::Descriptor::STF_INST_READY_REG> {
         public:
             InstReadyRegRecord() = default;
 
@@ -1771,7 +1772,7 @@ namespace stf {
      * Defines memory access attributions
      *
      */
-    class BusMasterAccessRecord : public TypeAwareSTFRecord<BusMasterAccessRecord> {
+    class BusMasterAccessRecord : public TypeAwareSTFRecord<BusMasterAccessRecord, descriptors::internal::Descriptor::STF_BUS_MASTER_ACCESS> {
         private:
             uint64_t address_;              /**< memory access address */
             uint16_t size_;                 /**< memory access data size */
@@ -1850,7 +1851,7 @@ namespace stf {
      * Defines memory data of bus master read/write
      *
      */
-    class BusMasterContentRecord : public GenericSingleDataRecord<BusMasterContentRecord, uint64_t> {
+    class BusMasterContentRecord : public GenericSingleDataRecord<BusMasterContentRecord, uint64_t, descriptors::internal::Descriptor::STF_BUS_MASTER_CONTENT> {
         public:
             BusMasterContentRecord() = default;
 
@@ -1883,7 +1884,7 @@ namespace stf {
      * Defines trace generator and features
      *
      */
-    class TraceInfoRecord : public TypeAwareSTFRecord<TraceInfoRecord> {
+    class TraceInfoRecord : public TypeAwareSTFRecord<TraceInfoRecord, descriptors::internal::Descriptor::STF_TRACE_INFO> {
         private:
             STF_GEN generator_ = STF_GEN::STF_GEN_RESERVED;          /**< The generator used to create the trace */
             uint8_t major_version_ = 0;                                  /**< The major version of the generator */
@@ -2145,7 +2146,7 @@ namespace stf {
      *
      * Defines which features are supported by this trace
      */
-    class TraceInfoFeatureRecord : public GenericSingleDataRecord<TraceInfoFeatureRecord, uint64_t> {
+    class TraceInfoFeatureRecord : public GenericSingleDataRecord<TraceInfoFeatureRecord, uint64_t, descriptors::internal::Descriptor::STF_TRACE_INFO_FEATURE> {
         private:
             void handleStreamFlags_(STFFstream& strm) const {
                 // If the trace doesn't support 64 bit events, tell the stream to pack/unpack from 32 bits
@@ -2261,9 +2262,9 @@ namespace stf {
      * Represents a timestamped bus transaction in the trace
      *
      */
-    class TransactionRecord : public TypeAwareSTFRecord<TransactionRecord> {
+    class TransactionRecord : public TypeAwareSTFRecord<TransactionRecord, descriptors::internal::Descriptor::STF_TRANSACTION> {
         private:
-            inline static uint64_t next_transaction_id_ = 0;
+            static inline uint64_t next_transaction_id_ = 0;
 
             uint64_t transaction_id_;
             uint64_t time_delta_;
@@ -2408,7 +2409,7 @@ namespace stf {
      * Represents a timestamped bus transaction in the trace
      *
      */
-    class TransactionDependencyRecord : public TypeAwareSTFRecord<TransactionDependencyRecord> {
+    class TransactionDependencyRecord : public TypeAwareSTFRecord<TransactionDependencyRecord, descriptors::internal::Descriptor::STF_TRANSACTION_DEPENDENCY> {
         private:
             uint64_t dependency_id_;
             uint64_t time_delta_;
@@ -2495,6 +2496,34 @@ namespace stf {
                 return time_delta_;
             }
     };
+
+    REGISTER_RECORD(STFIdentifierRecord)
+    REGISTER_RECORD(VersionRecord)
+    REGISTER_RECORD(CommentRecord)
+    REGISTER_RECORD(ISARecord)
+    REGISTER_RECORD(InstIEMRecord)
+    REGISTER_RECORD(ForcePCRecord)
+    REGISTER_RECORD(VLenConfigRecord)
+    REGISTER_RECORD(ProtocolIdRecord)
+    REGISTER_RECORD(EndOfHeaderRecord)
+    REGISTER_RECORD(PageTableWalkRecord)
+    REGISTER_RECORD(ProcessIDExtRecord)
+    REGISTER_RECORD(EventRecord)
+    REGISTER_RECORD(EventPCTargetRecord)
+    REGISTER_RECORD(InstPCTargetRecord)
+    REGISTER_RECORD(InstRegRecord)
+    REGISTER_RECORD(InstMemContentRecord)
+    REGISTER_RECORD(InstMemAccessRecord)
+    REGISTER_RECORD(InstOpcode32Record)
+    REGISTER_RECORD(InstOpcode16Record)
+    REGISTER_RECORD(InstMicroOpRecord)
+    REGISTER_RECORD(InstReadyRegRecord)
+    REGISTER_RECORD(BusMasterAccessRecord)
+    REGISTER_RECORD(BusMasterContentRecord)
+    REGISTER_RECORD(TraceInfoRecord)
+    REGISTER_RECORD(TraceInfoFeatureRecord)
+    REGISTER_RECORD(TransactionRecord)
+    REGISTER_RECORD(TransactionDependencyRecord)
 } // end namespace stf
 
 #endif

@@ -4,7 +4,7 @@
 #include <cstddef>
 
 namespace stf {
-    template<typename PoolType, typename Enum = typename PoolType::base_type::id_type>
+    template<typename ObjectType>
     class Factory;
 
     template<typename T>

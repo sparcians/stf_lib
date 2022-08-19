@@ -18,7 +18,7 @@ namespace stf {
      * Defines the main STF record data structure
      *
      */
-    class STFRecord : public STFObject<STFRecord, descriptors::internal::Descriptor> {
+    class STFRecord : public STFObject<STFRecord, descriptors::internal::Descriptor, descriptors::encoded::Descriptor> {
         public:
             /**
              * Constructs an STFRecord
@@ -54,9 +54,13 @@ namespace stf {
                 return isInstructionRecord(getId());
             }
     };
-
-    DECLARE_FACTORY(RecordFactory, STFRecord, descriptors::encoded::Descriptor)
-
 } // end namespace stf
+
+/**
+ * \def REGISTER_RECORD
+ *
+ * Registers a new STF record type
+ */
+#define REGISTER_RECORD(cls) REGISTER_WITH_FACTORY(STFRecord, cls)
 
 #endif

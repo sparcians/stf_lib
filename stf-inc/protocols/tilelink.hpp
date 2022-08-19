@@ -8,17 +8,16 @@
 #include "format_utils.hpp"
 
 namespace stf {
-    class TransactionRecord;
-
     namespace protocols {
         namespace tilelink {
             enum class ChannelType : uint8_t {
+                __RESERVED_START,
                 CHANNEL_A,
                 CHANNEL_B,
                 CHANNEL_C,
                 CHANNEL_D,
                 CHANNEL_E,
-                RESERVED_END // Must be at end
+                __RESERVED_END // Must be at end
             };
 
             std::ostream& operator<<(std::ostream& os, ChannelType id);
@@ -48,16 +47,16 @@ namespace stf {
              *
              * Channel class that knows its own type
              */
-            template<typename T>
-            using TypeAwareChannel = TypeAwareSTFObject<T, Channel>;
+            template<typename T, ChannelType channel_type>
+            using TypeAwareChannel = TypeAwareSTFObject<T, Channel, channel_type>;
 
             /**
              * \class DataChannel
              *
              * Standard TileLink channel with data
              */
-            template<typename T>
-            class DataChannel : public TypeAwareChannel<T> {
+            template<typename T, ChannelType channel_type>
+            class DataChannel : public TypeAwareChannel<T, channel_type> {
                 private:
                     uint8_t code_;
                     uint8_t param_;
@@ -138,7 +137,7 @@ namespace stf {
                      * \param reader STFIFstream to use
                      */
                     inline void unpack_impl(STFIFstream& reader) {
-                        TypeAwareChannel<T>::read_(reader, code_, param_, size_, source_, data_);
+                        TypeAwareChannel<T, channel_type>::read_(reader, code_, param_, size_, source_, data_);
                     }
 
                     /**
@@ -146,7 +145,7 @@ namespace stf {
                      * \param writer STFOFstream to use
                      */
                     inline void pack_impl(STFOFstream& writer) const {
-                        TypeAwareChannel<T>::write_(writer, code_, param_, size_, source_, data_);
+                        TypeAwareChannel<T, channel_type>::write_(writer, code_, param_, size_, source_, data_);
                     }
 
                     /**
@@ -212,8 +211,8 @@ namespace stf {
              *
              * TileLink DataChannel that has an address field
              */
-            template<typename T>
-            class AddressChannel : public DataChannel<T> {
+            template<typename T, ChannelType channel_type>
+            class AddressChannel : public DataChannel<T, channel_type> {
                 private:
                     uint64_t address_;
 
@@ -243,7 +242,7 @@ namespace stf {
                                    const uint64_t source,
                                    const uint64_t address,
                                    const std::vector<uint8_t>& data) :
-                        DataChannel<T>(code, param, size, source, data),
+                        DataChannel<T, channel_type>(code, param, size, source, data),
                         address_(address)
                     {
                     }
@@ -263,7 +262,7 @@ namespace stf {
                                    const uint64_t source,
                                    const uint64_t address,
                                    std::vector<uint8_t>&& data) :
-                        DataChannel<T>(code, param, size, source, data),
+                        DataChannel<T, channel_type>(code, param, size, source, data),
                         address_(address)
                     {
                     }
@@ -290,8 +289,8 @@ namespace stf {
                      * \param reader STFIFstream to use
                      */
                     inline void unpack_impl(STFIFstream& reader) {
-                        DataChannel<T>::unpack_impl(reader);
-                        TypeAwareChannel<T>::read_(reader, address_);
+                        DataChannel<T, channel_type>::unpack_impl(reader);
+                        TypeAwareChannel<T, channel_type>::read_(reader, address_);
                     }
 
                     /**
@@ -299,8 +298,8 @@ namespace stf {
                      * \param writer STFOFstream to use
                      */
                     inline void pack_impl(STFOFstream& writer) const {
-                        DataChannel<T>::pack_impl(writer);
-                        TypeAwareChannel<T>::write_(writer, address_);
+                        DataChannel<T, channel_type>::pack_impl(writer);
+                        TypeAwareChannel<T, channel_type>::write_(writer, address_);
                     }
 
                     /**
@@ -311,7 +310,7 @@ namespace stf {
                         os << std::endl;
                         format_utils::formatLabel(os, "ADDRESS");
                         format_utils::formatVA(os, address_);
-                        DataChannel<T>::format_impl(os);
+                        DataChannel<T, channel_type>::format_impl(os);
                     }
 
                     /**
@@ -391,8 +390,8 @@ namespace stf {
              *
              * TileLink AddressChannel that has a mask field
              */
-            template<typename T>
-            class MaskedChannel : public AddressChannel<T> {
+            template<typename T, ChannelType channel_type>
+            class MaskedChannel : public AddressChannel<T, channel_type> {
                 private:
                     SerializableVector<uint8_t, uint16_t> mask_;
 
@@ -424,7 +423,7 @@ namespace stf {
                                   const uint64_t address,
                                   const std::vector<uint8_t>& data,
                                   const std::vector<uint8_t>& mask) :
-                        AddressChannel<T>(code, param, size, source, address, data),
+                        AddressChannel<T, channel_type>(code, param, size, source, address, data),
                         mask_(mask)
                     {
                     }
@@ -446,7 +445,7 @@ namespace stf {
                                   const uint64_t address,
                                   std::vector<uint8_t>&& data,
                                   std::vector<uint8_t>&& mask) :
-                        AddressChannel<T>(code, param, size, source, address, data),
+                        AddressChannel<T, channel_type>(code, param, size, source, address, data),
                         mask_(std::move(mask))
                     {
                     }
@@ -473,8 +472,8 @@ namespace stf {
                      * \param reader STFIFstream to use
                      */
                     inline void unpack_impl(STFIFstream& reader) {
-                        AddressChannel<T>::unpack_impl(reader);
-                        TypeAwareChannel<T>::read_(reader, mask_);
+                        AddressChannel<T, channel_type>::unpack_impl(reader);
+                        TypeAwareChannel<T, channel_type>::read_(reader, mask_);
                     }
 
                     /**
@@ -482,8 +481,8 @@ namespace stf {
                      * \param writer STFOFstream to use
                      */
                     inline void pack_impl(STFOFstream& writer) const {
-                        AddressChannel<T>::pack_impl(writer);
-                        TypeAwareChannel<T>::write_(writer, mask_);
+                        AddressChannel<T, channel_type>::pack_impl(writer);
+                        TypeAwareChannel<T, channel_type>::write_(writer, mask_);
                     }
 
                     /**
@@ -491,7 +490,7 @@ namespace stf {
                      * \param os ostream to use
                      */
                     inline void format_impl(std::ostream& os) const {
-                        AddressChannel<T>::format_impl(os);
+                        AddressChannel<T, channel_type>::format_impl(os);
                         os << std::endl;
                         format_utils::formatLabel(os, "MASK");
                         os << mask_;
@@ -509,7 +508,7 @@ namespace stf {
              * \class ChannelA
              * Represents Channel A in the TileLink protocol
              */
-            class ChannelA : public MaskedChannel<ChannelA> {
+            class ChannelA : public MaskedChannel<ChannelA, ChannelType::CHANNEL_A> {
                 public:
                     /**
                      * Constructs a tilelink::ChannelA from an STFIFstream
@@ -536,7 +535,7 @@ namespace stf {
                              const uint64_t address,
                              const std::vector<uint8_t>& data,
                              const std::vector<uint8_t>& mask) :
-                        MaskedChannel<ChannelA>(code, param, size, source, address, data, mask)
+                        MaskedChannel<ChannelA, ChannelType::CHANNEL_A>(code, param, size, source, address, data, mask)
                     {
                     }
 
@@ -557,7 +556,7 @@ namespace stf {
                              const uint64_t address,
                              std::vector<uint8_t>&& data,
                              std::vector<uint8_t>&& mask) :
-                        MaskedChannel<ChannelA>(code, param, size, source, address, data, mask)
+                        MaskedChannel<ChannelA, ChannelType::CHANNEL_A>(code, param, size, source, address, data, mask)
                     {
                     }
 
@@ -591,7 +590,7 @@ namespace stf {
              * \class ChannelB
              * Represents Channel B in the TileLink protocol
              */
-            class ChannelB : public MaskedChannel<ChannelB> {
+            class ChannelB : public MaskedChannel<ChannelB, ChannelType::CHANNEL_B> {
                 public:
                     /**
                      * Constructs a tilelink::ChannelB from an STFIFstream
@@ -618,7 +617,7 @@ namespace stf {
                              const uint64_t address,
                              const std::vector<uint8_t>& data,
                              const std::vector<uint8_t>& mask) :
-                        MaskedChannel<ChannelB>(code, param, size, source, address, data, mask)
+                        MaskedChannel<ChannelB, ChannelType::CHANNEL_B>(code, param, size, source, address, data, mask)
                     {
                     }
 
@@ -639,7 +638,7 @@ namespace stf {
                              const uint64_t address,
                              std::vector<uint8_t>&& data,
                              std::vector<uint8_t>&& mask) :
-                        MaskedChannel<ChannelB>(code, param, size, source, address, data, mask)
+                        MaskedChannel<ChannelB, ChannelType::CHANNEL_B>(code, param, size, source, address, data, mask)
                     {
                     }
 
@@ -673,7 +672,7 @@ namespace stf {
              * \class ChannelC
              * Represents Channel C in the TileLink protocol
              */
-            class ChannelC : public AddressChannel<ChannelC> {
+            class ChannelC : public AddressChannel<ChannelC, ChannelType::CHANNEL_C> {
                 public:
                     /**
                      * Constructs a tilelink::ChannelC from an STFIFstream
@@ -698,7 +697,7 @@ namespace stf {
                              const uint64_t source,
                              const uint64_t address,
                              const std::vector<uint8_t>& data) :
-                        AddressChannel<ChannelC>(code, param, size, source, address, data)
+                        AddressChannel<ChannelC, ChannelType::CHANNEL_C>(code, param, size, source, address, data)
                     {
                     }
 
@@ -717,7 +716,7 @@ namespace stf {
                              const uint64_t source,
                              const uint64_t address,
                              std::vector<uint8_t>&& data) :
-                        AddressChannel<ChannelC>(code, param, size, source, address, data)
+                        AddressChannel<ChannelC, ChannelType::CHANNEL_C>(code, param, size, source, address, data)
                     {
                     }
 
@@ -751,7 +750,7 @@ namespace stf {
              * \class ChannelD
              * Represents Channel D in the TileLink protocol
              */
-            class ChannelD : public DataChannel<ChannelD>, public SinkChannel {
+            class ChannelD : public DataChannel<ChannelD, ChannelType::CHANNEL_D>, public SinkChannel {
                 public:
                     /**
                      * Constructs a tilelink::ChannelD from an STFIFstream
@@ -776,7 +775,7 @@ namespace stf {
                              const uint64_t source,
                              const uint64_t sink,
                              const std::vector<uint8_t>& data) :
-                        DataChannel<ChannelD>(code, param, size, source, data),
+                        DataChannel<ChannelD, ChannelType::CHANNEL_D>(code, param, size, source, data),
                         SinkChannel(sink)
                     {
                     }
@@ -796,7 +795,7 @@ namespace stf {
                              const uint64_t source,
                              const uint64_t sink,
                              std::vector<uint8_t>&& data) :
-                        DataChannel<ChannelD>(code, param, size, source, data),
+                        DataChannel<ChannelD, ChannelType::CHANNEL_D>(code, param, size, source, data),
                         SinkChannel(sink)
                     {
                     }
@@ -850,7 +849,7 @@ namespace stf {
              * \class ChannelE
              * Represents Channel E in the TileLink protocol
              */
-            class ChannelE : public TypeAwareChannel<ChannelE>, public SinkChannel {
+            class ChannelE : public TypeAwareChannel<ChannelE, ChannelType::CHANNEL_E>, public SinkChannel {
                 public:
                     /**
                      * Constructs a tilelink::ChannelE from an STFIFstream
@@ -899,7 +898,7 @@ namespace stf {
          * \class TileLink
          * Represents a TileLink protocol transaction
          */
-        class TileLink : public TypeAwareProtocolData<TileLink> {
+        class TileLink : public TypeAwareProtocolData<TileLink, ProtocolId::TILELINK> {
             private:
                 tilelink::Channel::UniqueHandle channel_data_;
 
@@ -927,7 +926,7 @@ namespace stf {
                  * \param args Arguments passed to channel data constructor
                  */
                 template<typename ChannelType, typename ... Args>
-                inline static TransactionRecord makeTransactionWithDelta(const uint64_t time_delta, Args&&... args) {
+                static inline TransactionRecord makeTransactionWithDelta(const uint64_t time_delta, Args&&... args) {
                     return TransactionRecord::createNext(
                         time_delta,
                         TileLink::pool_type::construct<TileLink>(
@@ -941,7 +940,7 @@ namespace stf {
                  * \param args Arguments passed to channel data constructor
                  */
                 template<typename ChannelType, typename ... Args>
-                inline static TransactionRecord makeTransaction(Args&&... args) {
+                static inline TransactionRecord makeTransaction(Args&&... args) {
                     return TransactionRecord::createNext(
                         TileLink::pool_type::construct<TileLink>(
                             ChannelType::pool_type::template construct<ChannelType>(std::forward<Args>(args)...)
@@ -1006,7 +1005,20 @@ namespace stf {
         };
     }
 
-    DECLARE_FACTORY(ChannelFactory, protocols::tilelink::Channel)
+    REGISTER_PROTOCOL(TileLink)
+
+/**
+ * \def REGISTER_TILELINK_CHANNEL
+ *
+ * Registers a new TileLink channel type
+ */
+#define REGISTER_TILELINK_CHANNEL(cls) REGISTER_WITH_FACTORY(protocols::tilelink::Channel, protocols::tilelink::cls)
+
+    REGISTER_TILELINK_CHANNEL(ChannelA)
+    REGISTER_TILELINK_CHANNEL(ChannelB)
+    REGISTER_TILELINK_CHANNEL(ChannelC)
+    REGISTER_TILELINK_CHANNEL(ChannelD)
+    REGISTER_TILELINK_CHANNEL(ChannelE)
 }
 
 #endif

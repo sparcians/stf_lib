@@ -30,7 +30,7 @@ namespace stf {
             static bool atexit_handler_registered_; /**< Flag used to indicate whether atexit handler has already been registered */
             vlen_t vlen_ = 0; /**< Vector vlen parameter - if 0, the parameter has not been set and
                                    attempting to read/write a vector register record will cause an error */
-            protocols::ProtocolId protocol_id_ = protocols::ProtocolId::RESERVED_END;
+            protocols::ProtocolId protocol_id_ = protocols::ProtocolId::__RESERVED_END;
 
         protected:
             FILE* stream_ = nullptr; /**< Underlying file stream */

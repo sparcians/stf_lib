@@ -1,8 +1,4 @@
-#include <cstdint>
-#include <memory>
 #include <ostream>
-#include <string>
-#include <vector>
 
 #include "format_utils.hpp"
 #include "stf_enums.hpp"
@@ -11,35 +7,13 @@
 #include "stf_record.hpp"
 #include "stf_record_types.hpp"
 #include "stf_reg_def.hpp"
-#include "stf_serializable_container.hpp"
-#include "stf_writer.hpp"
-
-#define REGISTER_RECORD(desc, cls) REGISTER_WITH_FACTORY(RecordFactory, desc, cls)
 
 namespace stf {
-    REGISTER_RECORD(STF_IDENTIFIER, STFIdentifierRecord)
-
-    REGISTER_RECORD(STF_VERSION, VersionRecord)
-
     std::ostream& operator<<(std::ostream& os, const CommentRecord& comment) {
         format_utils::formatLabel(os, "    COMMENT");
         comment.format_impl(os);
         return os;
     }
-
-    REGISTER_RECORD(STF_COMMENT, CommentRecord)
-
-    REGISTER_RECORD(STF_ISA, ISARecord)
-
-    REGISTER_RECORD(STF_INST_IEM, InstIEMRecord)
-
-    REGISTER_RECORD(STF_FORCE_PC, ForcePCRecord)
-
-    REGISTER_RECORD(STF_VLEN_CONFIG, VLenConfigRecord)
-
-    REGISTER_RECORD(STF_PROTOCOL_ID, ProtocolIdRecord)
-
-    REGISTER_RECORD(STF_END_HEADER, EndOfHeaderRecord)
 
     STFOFstream& operator<<(STFOFstream& writer, const PageTableWalkRecord::PTE& rec) {
         rec.pack_impl(writer);
@@ -56,12 +30,6 @@ namespace stf {
         pte.format_impl(os);
         return os;
     }
-
-    REGISTER_RECORD(STF_PAGE_TABLE_WALK, PageTableWalkRecord)
-
-    REGISTER_RECORD(STF_PROCESS_ID_EXT, ProcessIDExtRecord)
-
-    REGISTER_RECORD(STF_EVENT, EventRecord)
 
     std::ostream& operator<<(std::ostream& os, const EventRecord::TYPE event_type) {
         switch(event_type) {
@@ -138,28 +106,6 @@ namespace stf {
         stf_throw("Invalid EventRecord::TYPE value: " << enums::to_printable_int(event_type));
     }
 
-    REGISTER_RECORD(STF_EVENT_PC_TARGET, EventPCTargetRecord)
-
-    REGISTER_RECORD(STF_INST_PC_TARGET, InstPCTargetRecord)
-
-    REGISTER_RECORD(STF_INST_REG, InstRegRecord)
-
-    REGISTER_RECORD(STF_INST_MEM_CONTENT, InstMemContentRecord)
-
-    REGISTER_RECORD(STF_INST_MEM_ACCESS, InstMemAccessRecord)
-
-    REGISTER_RECORD(STF_INST_OPCODE32, InstOpcode32Record)
-
-    REGISTER_RECORD(STF_INST_OPCODE16, InstOpcode16Record)
-
-    REGISTER_RECORD(STF_INST_MICROOP, InstMicroOpRecord)
-
-    REGISTER_RECORD(STF_INST_READY_REG, InstReadyRegRecord)
-
-    REGISTER_RECORD(STF_BUS_MASTER_ACCESS, BusMasterAccessRecord)
-
-    REGISTER_RECORD(STF_BUS_MASTER_CONTENT, BusMasterContentRecord)
-
     std::ostream& operator<<(std::ostream& os, const TraceInfoRecord& rec) {
         format_utils::formatLabel(os, "GENERATOR");
         os << rec.getGenerator() << std::endl;
@@ -170,12 +116,7 @@ namespace stf {
         return os;
     }
 
-    REGISTER_RECORD(STF_TRACE_INFO, TraceInfoRecord)
-
-    REGISTER_RECORD(STF_TRACE_INFO_FEATURE, TraceInfoFeatureRecord)
-
-    REGISTER_RECORD(STF_TRANSACTION, TransactionRecord)
-
-    REGISTER_RECORD(STF_TRANSACTION_DEPENDENCY, TransactionDependencyRecord)
-
+    // REQUIRED to properly instantiate RecordFactory and all STFRecord types
+    // Should only be specified ONCE in a .cpp file
+    FINALIZE_FACTORY(STFRecord)
 } // end namespace stf

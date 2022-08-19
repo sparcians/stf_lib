@@ -446,11 +446,11 @@ namespace stf {
                             }
 
                             inline void skipToVec1_() {
-                                skipToVec_(parent_->vec1_, std::prev(cur_vec_->end()));
+                                skipToVec_(parent_->vec1_, std::prev(parent_->vec1_->end()));
                             }
 
                             inline void skipToVec2_() {
-                                skipToVec_(parent_->vec2_, cur_vec_->begin());
+                                skipToVec_(parent_->vec2_, parent_->vec2_->begin());
                             }
 
                             /**

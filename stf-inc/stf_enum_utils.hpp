@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <type_traits>
 
+#include "type_utils.hpp"
+
 /**
  * \namespace stf::enums
  *
@@ -53,17 +55,43 @@ namespace stf::enums {
      */
     template <typename E>
     constexpr size_t size() {
-        return static_cast<size_t>(E::RESERVED_END) + 1;
+        return static_cast<size_t>(E::__RESERVED_END) + 1;
     }
 
     /**
      * \typedef EnumArray
      *
-     * std::array that gets its size from an enum class based on its RESERVED_END member
+     * std::array that gets its size from an enum class based on its __RESERVED_END member
      */
     template<typename T, typename E>
     using EnumArray = std::array<T, size<E>()>;
 
+    /**
+     * Initializes an EnumArray at compile time by iterating between enum values Start and End, calling init_func to generate the value for each entry.
+     * init_func should take an enum index value and an EnumArray as parameters, returning a transformed copy of the array
+     * \param init_func Callback function used to generate array values
+     */
+    template<typename T, typename E, T default_value, E Start, E End, typename InitFunc>
+    inline constexpr EnumArray<T, E> populateEnumArray(InitFunc&& init_func) {
+        static_assert(Start <= End, "Start must be less than or equal to End");
+
+        if constexpr(Start < End) {
+            auto arr = populateEnumArray<T, E, default_value, static_cast<decltype(Start)>(enums::to_int(Start)+1), End, InitFunc>(std::forward<InitFunc>(init_func));
+            return init_func(std::integral_constant<E, Start>(), arr);
+        }
+
+        return type_utils::initArray<EnumArray<T, E>>(default_value);
+    }
+
+    /**
+     * Initializes an EnumArray at compile time by iterating over every value in the enum, calling init_func to generate the value for each entry.
+     * init_func should take an enum index value and an EnumArray as parameters, returning a transformed copy of the array
+     * \param init_func Callback function used to generate array values
+     */
+    template<typename T, typename E, T default_value, typename InitFunc>
+    inline constexpr EnumArray<T, E> populateEnumArray(InitFunc&& init_func) {
+        return populateEnumArray<T, E, default_value, E::__RESERVED_START, E::__RESERVED_END, InitFunc>(std::forward<InitFunc>(init_func));
+    }
 } // end namespace stf::enums
 
 #endif

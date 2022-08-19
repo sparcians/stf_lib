@@ -14,7 +14,7 @@ namespace stf {
      */
     class STFTransactionRecordReader : public STFReaderBase {
         private:
-            protocols::ProtocolId expected_protocol_ = protocols::ProtocolId::RESERVED_END;
+            protocols::ProtocolId expected_protocol_ = protocols::ProtocolId::__RESERVED_END;
 
             /**
              * Reads the STF header
@@ -30,12 +30,12 @@ namespace stf {
              * \param expected_protocol Protocol ID we expect the trace to contain
              * \param force_single_threaded_stream If true, forces single threaded mode
              */
-            STFTransactionRecordReader(const std::string_view filename,
-                                       const protocols::ProtocolId expected_protocol,
-                                       const bool force_single_threaded_stream = false) :
-                STFReaderBase(filename, force_single_threaded_stream),
+            explicit STFTransactionRecordReader(const std::string_view filename,
+                                                const protocols::ProtocolId expected_protocol = protocols::ProtocolId::__RESERVED_END,
+                                                const bool force_single_threaded_stream = false) :
                 expected_protocol_(expected_protocol)
             {
+                open(filename, force_single_threaded_stream);
             }
 
             /**

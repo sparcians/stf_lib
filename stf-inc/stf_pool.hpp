@@ -4,6 +4,10 @@
 #include <array>
 #include <memory>
 
+#ifdef DEBUG_CACHE
+#include <iostream>
+#endif
+
 #include "boost_pool.hpp"
 #define BOOST_POOL_NO_MT
 #pragma push_macro("S1")
@@ -27,7 +31,7 @@ namespace stf {
      */
     template<typename BaseObjectType, typename Enum>
     class STFPool {
-        public:
+        private:
             /**
              * \struct Deleter
              * Functor struct used to delete objects allocated by STFPool
@@ -43,16 +47,87 @@ namespace stf {
                 }
             };
 
-    private:
+            using DeleterFuncType = void(*)(const BaseObjectType*);
+
+            using DeleterArray = enums::EnumArray<DeleterFuncType, Enum>;
+
+            /**
+             * Default deleter for unregistered objects. Just throws an exception.
+             */
+            static inline void defaultDeleter_(const BaseObjectType*) {
+                invalid_descriptor_throw("Attempted to delete unregistered object");
+            }
+
+            /**
+             * Translates an object ID to the deleter for that object
+             */
+            template<Enum ObjectId>
+            static inline constexpr DeleterFuncType genDeleter_();
+
+            /**
+             * genDeleter_ specialization for __RESERVED_START object ID.
+             * Ensures we always throw an exception if we attempt to delete a __RESERVED_START ID.
+             */
+            template<>
+            static inline constexpr DeleterFuncType genDeleter_<Enum::__RESERVED_START> () {
+                return &defaultDeleter_;
+            }
+
+            /**
+             * genDeleter_ specialization for __RESERVED_END object ID.
+             * Ensures we always throw an exception if we attempt to delete a __RESERVED_END ID.
+             */
+            template<>
+            static inline constexpr DeleterFuncType genDeleter_<Enum::__RESERVED_END> () {
+                return &defaultDeleter_;
+            }
+
+            /**
+             * Used to initialize the deleters_ array at compile time.
+             * Automatically iterates over all object IDs and adds their respective deleter functions to the array.
+             */
+            static inline constexpr DeleterArray populateDeleterArray_() {
+                return enums::populateEnumArray<DeleterFuncType, Enum, &defaultDeleter_>(
+                    [](auto Index, DeleterArray deleter_array) {
+                        deleter_array[enums::to_int(Index())] = genDeleter_<Index>();
+                        return deleter_array;
+                    }
+                );
+            }
+
             template<typename T>
             using DeleterPointer = std::unique_ptr<T, Deleter>;
 
-    public:
+            static inline constexpr DeleterArray deleters_ = populateDeleterArray_();
+
+            /**
+             * Gets the deleter for the given object ID
+             * \param object_id ID of object to delete
+             */
+            static DeleterFuncType getDeleter_(const size_t object_id);
+
+            __attribute__((always_inline))
+            static inline auto getDeleter_(const Enum object_id) {
+                return getDeleter_(static_cast<size_t>(object_id));
+            }
+
+            __attribute__((always_inline))
+            static inline auto getDeleter_(const BaseObjectType* obj) {
+                return getDeleter_(obj->getId());
+            }
+
+        public:
             /**
              * \typedef base_type
              * Base class of objects constructed by this pool
              */
             using base_type = BaseObjectType;
+
+            /**
+             * \typedef id_type
+             * Enum type used by this pool to identify objects
+             */
+            using id_type = Enum;
 
             /**
              * \typedef BaseObjectPointer
@@ -87,20 +162,14 @@ namespace stf {
                               "STFObjectCache type is not derived from the pool base class");
 
                 private:
-                    using FuncType = void(*)(const ObjectType*);
-
-                    static constexpr size_t MAX_SIZE_ = 3072;
+                    static inline constexpr size_t MAX_SIZE_ = 3072;
 
 #ifdef DEBUG_CACHE
                     size_t num_insertions_ = 0;
                     size_t num_hits_ = 0;
                     mutable size_t num_misses_ = 0;
 #endif
-                    enums::EnumArray<FuncType, Enum> deleters_;
-
                     enums::EnumArray<boost::container::static_vector<ObjectType*, MAX_SIZE_>, Enum> cache_;
-
-                    bool deleters_initialized_ = false;
 
                     ~STFObjectCache() {
 #ifdef DEBUG_CACHE
@@ -121,21 +190,6 @@ namespace stf {
                                 cur_deleter(obj);
                             }
                         }
-                    }
-
-                    __attribute__((always_inline))
-                    inline auto getDeleter_(const size_t object_id) const {
-                        return deleters_[object_id];
-                    }
-
-                    __attribute__((always_inline))
-                    inline auto getDeleter_(const Enum object_id) const {
-                        return getDeleter_(static_cast<size_t>(object_id));
-                    }
-
-                    __attribute__((always_inline))
-                    inline auto getDeleter_(const ObjectType* obj) const {
-                        return getDeleter_(obj->getId());
                     }
 
                 public:
@@ -174,16 +228,6 @@ namespace stf {
                         const auto ptr = cache_entry.back();
                         cache_entry.pop_back();
                         return ptr;
-                    }
-
-                    __attribute__((always_inline))
-                    inline void deleter(const ObjectType* obj) const {
-                        getDeleter_(obj)(obj);
-                    }
-
-                    __attribute__((always_inline))
-                    inline void registerDeleter(const Enum object_id, const FuncType func) {
-                        deleters_[static_cast<size_t>(object_id)] = func;
                     }
             };
 
@@ -251,7 +295,7 @@ namespace stf {
 
             template<typename ObjectType>
             __attribute__((always_inline))
-            static inline void deleter_(const BaseObjectType* obj) {
+            static inline void deleter_func_(const BaseObjectType* obj) {
                 static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
                               "Pool allocated type is not derived from the pool base class");
                 const auto ptr = const_cast<ObjectType*>(static_cast<const ObjectType*>(obj));
@@ -272,7 +316,7 @@ namespace stf {
                 }
 
                 if(auto& cache = STFObjectCache<BaseObjectType>::get(); STF_EXPECT_FALSE(!cache.add(obj))) {
-                    cache.deleter(obj);
+                    getDeleter_(obj)(obj);
                 }
             }
 
@@ -298,18 +342,6 @@ namespace stf {
                 static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
                               "Pool allocated type is not derived from the pool base class");
                 return construct_<ObjectPointer<ObjectType>, ObjectType, Args...>(std::forward<Args>(args)...);
-            }
-
-            /**
-             * Registers a deleter method in the STFObjectCache for a particular object type
-             * \param object_id Descriptor for the object type being registered
-             */
-            template<typename ObjectType>
-            __attribute__((always_inline))
-            static inline void registerDeleter(const Enum object_id) {
-                static_assert(std::is_base_of_v<BaseObjectType, ObjectType>,
-                              "Pool allocated type is not derived from the pool base class");
-                STFObjectCache<BaseObjectType>::get().registerDeleter(object_id, &STFPool::deleter_<ObjectType>);
             }
 
             /**

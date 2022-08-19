@@ -7,8 +7,9 @@
 namespace stf {
     namespace protocols {
         enum class ProtocolId : uint8_t {
+            __RESERVED_START,
             TILELINK,
-            RESERVED_END // Must be at the end
+            __RESERVED_END // Must be at the end
         };
 
         std::ostream& operator<<(std::ostream& os, ProtocolId id);

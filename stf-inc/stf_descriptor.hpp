@@ -21,7 +21,8 @@ namespace stf {
              *
              */
             enum class Descriptor : uint8_t {
-                STF_RESERVED                    = 0,            /**< Reserved for error detection */
+                __RESERVED_START = 0,
+                STF_RESERVED                    = __RESERVED_START,            /**< Reserved for error detection */
                 STF_IDENTIFIER                  = 1,            /**< Indicates start of an STF file */
                 STF_VERSION                     = 2,            /**< Trace format version */
                 STF_COMMENT                     = 3,            /**< Comment */
@@ -59,7 +60,7 @@ namespace stf {
                 STF_TRANSACTION                 = 250,
                 STF_TRANSACTION_DEPENDENCY      = 251,
 
-                RESERVED_END                                /**< Reserved for error detection, end of descriptor  */
+                __RESERVED_END                                /**< Reserved for error detection, end of descriptor  */
             };
 
             /**
@@ -77,6 +78,8 @@ namespace stf {
              *
              */
             enum class Descriptor : enums::int_t<encoded::Descriptor> {
+                __RESERVED_START,
+                STF_RESERVED = __RESERVED_START,
                 STF_INST_REG,
                 STF_INST_OPCODE16,
                 STF_INST_OPCODE32,
@@ -104,8 +107,7 @@ namespace stf {
                 STF_END_HEADER,
                 STF_TRANSACTION,
                 STF_TRANSACTION_DEPENDENCY,
-                STF_RESERVED,
-                RESERVED_END // MUST ALWAYS BE AT THE END
+                __RESERVED_END // MUST ALWAYS BE AT THE END
             };
 
             /**
@@ -184,7 +186,7 @@ namespace stf {
                                 INIT_DESC_ARRAY(STF_INST_OPCODE16)
                                 INIT_DESC_ARRAY(STF_TRANSACTION)
                                 INIT_DESC_ARRAY(STF_TRANSACTION_DEPENDENCY)
-                                INIT_DESC_ARRAY(RESERVED_END)
+                                INIT_DESC_ARRAY(__RESERVED_END)
                             };
 
                             // Use NUM_DESCRIPTORS_ as the default value for Descriptor enums with gaps
@@ -477,7 +479,6 @@ namespace stf {
     inline constexpr auto ObjectIdConverter::toTrace(const descriptors::internal::Descriptor val) {
         return descriptors::conversion::toEncoded(val);
     }
-
 } // end namespace stf
 
 #endif

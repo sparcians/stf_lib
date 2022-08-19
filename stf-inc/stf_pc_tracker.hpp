@@ -4,12 +4,13 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "stf_descriptor.hpp"
 #include "stf_exception.hpp"
 
 namespace stf {
     class STFRecord;
-    template<typename T> class GenericPCTargetRecord;
-    template<typename ClassT, typename OpcodeT> class GenericOpcodeRecord;
+    template<typename T, descriptors::internal::Descriptor desc> class GenericPCTargetRecord;
+    template<typename ClassT, typename OpcodeT, descriptors::internal::Descriptor desc> class GenericOpcodeRecord;
     class ForcePCRecord;
     class STFInst;
 
@@ -86,8 +87,8 @@ namespace stf {
              * Inspects the record and tracks the PC accordingly
              * \param rec Record to inspect
              */
-            template<typename T>
-            void track(const GenericPCTargetRecord<T>& rec) {
+            template<typename T, descriptors::internal::Descriptor desc>
+            void track(const GenericPCTargetRecord<T, desc>& rec) {
                 setTargetPC_(rec.getAddr());
             }
 
@@ -95,8 +96,8 @@ namespace stf {
              * Inspects the record and tracks the PC accordingly
              * \param rec Record to inspect
              */
-            template<typename ClassT, typename OpcodeT>
-            void track(const GenericOpcodeRecord<ClassT, OpcodeT>& rec) {
+            template<typename ClassT, typename OpcodeT, descriptors::internal::Descriptor desc>
+            void track(const GenericOpcodeRecord<ClassT, OpcodeT, desc>& rec) {
                 pc_ = next_pc_;
 
                 if(STF_EXPECT_FALSE(is_branch_)) {

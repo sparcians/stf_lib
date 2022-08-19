@@ -77,7 +77,7 @@ namespace stf {
                             case IntDescriptor::STF_TRANSACTION: // handled earlier
                             case IntDescriptor::STF_TRANSACTION_DEPENDENCY: // handled earlier
                             case IntDescriptor::STF_RESERVED: // cannot be constructed
-                            case IntDescriptor::RESERVED_END: // cannot be constructed
+                            case IntDescriptor::__RESERVED_END: // cannot be constructed
                                 __builtin_unreachable();
                         };
                     }
@@ -124,10 +124,10 @@ namespace stf {
              * \param force_single_threaded_stream If true, use a single threaded reader
              */
             template<typename StrType>
-            STFTransactionReader(const StrType& filename,
-                                 const protocols::ProtocolId expected_protocol,
-                                 const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
-                                 const bool force_single_threaded_stream = false) :
+            explicit STFTransactionReader(const StrType& filename,
+                                          const protocols::ProtocolId expected_protocol = protocols::ProtocolId::__RESERVED_END,
+                                          const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
+                                          const bool force_single_threaded_stream = false) :
                 ParentReader(buffer_size)
             {
                 setExpectedProtocol(expected_protocol);

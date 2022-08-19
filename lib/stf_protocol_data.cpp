@@ -6,22 +6,19 @@ namespace stf {
     namespace protocols {
         std::ostream& operator<<(std::ostream& os, const ProtocolId id) {
             switch(id) {
+                case ProtocolId::__RESERVED_START:
+                    os << "RESERVED_START";
+                    return os;
                 case ProtocolId::TILELINK:
                     os << "TILELINK";
                     return os;
-                case ProtocolId::RESERVED_END:
+                case ProtocolId::__RESERVED_END:
                     os << "RESERVED_END";
                     return os;
             };
 
             os << "UNKNOWN_" + std::to_string(enums::to_printable_int(id));
-
-                return os;
+            return os;
         }
-    }
-
-    STFIFstream& operator>>(STFIFstream& strm, protocols::ProtocolData::UniqueHandle& ptr) {
-        strm.readFromId(strm.getProtocolId(), ptr);
-        return strm;
     }
 }

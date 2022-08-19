@@ -55,9 +55,8 @@ namespace stf {
              * \param filename file to open
              * \param force_single_threaded_stream If true, forces single threaded mode
              */
-            explicit STFReader(const std::string_view filename, const bool force_single_threaded_stream = false) :
-                STFReaderBase(filename, force_single_threaded_stream)
-            {
+            explicit STFReader(const std::string_view filename, const bool force_single_threaded_stream = false) {
+                open(filename, force_single_threaded_stream);
             }
 
             /**

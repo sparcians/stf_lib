@@ -89,7 +89,7 @@ namespace stf {
                     case Descriptor::STF_TRANSACTION_DEPENDENCY:
                         os << "TRANSACTION_DEP";
                         return os;
-                    case Descriptor::RESERVED_END:
+                    case Descriptor::__RESERVED_END:
                         os << "RESERVED_END";
                         return os;
                 };

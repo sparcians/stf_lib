@@ -4,9 +4,6 @@
 
 namespace stf {
     void STFTransactionRecordReader::readHeader_() {
-        stf_assert(expected_protocol_ != protocols::ProtocolId::RESERVED_END,
-                   "Expected protocol must either be set in the constructor or with a call to setExpectedProtocol");
-
         bool complete_header = false;
         try {
             STFRecord::UniqueHandle rec;
@@ -46,7 +43,7 @@ namespace stf {
                         break;
                     case descriptors::internal::Descriptor::STF_PROTOCOL_ID:
                         // This record is handled internally by the STFIFstream
-                        stf_assert(getProtocolId() == expected_protocol_,
+                        stf_assert((getProtocolId() == expected_protocol_) || (expected_protocol_ == protocols::ProtocolId::__RESERVED_END),
                                    "Expected protocol " << expected_protocol_ << ", but trace contains " << getProtocolId());
                         break;
                     case descriptors::internal::Descriptor::STF_ISA:
@@ -75,7 +72,7 @@ namespace stf {
                         stf_throw("Encountered unexpected STF record in header: " << rec->getId());
                     // These records can't be constructed
                     case descriptors::internal::Descriptor::STF_RESERVED:
-                    case descriptors::internal::Descriptor::RESERVED_END:
+                    case descriptors::internal::Descriptor::__RESERVED_END:
                         __builtin_unreachable();
                 }
             }

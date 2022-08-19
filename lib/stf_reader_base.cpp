@@ -22,8 +22,7 @@ namespace stf {
         stream_->openWithProcess(cmd, filename);
     }
 
-    void STFReaderBase::open(const std::string_view filename, const bool force_single_threaded_stream)
-    {
+    void STFReaderBase::open(const std::string_view filename, const bool force_single_threaded_stream) {
         stf_assert(!operator bool(), "Attempted to open STFReaderBase that was already open");
 
         switch(getFileType_(filename)) {

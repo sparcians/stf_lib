@@ -338,7 +338,7 @@ namespace stf {
             }
 
             friend class STFBaseObject;
-            template<typename PoolType, typename Enum>
+            template<typename ObjectType>
             friend class Factory;
 
             template<typename T, typename SerializedSizeT>
@@ -353,7 +353,7 @@ namespace stf {
                 static_assert(std::is_base_of_v<STFBaseObject, T>,
                               "Must be derived from STFBaseObject");
                 try {
-                    ptr = factory_lookup<std::remove_cv_t<T>>::factory::construct(*this);
+                    ptr = T::factory_type::construct(*this);
                 }
                 catch(const InvalidDescriptorException&) {
                     // Check to see if the invalid descriptor was because the file ended - if it was we'll raise a new exception
@@ -375,7 +375,7 @@ namespace stf {
                               "Must be derived from STFBaseObject");
                 try {
                     // We already got the protocol ID when we read the trace header
-                    ptr = factory_lookup<std::remove_cv_t<T>>::factory::construct(*this, object_id);
+                    ptr = T::factory_type::construct(*this, object_id);
                 }
                 catch(const InvalidDescriptorException&) {
                     // Check to see if the invalid descriptor was because the file ended - if it was we'll raise a new exception

@@ -111,7 +111,7 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_FORCE_PC:
                 stf_throw("Attempted to write instruction record " << desc << " in a transaction trace");
             case descriptors::internal::Descriptor::STF_RESERVED:
-            case descriptors::internal::Descriptor::RESERVED_END:
+            case descriptors::internal::Descriptor::__RESERVED_END:
                 stf_throw("Attempted to write reserved record: " << desc);
         }
 

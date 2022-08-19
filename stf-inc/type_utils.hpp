@@ -47,6 +47,15 @@ namespace stf {
 
         template<typename... Ts>
         struct is_pack_empty : is_pack_size<0, Ts...> {};
+
+        template<typename ArrayType, typename Value>
+        inline constexpr ArrayType initArray(const Value val) {
+            ArrayType new_arr{};
+            for(size_t i = 0; i < new_arr.size(); ++i) {
+                new_arr[i] = val;
+            }
+            return new_arr;
+        }
     } // end namespace type_utils
 } // end namespace stf
 

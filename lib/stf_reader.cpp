@@ -94,7 +94,7 @@ namespace stf {
                         stf_throw("Encountered unexpected STF record in header: " << rec->getId());
                     // These records can't be constructed
                     case descriptors::internal::Descriptor::STF_RESERVED:
-                    case descriptors::internal::Descriptor::RESERVED_END:
+                    case descriptors::internal::Descriptor::__RESERVED_END:
                         __builtin_unreachable();
                 }
             }

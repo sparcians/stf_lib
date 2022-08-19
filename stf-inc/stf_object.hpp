@@ -5,6 +5,7 @@
 #include "stf_ofstream.hpp"
 #include "stf_packed_container.hpp"
 #include "stf_pool.hpp"
+#include "stf_factory.hpp"
 #include "stf_vector_view.hpp"
 #include "stf_object_id.hpp"
 #include "type_utils.hpp"
@@ -174,7 +175,7 @@ namespace stf {
      *
      * STF object that provides an enum ID value and an interface to the pool used to construct the object.
      */
-    template<typename BaseType, typename TypeIdEnum>
+    template<typename BaseType, typename TypeIdEnum, typename FactoryEnum = TypeIdEnum>
     class STFObject : public STFBaseObject {
         protected:
             const TypeIdEnum id_; /**< Enum value that was used to construct the object */
@@ -187,10 +188,22 @@ namespace stf {
             using pool_type = STFPool<BaseType, TypeIdEnum>;
 
             /**
+             * \typedef factory_type
+             * Factory class used to construct objects that derive from this class
+             */
+            using factory_type = Factory<BaseType>;
+
+            /**
              * \typedef id_type
              * Enum type used to construct objects that derive from this class
              */
             using id_type = TypeIdEnum;
+
+            /**
+             * \typedef factory_id_type
+             * Enum type used to construct objects that derive from this class
+             */
+            using factory_id_type = FactoryEnum;
 
             /**
              * \typedef UniqueHandle
@@ -312,13 +325,14 @@ namespace stf {
      * Mix-in class that makes an STFObject aware of its own type and associates that type with an enum value.
      *
      */
-    template<typename Type, typename BaseType>
+    template<typename Type, typename BaseType, typename BaseType::id_type id_value>
     class TypeAwareSTFObject : public BaseType {
         private:
             using PoolType = typename BaseType::pool_type;
             using IdType = typename BaseType::id_type;
+            using FactoryIdType = typename BaseType::factory_id_type;
 
-            static_assert(std::is_base_of_v<STFObject<BaseType, IdType>, BaseType>,
+            static_assert(std::is_base_of_v<STFObject<BaseType, IdType, typename BaseType::factory_id_type>, BaseType>,
                         "BaseType must inherit from STFObject");
 
             inline void pack(STFOFstream& writer) const final {
@@ -339,13 +353,15 @@ namespace stf {
             /**
              * Returns the enum value associated with Type
              */
-            static IdType getTypeId();
+            static inline constexpr IdType getTypeId() {
+                return id_value;
+            }
 
             /**
              * Writes the object ID to the trace
              * \param writer Writer to use
              */
-            inline static void writeTraceId(STFOFstream& writer) {
+            static inline void writeTraceId(STFOFstream& writer) {
                 write_(writer, ObjectIdConverter::toTrace(getTypeId()));
             }
 

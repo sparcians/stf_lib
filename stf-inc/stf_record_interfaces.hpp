@@ -13,8 +13,8 @@ namespace stf {
      * STFRecord that can introspect its own type
      *
      */
-    template<typename T>
-    using TypeAwareSTFRecord = TypeAwareSTFObject<T, STFRecord>;
+    template<typename T, descriptors::internal::Descriptor desc>
+    using TypeAwareSTFRecord = TypeAwareSTFObject<T, STFRecord, desc>;
 
     /**
      * \class GenericEmptyRecord
@@ -22,8 +22,8 @@ namespace stf {
      * Generic class for data-less records
      *
      */
-    template<typename T>
-    class GenericEmptyRecord : public TypeAwareSTFRecord<T> {
+    template<typename T, descriptors::internal::Descriptor desc>
+    class GenericEmptyRecord : public TypeAwareSTFRecord<T, desc> {
         protected:
             GenericEmptyRecord() = default;
 
@@ -57,8 +57,8 @@ namespace stf {
      * Generic record used to hold a single pience of data
      *
      */
-    template<typename ClassT, typename DataT>
-    class GenericSingleDataRecord : public TypeAwareSTFRecord<ClassT> {
+    template<typename ClassT, typename DataT, descriptors::internal::Descriptor desc>
+    class GenericSingleDataRecord : public TypeAwareSTFRecord<ClassT, desc> {
         private:
             DataT data_ = DataT(); /**< underlying data */
 
@@ -94,7 +94,7 @@ namespace stf {
              * \param writer STFOFstream to use
              */
             inline void pack_impl(STFOFstream& writer) const {
-                TypeAwareSTFRecord<ClassT>::write_(writer, data_);
+                TypeAwareSTFRecord<ClassT, desc>::write_(writer, data_);
             }
 
             /**
@@ -103,7 +103,7 @@ namespace stf {
              */
             __attribute__((always_inline))
             inline void unpack_impl(STFIFstream& reader) {
-                TypeAwareSTFRecord<ClassT>::read_(reader, data_);
+                TypeAwareSTFRecord<ClassT, desc>::read_(reader, data_);
             }
 
             /**
@@ -133,8 +133,8 @@ namespace stf {
      * Generic record that holds a SerializableVector
      *
      */
-    template<typename ClassT, typename VectorDataT, typename VectorSizeT>
-    class SerializableVectorRecord : public TypeAwareSTFRecord<ClassT> {
+    template<typename ClassT, typename VectorDataT, typename VectorSizeT, descriptors::internal::Descriptor desc>
+    class SerializableVectorRecord : public TypeAwareSTFRecord<ClassT, desc> {
         private:
             SerializableVector<VectorDataT, VectorSizeT> data_;
 
@@ -162,7 +162,7 @@ namespace stf {
              * \param writer STFOFstream to use
              */
             inline void pack_impl(STFOFstream& writer) const {
-                TypeAwareSTFRecord<ClassT>::write_(writer, data_);
+                TypeAwareSTFRecord<ClassT, desc>::write_(writer, data_);
             }
 
             /**
@@ -171,7 +171,7 @@ namespace stf {
              */
             __attribute__((always_inline))
             inline void unpack_impl(STFIFstream& reader) {
-                TypeAwareSTFRecord<ClassT>::read_(reader, data_);
+                TypeAwareSTFRecord<ClassT, desc>::read_(reader, data_);
             }
 
             /**
@@ -190,8 +190,8 @@ namespace stf {
      * Generic record that holds an address
      *
      */
-    template <typename T>
-    class GenericAddressRecord : public GenericSingleDataRecord<T, uint64_t> {
+    template <typename T, descriptors::internal::Descriptor desc>
+    class GenericAddressRecord : public GenericSingleDataRecord<T, uint64_t, desc> {
         protected:
             GenericAddressRecord() = default;
 
@@ -200,7 +200,7 @@ namespace stf {
              * \param addr address
              */
             explicit GenericAddressRecord(uint64_t addr) :
-                GenericSingleDataRecord<T, uint64_t>(addr)
+                GenericSingleDataRecord<T, uint64_t, desc>(addr)
             {
             }
 
@@ -208,7 +208,7 @@ namespace stf {
             /**
              * Gets the address
              */
-            uint64_t getAddr() const { return GenericSingleDataRecord<T, uint64_t>::getData_(); }
+            uint64_t getAddr() const { return GenericSingleDataRecord<T, uint64_t, desc>::getData_(); }
     };
 
     /**
@@ -217,8 +217,8 @@ namespace stf {
      * Generic record that holds an instruction PC target address
      *
      */
-    template<typename T>
-    class GenericPCTargetRecord : public GenericAddressRecord<T> {
+    template<typename T, descriptors::internal::Descriptor desc>
+    class GenericPCTargetRecord : public GenericAddressRecord<T, desc> {
         protected:
             GenericPCTargetRecord() = default;
 
@@ -227,7 +227,7 @@ namespace stf {
              * \param addr Target address
              */
             explicit GenericPCTargetRecord(uint64_t addr) :
-                GenericAddressRecord<T>(addr)
+                GenericAddressRecord<T, desc>(addr)
             {
             }
 
@@ -238,7 +238,7 @@ namespace stf {
              */
             inline void pack_impl(STFOFstream& writer) const {
                 writer.trackPC(*static_cast<const T*>(this));
-                GenericAddressRecord<T>::pack_impl(writer);
+                GenericAddressRecord<T, desc>::pack_impl(writer);
             }
 
             /**
@@ -247,7 +247,7 @@ namespace stf {
              */
             __attribute__((always_inline))
             inline void unpack_impl(STFIFstream& reader) {
-                GenericAddressRecord<T>::unpack_impl(reader);
+                GenericAddressRecord<T, desc>::unpack_impl(reader);
                 reader.trackPC(*static_cast<T*>(this));
             }
     };
@@ -258,8 +258,8 @@ namespace stf {
      * Defines an instruction opcode
      *
      */
-    template <typename ClassT, typename OpcodeT>
-    class GenericOpcodeRecord : public GenericSingleDataRecord<ClassT, OpcodeT> {
+    template <typename ClassT, typename OpcodeT, descriptors::internal::Descriptor desc>
+    class GenericOpcodeRecord : public GenericSingleDataRecord<ClassT, OpcodeT, desc> {
         private:
             uint64_t pc_ = 0;
 
@@ -271,7 +271,7 @@ namespace stf {
              * \param opcode opcode
              */
             explicit GenericOpcodeRecord(const OpcodeT opcode) :
-                GenericSingleDataRecord<ClassT, OpcodeT>(opcode)
+                GenericSingleDataRecord<ClassT, OpcodeT, desc>(opcode)
             {
             }
 
@@ -279,7 +279,7 @@ namespace stf {
             /**
              * Gets the opcode
              */
-            OpcodeT getOpcode() const { return GenericSingleDataRecord<ClassT, OpcodeT>::getData_(); }
+            OpcodeT getOpcode() const { return GenericSingleDataRecord<ClassT, OpcodeT, desc>::getData_(); }
 
             /**
              * Gets the PC
@@ -294,7 +294,7 @@ namespace stf {
              */
             inline void pack_impl(STFOFstream& writer) const {
                 writer.trackPC(*static_cast<const ClassT*>(this));
-                GenericSingleDataRecord<ClassT, OpcodeT>::pack_impl(writer);
+                GenericSingleDataRecord<ClassT, OpcodeT, desc>::pack_impl(writer);
                 writer.markerRecordCallback();
             }
 
@@ -304,7 +304,7 @@ namespace stf {
              */
             __attribute__((always_inline))
             inline void unpack_impl(STFIFstream& reader) {
-                GenericSingleDataRecord<ClassT, OpcodeT>::unpack_impl(reader);
+                GenericSingleDataRecord<ClassT, OpcodeT, desc>::unpack_impl(reader);
                 reader.trackPC(*static_cast<ClassT*>(this));
                 pc_ = reader.getPC();
                 reader.markerRecordCallback();

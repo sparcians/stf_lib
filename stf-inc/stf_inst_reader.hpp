@@ -293,7 +293,7 @@ namespace stf {
                             case IntDescriptor::STF_INST_MEM_ACCESS: // handled earlier
                             case IntDescriptor::STF_INST_MEM_CONTENT: // handled earlier
                             case IntDescriptor::STF_RESERVED: // cannot be constructed
-                            case IntDescriptor::RESERVED_END: // cannot be constructed
+                            case IntDescriptor::__RESERVED_END: // cannot be constructed
                                 __builtin_unreachable();
                         };
                     }
