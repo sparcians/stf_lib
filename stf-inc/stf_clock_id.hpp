@@ -13,7 +13,7 @@ namespace stf {
      * \typedef ClockId
      * Type used to represent clock IDs in transaction traces
      */
-    using ClockId = uint16_t;
+    using ClockId = uint8_t;
     static inline constexpr ClockId INVALID_CLOCK_ID = 0; /**< Value used to indicate an invalid clock ID */
 
     /**

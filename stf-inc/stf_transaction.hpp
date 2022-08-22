@@ -145,7 +145,7 @@ namespace stf {
 
             uint64_t transaction_id_ = 0;
             uint64_t cycle_delta_ = 0;
-            uint16_t clock_id_ = INVALID_CLOCK_ID;
+            ClockId clock_id_ = INVALID_CLOCK_ID;
             Protocol protocol_;
 
             using DependencyVector = boost::container::small_vector<Dependency, 1>;
@@ -160,6 +160,7 @@ namespace stf {
             inline void reset_() {
                 transaction_id_ = 0;
                 cycle_delta_ = 0;
+                clock_id_ = INVALID_CLOCK_ID;
                 protocol_.reset(nullptr);
                 dependencies_.clear();
             }
