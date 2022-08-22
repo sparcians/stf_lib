@@ -53,7 +53,7 @@ namespace stf {
              * Gets RecordFactory singleton
              */
             __attribute__((always_inline))
-            static inline Factory& get_() {
+            static inline const Factory& get_() {
                 static Factory instance;
                 return instance;
             }
@@ -64,7 +64,7 @@ namespace stf {
              * \param object_id ID of type to construct
              */
             __attribute__((always_inline))
-            inline PtrType construct_(STFIFstream& strm, const Enum object_id) {
+            inline PtrType construct_(STFIFstream& strm, const Enum object_id) const {
                 try {
                     const auto& constructor = getConstructor_(object_id);
                     auto ptr = constructor(strm);
@@ -131,7 +131,7 @@ namespace stf {
              * \param strm STFIFstream to read data from
              */
             __attribute__((always_inline))
-            inline PtrType construct_(STFIFstream& strm) {
+            inline PtrType construct_(STFIFstream& strm) const {
                 Enum object_id;
                 strm >> object_id;
                 return construct_(strm, object_id);
