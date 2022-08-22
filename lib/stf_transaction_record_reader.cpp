@@ -38,13 +38,19 @@ namespace stf {
                         stf_assert(!trace_features_, "Header has multiple TRACE_INFO_FEATURE records");
                         STFRecord::grabOwnership(trace_features_, rec);
                         break;
-                    case descriptors::internal::Descriptor::STF_END_HEADER:
-                        complete_header = true;
-                        break;
                     case descriptors::internal::Descriptor::STF_PROTOCOL_ID:
                         // This record is handled internally by the STFIFstream
                         stf_assert((getProtocolId() == expected_protocol_) || (expected_protocol_ == protocols::ProtocolId::__RESERVED_END),
                                    "Expected protocol " << expected_protocol_ << ", but trace contains " << getProtocolId());
+                        break;
+                    case descriptors::internal::Descriptor::STF_CLOCK_ID:
+                        {
+                            const auto& clock_id_rec = rec->as<ClockIdRecord>();
+                            ClockRegistry::registerClock(clock_id_rec.getId(), clock_id_rec.getName());
+                        }
+                        break;
+                    case descriptors::internal::Descriptor::STF_END_HEADER:
+                        complete_header = true;
                         break;
                     case descriptors::internal::Descriptor::STF_ISA:
                     case descriptors::internal::Descriptor::STF_INST_IEM:

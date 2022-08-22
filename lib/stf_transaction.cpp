@@ -6,8 +6,10 @@ namespace stf {
         format_utils::formatLabel(os, "TXNID");
         format_utils::formatDec(os, transaction.getTransactionId());
         os << std::endl;
+        format_utils::formatLabel(os, "CLOCK");
+        os << ClockRegistry::getClockName(transaction.getClockId()) << std::endl;
         format_utils::formatLabel(os, "DELTA");
-        format_utils::formatDec(os, transaction.getTimeDelta());
+        format_utils::formatDec(os, transaction.getCycleDelta());
         os << std::endl;
 
         if(const auto& dependencies = transaction.getDependencies(); !dependencies.empty()) {

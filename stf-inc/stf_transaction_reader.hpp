@@ -70,6 +70,7 @@ namespace stf {
                             case IntDescriptor::STF_VERSION:
                             case IntDescriptor::STF_TRACE_INFO_FEATURE:
                             case IntDescriptor::STF_PROTOCOL_ID:
+                            case IntDescriptor::STF_CLOCK_ID:
                             case IntDescriptor::STF_END_HEADER:
                                 stf_throw("Saw an unexpected record outside of the header: " << id);
 

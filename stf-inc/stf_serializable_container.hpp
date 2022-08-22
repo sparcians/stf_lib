@@ -50,7 +50,7 @@ namespace stf {
              * Move-constructs a SerializableContainer from its underlying container type
              */
             explicit SerializableContainer(ContainerT&& rhs) :
-                ContainerT(rhs)
+                ContainerT(std::move(rhs))
             {
             }
 

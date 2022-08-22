@@ -282,6 +282,7 @@ namespace stf {
 
                             // These descriptors should only be in transaction traces
                             case IntDescriptor::STF_PROTOCOL_ID: // STFRecord throws
+                            case IntDescriptor::STF_CLOCK_ID: // STFRecord throws
                             case IntDescriptor::STF_TRANSACTION: // STFRecord throws
                             case IntDescriptor::STF_TRANSACTION_DEPENDENCY: // STFRecord throws
                                 stf_throw("Saw a transaction record " << desc << " in an instruction trace");

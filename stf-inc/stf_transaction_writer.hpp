@@ -3,11 +3,13 @@
 
 #include <string_view>
 
+#include "stf_clock_id.hpp"
 #include "stf_protocol_id.hpp"
 #include "stf_writer_base.hpp"
 
 namespace stf {
     class ProtocolIdRecord;
+    class ClockIdRecord;
 
     /**
      * \class STFTransactionWriter
@@ -18,6 +20,8 @@ namespace stf {
         private:
             STFRecord::Handle<ProtocolIdRecord> protocol_id_;
             bool protocol_id_written_ = false;
+            std::vector<ClockIdRecord> clock_ids_;
+            bool clock_ids_written_ = false;
 
         public:
             STFTransactionWriter() = default;
@@ -41,6 +45,13 @@ namespace stf {
              * \param protocol_id protocol ID value to set
              */
             void setProtocolId(protocols::ProtocolId protocol_id);
+
+            /**
+             * Adds a clock to the trace. The first clock added will be used as the default clock domain.
+             * \param clock_id Clock domain ID
+             * \param name Name of the clock domain
+             */
+            void addClock(ClockId clock_id, std::string_view name);
 
             void flushHeader() final;
 

@@ -7,6 +7,11 @@ namespace stf {
         protocol_id_ = STFRecord::make<ProtocolIdRecord>(protocol_id);
     }
 
+    void STFTransactionWriter::addClock(const ClockId clock_id, const std::string_view name) {
+        ClockRegistry::registerClock(clock_id, name);
+        clock_ids_.emplace_back(clock_id, name);
+    }
+
     void STFTransactionWriter::flushHeader() {
         stf_assert(!header_finalized_, "Cannot write anything else to the header after it has been finalized");
 
@@ -40,8 +45,19 @@ namespace stf {
                        "TRACE_INFO record must come before PROTOCOL_ID record");
             stf_assert(trace_features_written_,
                        "TRACE_INFO_FEATURE record must come before PROTOCOL_ID record");
+            stf_assert(!clock_ids_written_,
+                       "PROTOCOL_ID record must come before CLOCK_ID record");
             *this << *protocol_id_;
             protocol_id_written_ = true;
+        }
+
+        if(!clock_ids_written_) {
+            stf_assert(protocol_id_written_, "PROTOCOL_ID record must come before CLOCK_ID record");
+            stf_assert(!clock_ids_.empty(), "At least one clock ID must be specified");
+            for(const auto& clock_id: clock_ids_) {
+                *this << clock_id;
+            }
+            clock_ids_written_ = true;
         }
     }
 
@@ -83,6 +99,7 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_TRACE_INFO:
             case descriptors::internal::Descriptor::STF_TRACE_INFO_FEATURE:
             case descriptors::internal::Descriptor::STF_PROTOCOL_ID:
+            case descriptors::internal::Descriptor::STF_CLOCK_ID:
             case descriptors::internal::Descriptor::STF_END_HEADER:
                 stf_assert(!headerFinalized(), "Attempted to write " << desc << " record outside of the header");
                 stf_assert(headerStarted(), "Attempted to write " << desc << " before the header has started");

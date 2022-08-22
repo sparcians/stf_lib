@@ -190,6 +190,7 @@ namespace stf {
                 stf_assert(headerFinalized(), "Attempted to write " << desc << " record before finalizing the header");
                 break;
             case descriptors::internal::Descriptor::STF_PROTOCOL_ID:
+            case descriptors::internal::Descriptor::STF_CLOCK_ID:
             case descriptors::internal::Descriptor::STF_TRANSACTION:
             case descriptors::internal::Descriptor::STF_TRANSACTION_DEPENDENCY:
                 stf_throw("Attempted to write transaction record " << desc << " in an instruction trace");

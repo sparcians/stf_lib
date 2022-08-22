@@ -38,6 +38,9 @@ namespace stf {
                     case Descriptor::STF_PROTOCOL_ID:
                         os << "PROTOCOL_ID";
                         return os;
+                    case Descriptor::STF_CLOCK_ID:
+                        os << "CLOCK_ID";
+                        return os;
                     case Descriptor::STF_END_HEADER:
                         os << "END_HEADER";
                         return os;

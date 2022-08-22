@@ -73,6 +73,7 @@ namespace stf {
                         complete_header = true;
                         break;
                     case descriptors::internal::Descriptor::STF_PROTOCOL_ID:
+                    case descriptors::internal::Descriptor::STF_CLOCK_ID:
                     case descriptors::internal::Descriptor::STF_TRANSACTION:
                     case descriptors::internal::Descriptor::STF_TRANSACTION_DEPENDENCY:
                         stf_throw("Attempted to open a transaction trace with an instruction reader");

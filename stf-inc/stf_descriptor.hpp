@@ -33,7 +33,8 @@ namespace stf {
                 STF_PROCESS_ID_EXT              = 8,            /**< Process ID EXTENSION */
                 STF_FORCE_PC                    = 9,            /**< Initial PC and trace stitching */
                 STF_VLEN_CONFIG                 = 10,           /**< Sets the vector vlen parameter */
-                STF_PROTOCOL_ID                 = 11,
+                STF_PROTOCOL_ID                 = 11,           /**< Sets the protocol encoded in a transaction trace */
+                STF_CLOCK_ID                    = 12,           /**< Adds a clock domain ID to a transaction trace */
 
                 STF_END_HEADER                  = 19,           /**< End of header record */
 
@@ -104,6 +105,7 @@ namespace stf {
                 STF_VERSION,
                 STF_VLEN_CONFIG,
                 STF_PROTOCOL_ID,
+                STF_CLOCK_ID,
                 STF_END_HEADER,
                 STF_TRANSACTION,
                 STF_TRANSACTION_DEPENDENCY,
@@ -170,6 +172,7 @@ namespace stf {
                                 INIT_DESC_ARRAY(STF_FORCE_PC)
                                 INIT_DESC_ARRAY(STF_VLEN_CONFIG)
                                 INIT_DESC_ARRAY(STF_PROTOCOL_ID)
+                                INIT_DESC_ARRAY(STF_CLOCK_ID)
                                 INIT_DESC_ARRAY(STF_END_HEADER)
                                 INIT_DESC_ARRAY(STF_INST_PC_TARGET)
                                 INIT_DESC_ARRAY(STF_INST_REG)

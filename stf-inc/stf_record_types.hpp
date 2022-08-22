@@ -9,6 +9,7 @@
 #include <vector>
 #include "boost_small_vector.hpp"
 #include "format_utils.hpp"
+#include "stf_clock_id.hpp"
 #include "stf_descriptor.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_record.hpp"
@@ -437,6 +438,103 @@ namespace stf {
     };
 
     REGISTER_RECORD(ProtocolIdRecord)
+
+    /**
+     * \class ClockIdRecord
+     *
+     * Indicates what protocol is used in a transaction trace
+     */
+    class ClockIdRecord : public TypeAwareSTFRecord<ClockIdRecord, descriptors::internal::Descriptor::STF_CLOCK_ID> {
+        private:
+            ClockId clock_id_;
+            SerializableString<uint16_t> name_;
+
+        public:
+            ClockIdRecord() = default;
+
+            /**
+             * Constructs ClockIdRecord
+             * \param strm STFIFstream to read from
+             */
+            explicit ClockIdRecord(STFIFstream& strm) {
+                unpack_impl(strm);
+            }
+
+            /**
+             * Constructs a ClockIdRecord
+             * \param clock_id clock ID value
+             * \param name clock name
+             */
+            explicit ClockIdRecord(const ClockId clock_id, const std::string& name) :
+                clock_id_(clock_id),
+                name_(name)
+            {
+            }
+
+            /**
+             * Constructs a ClockIdRecord
+             * \param clock_id clock ID value
+             * \param name clock name
+             */
+            explicit ClockIdRecord(const ClockId clock_id, std::string&& name) :
+                clock_id_(clock_id),
+                name_(std::move(name))
+            {
+            }
+
+            /**
+             * Constructs a ClockIdRecord
+             * \param clock_id clock ID value
+             * \param name clock name
+             */
+            explicit ClockIdRecord(const ClockId clock_id, const std::string_view name) :
+                clock_id_(clock_id),
+                name_(std::string(name))
+            {
+            }
+
+            /**
+             * Packs a ClockIdRecord into an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            inline void pack_impl(STFOFstream& writer) const {
+                write_(writer, clock_id_, name_);
+            }
+
+            /**
+             * Unpacks a ClockIdRecord from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            __attribute__((always_inline))
+            inline void unpack_impl(STFIFstream& reader) {
+                read_(reader, clock_id_, name_);
+            }
+
+            /**
+             * Formats a ClockIdRecord to an std::ostream
+             * \param os ostream to use
+             */
+            inline void format_impl(std::ostream& os) const {
+                format_utils::formatLabel(os, name_);
+                format_utils::formatDec(os, clock_id_);
+            }
+
+            /**
+             * Gets the clock id
+             */
+            ClockId getId() const {
+                return clock_id_;
+            }
+
+            /**
+             * Gets the clock name
+             */
+            const std::string& getName() const {
+                return name_;
+            }
+    };
+
+    REGISTER_RECORD(ClockIdRecord)
 
     /**
      * \class EndOfHeaderRecord
@@ -2314,17 +2412,25 @@ namespace stf {
         private:
             static inline uint64_t next_transaction_id_ = 0;
 
-            uint64_t transaction_id_;
-            uint64_t time_delta_;
+            uint64_t transaction_id_ = 0;
+            uint64_t cycle_delta_ = 0;
+            ClockId clock_id_ = INVALID_CLOCK_ID;
             protocols::ProtocolData::UniqueHandle protocol_data_;
 
             /**
              * Constructs a TransactionRecord
-             * \param reader STFIFstream to use
+             * \param transaction_id Transaction ID
+             * \param cycle_delta Cycle delta from previous transaction
+             * \param clock_id Clock domain ID
+             * \param protocol_data Protocol data object
              */
-            explicit TransactionRecord(const uint64_t transaction_id, const uint64_t time_delta, protocols::ProtocolData::UniqueHandle&& protocol_data) :
+            explicit TransactionRecord(const uint64_t transaction_id,
+                                       const uint64_t cycle_delta,
+                                       const ClockId clock_id,
+                                       protocols::ProtocolData::UniqueHandle&& protocol_data) :
                 transaction_id_(transaction_id),
-                time_delta_(time_delta),
+                cycle_delta_(cycle_delta),
+                clock_id_(clock_id),
                 protocol_data_(std::move(protocol_data))
             {
             }
@@ -2346,7 +2452,8 @@ namespace stf {
              */
             TransactionRecord(const TransactionRecord& rhs) :
                 transaction_id_(rhs.transaction_id_),
-                time_delta_(rhs.time_delta_),
+                cycle_delta_(rhs.cycle_delta_),
+                clock_id_(rhs.clock_id_),
                 protocol_data_(rhs.protocol_data_->clone())
             {
             }
@@ -2363,7 +2470,8 @@ namespace stf {
             inline void pack_impl(STFOFstream& writer) const {
                 write_(writer,
                        transaction_id_,
-                       time_delta_);
+                       cycle_delta_,
+                       clock_id_);
                 protocol_data_->pack(writer);
                 writer.markerRecordCallback();
             }
@@ -2376,7 +2484,8 @@ namespace stf {
             inline void unpack_impl(STFIFstream& reader) {
                 read_(reader,
                       transaction_id_,
-                      time_delta_);
+                      cycle_delta_,
+                      clock_id_);
                 reader >> protocol_data_;
                 reader.markerRecordCallback();
             }
@@ -2389,8 +2498,10 @@ namespace stf {
                 format_utils::formatLabel(os, "ID");
                 format_utils::formatDec(os, transaction_id_);
                 os << std::endl;
+                format_utils::formatLabel(os, "CLOCK");
+                os << ClockRegistry::getClockName(clock_id_) << std::endl;
                 format_utils::formatLabel(os, "DELTA");
-                format_utils::formatDec(os, time_delta_);
+                format_utils::formatDec(os, cycle_delta_);
                 os << std::endl;
                 format_utils::formatLabel(os, "PROTOCOL");
                 protocol_data_->format(os);
@@ -2398,11 +2509,23 @@ namespace stf {
 
             /**
              * Creates a new TransactionRecord. Automatically assigns the ID to the next sequential value.
-             * \param time_delta Time delta between the previous transaction and this one
+             * \param clock_id Clock domain ID for this transaction
+             * \param cycle_delta Cycle delta between the previous transaction and this one
              * \param protocol_data Protocol data to populate this transaction
              */
-            static inline TransactionRecord createNext(const uint64_t time_delta, protocols::ProtocolData::UniqueHandle&& protocol_data) {
-                return TransactionRecord(++next_transaction_id_, time_delta, std::move(protocol_data));
+            static inline TransactionRecord createNext(const ClockId clock_id,
+                                                       const uint64_t cycle_delta,
+                                                       protocols::ProtocolData::UniqueHandle&& protocol_data) {
+                return TransactionRecord(++next_transaction_id_, cycle_delta, clock_id, std::move(protocol_data));
+            }
+
+            /**
+             * Creates a new TransactionRecord in the default clock domain. Automatically assigns the ID to the next sequential value.
+             * \param cycle_delta Cycle delta between the previous transaction and this one
+             * \param protocol_data Protocol data to populate this transaction
+             */
+            static inline TransactionRecord createNext(const uint64_t cycle_delta, protocols::ProtocolData::UniqueHandle&& protocol_data) {
+                return createNext(ClockRegistry::getDefaultClock(), cycle_delta, std::move(protocol_data));
             }
 
             /**
@@ -2429,10 +2552,17 @@ namespace stf {
             }
 
             /**
-             * Gets the time delta
+             * Gets the cycle delta
              */
-            inline uint64_t getTimeDelta() const {
-                return time_delta_;
+            inline uint64_t getCycleDelta() const {
+                return cycle_delta_;
+            }
+
+            /**
+             * Gets the clock domain ID
+             */
+            inline ClockId getClockId() const {
+                return clock_id_;
             }
 
             /**
@@ -2461,8 +2591,9 @@ namespace stf {
      */
     class TransactionDependencyRecord : public TypeAwareSTFRecord<TransactionDependencyRecord, descriptors::internal::Descriptor::STF_TRANSACTION_DEPENDENCY> {
         private:
-            uint64_t dependency_id_;
-            uint64_t time_delta_;
+            uint64_t dependency_id_ = 0;
+            uint64_t cycle_delta_ = 0;
+            ClockId clock_id_ = INVALID_CLOCK_ID;
 
         public:
             TransactionDependencyRecord() = default;
@@ -2478,23 +2609,25 @@ namespace stf {
             /**
              * Unpacks a TransactionDependencyRecord from an STFIFstream
              * \param dependency_id Transaction dependency ID
-             * \param time_delta Delta between this dependency and the previous transaction
+             * \param cycle_delta Cycle delta between this dependency and the previous transaction
              */
             explicit TransactionDependencyRecord(const uint64_t dependency_id,
-                                                 const uint64_t time_delta = 0) :
+                                                 const uint64_t cycle_delta = 0,
+                                                 const ClockId clock_id = ClockRegistry::getDefaultClock()) :
                 dependency_id_(dependency_id),
-                time_delta_(time_delta)
+                cycle_delta_(cycle_delta),
+                clock_id_(clock_id)
             {
             }
 
             /**
              * Constructs a TransactionDependencyRecord
              * \param transaction_record TransactionRecord that provides the dependency ID
-             * \param time_delta Delta between this dependency and the previous transaction
+             * \param cycle_delta Cycle delta between this dependency and the previous transaction
              */
             explicit TransactionDependencyRecord(const TransactionRecord& transaction_record,
-                                                 const uint64_t time_delta = 0) :
-                TransactionDependencyRecord(transaction_record.getTransactionId(), time_delta)
+                                                 const uint64_t cycle_delta = 0) :
+                TransactionDependencyRecord(transaction_record.getTransactionId(), cycle_delta, transaction_record.getClockId())
             {
             }
 
@@ -2505,7 +2638,8 @@ namespace stf {
             inline void pack_impl(STFOFstream& writer) const {
                 write_(writer,
                        dependency_id_,
-                       time_delta_);
+                       cycle_delta_,
+                       clock_id_);
             }
 
             /**
@@ -2516,7 +2650,8 @@ namespace stf {
             inline void unpack_impl(STFIFstream& reader) {
                 read_(reader,
                       dependency_id_,
-                      time_delta_);
+                      cycle_delta_,
+                      clock_id_);
             }
 
             /**
@@ -2527,8 +2662,10 @@ namespace stf {
                 format_utils::formatLabel(os, "DEPENDENCY ID");
                 format_utils::formatDec(os, dependency_id_);
                 os << std::endl;
+                format_utils::formatLabel(os, "CLOCK");
+                os << ClockRegistry::getClockName(clock_id_) << std::endl;
                 format_utils::formatLabel(os, "DELTA");
-                format_utils::formatDec(os, time_delta_);
+                format_utils::formatDec(os, cycle_delta_);
                 os << std::endl;
             }
 
@@ -2540,10 +2677,17 @@ namespace stf {
             }
 
             /**
-             * Gets the time delta
+             * Gets the cycle delta
              */
-            inline uint64_t getTimeDelta() const {
-                return time_delta_;
+            inline uint64_t getCycleDelta() const {
+                return cycle_delta_;
+            }
+
+            /**
+             * Gets the clock domain ID
+             */
+            inline ClockId getClockId() const {
+                return clock_id_;
             }
     };
 

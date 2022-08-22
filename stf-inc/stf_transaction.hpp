@@ -46,11 +46,18 @@ namespace stf {
                     }
 
                     /**
-                     * Gets the time delta between when the dependent transaction completes
+                     * Gets the cycle delta between when the dependent transaction completes
                      * and when this dependency can be considered fulfilled
                      */
-                    inline auto getTimeDelta() const {
-                        return rec_->getTimeDelta();
+                    inline auto getCycleDelta() const {
+                        return rec_->getCycleDelta();
+                    }
+
+                    /**
+                     * Gets the clock domain ID for this dependency
+                     */
+                    inline auto getClockId() const {
+                        return rec_->getClockId();
                     }
 
                     /**
@@ -137,7 +144,8 @@ namespace stf {
                                       */
 
             uint64_t transaction_id_ = 0;
-            uint64_t time_delta_ = 0;
+            uint64_t cycle_delta_ = 0;
+            uint16_t clock_id_ = INVALID_CLOCK_ID;
             Protocol protocol_;
 
             using DependencyVector = boost::container::small_vector<Dependency, 1>;
@@ -151,7 +159,7 @@ namespace stf {
             __attribute__((always_inline))
             inline void reset_() {
                 transaction_id_ = 0;
-                time_delta_ = 0;
+                cycle_delta_ = 0;
                 protocol_.reset(nullptr);
                 dependencies_.clear();
             }
@@ -160,7 +168,8 @@ namespace stf {
             inline void setTransactionInfo_(const STFRecord* const rec) {
                 const auto& transaction_info = rec->as<TransactionRecord>();
                 transaction_id_ = transaction_info.getTransactionId();
-                time_delta_ = transaction_info.getTimeDelta();
+                cycle_delta_ = transaction_info.getCycleDelta();
+                clock_id_ = transaction_info.getClockId();
                 protocol_.reset(transaction_info);
             }
 
@@ -185,10 +194,17 @@ namespace stf {
             }
 
             /**
-             * Gets the time delta
+             * Gets the cycle delta
              */
-            inline uint64_t getTimeDelta() const {
-                return time_delta_;
+            inline uint64_t getCycleDelta() const {
+                return cycle_delta_;
+            }
+
+            /**
+             * Gets the clock domain ID
+             */
+            inline ClockId getClockId() const {
+                return clock_id_;
             }
 
             /**
