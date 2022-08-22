@@ -2610,6 +2610,7 @@ namespace stf {
              * Unpacks a TransactionDependencyRecord from an STFIFstream
              * \param dependency_id Transaction dependency ID
              * \param cycle_delta Cycle delta between this dependency and the previous transaction
+             * \param clock_id Clock domain ID for this dependency
              */
             explicit TransactionDependencyRecord(const uint64_t dependency_id,
                                                  const uint64_t cycle_delta = 0,

@@ -14,8 +14,14 @@ namespace stf {
      * Type used to represent clock IDs in transaction traces
      */
     using ClockId = uint16_t;
-    static inline constexpr ClockId INVALID_CLOCK_ID = 0;
+    static inline constexpr ClockId INVALID_CLOCK_ID = 0; /**< Value used to indicate an invalid clock ID */
 
+    /**
+     * \class ClockRegistry
+     *
+     * Singleton class that records clock ID -> name mappings and the default clock ID.
+     * The default clock ID is the first clock ID that appears in the trace header.
+     */
     class ClockRegistry {
         private:
             ClockId default_clock_;
@@ -52,18 +58,35 @@ namespace stf {
             }
 
         public:
+            /**
+             * Registers a new clock
+             * \param clock_id ID of the clock
+             * \param name Name of the clock
+             */
             static inline void registerClock(const ClockId clock_id, const std::string& name) {
                 get_().registerClock_(clock_id, name);
             }
 
+            /**
+             * Registers a new clock
+             * \param clock_id ID of the clock
+             * \param name Name of the clock
+             */
             static inline void registerClock(const ClockId clock_id, const std::string_view name) {
                 get_().registerClock_(clock_id, std::string(name));
             }
 
+            /**
+             * Gets the default clock ID
+             */
             static inline ClockId getDefaultClock() {
                 return get_().getDefaultClock_();
             }
 
+            /**
+             * Gets the name associated with a clock ID
+             * \param clock_id clock ID to look up
+             */
             static inline const std::string& getClockName(const ClockId clock_id) {
                 return get_().getClockName_(clock_id);
             }
