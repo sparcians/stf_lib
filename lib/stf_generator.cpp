@@ -37,6 +37,9 @@ namespace stf {
             case STF_GEN::STF_GEN_STF_MORPH:
                 os << "stf_morph";
                 return os;
+            case STF_GEN::STF_GEN_DROMAJO:
+                os << "Dromajo";
+                return os;
             case STF_GEN::STF_GEN_RESERVED:
             case STF_GEN::STF_GEN_RESERVED_END:
                 break;
