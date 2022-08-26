@@ -25,6 +25,7 @@ namespace stf {
         STF_GEN_STF_FILTER_EVT,             /**< stf_filter_evt */
         STF_GEN_ATHENA,                     /**< Athena */
         STF_GEN_STF_MORPH,                  /**< stf_morph */
+        STF_GEN_DROMAJO,                    /**< Dromajo */
 
         /*
          * Note that if you add anything to this list, you need to
