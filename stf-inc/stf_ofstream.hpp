@@ -5,7 +5,7 @@
 #include <cstring>
 #include <memory>
 #include <vector>
-#include "boost_small_vector.hpp"
+#include "boost_wrappers/small_vector.hpp"
 
 #include "stf_enum_utils.hpp"
 #include "stf_fstream.hpp"

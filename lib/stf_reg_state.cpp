@@ -8,130 +8,16 @@
 
 namespace stf {
     // cppcheck-suppress unusedFunction
-    bool STFRegState::regStateUpdate(const InstRegRecord& rec) {
-        if(rec.isVector()) {
-            return regStateVectorUpdate(rec.getReg(), rec.getVectorData());
-        }
-
-        return regStateScalarUpdate(rec.getReg(), rec.getScalarData());
-    }
-
-    bool STFRegState::regStateScalarUpdate(const Registers::STF_REG regno, const uint64_t data) {
-        const auto rbit = regbank.find(regno);
-        if (rbit == regbank.end()) {
-            return false;
-        }
-
-        const Registers::STF_REG mapped_reg = rbit->second.getMappedReg();
-        const uint64_t mask = rbit->second.getMask();
-        const uint32_t shift = rbit->second.getShiftBits();
-
-        auto it = regstate.find(mapped_reg);
-        if (it == regstate.end()) {
-            const auto insert_result = regstate.emplace(std::piecewise_construct,
-                                                        std::forward_as_tuple(mapped_reg),
-                                                        std::forward_as_tuple(mapped_reg,
-                                                                              Registers::STF_REG_OPERAND_TYPE::REG_STATE,
-                                                                              0));
-            it = insert_result.first;
-        }
-
-        it->second.setScalarData((it->second.getScalarData() & ~(mask<<shift)) | ((data & mask) << shift));
-
-        return true ;
-    }
-
-    bool STFRegState::regStateVectorUpdate(const Registers::STF_REG regno, const InstRegRecord::VectorType& data) {
-        const auto rbit = regbank.find(regno);
-        if (rbit == regbank.end()) {
-            return false;
-        }
-
-        const Registers::STF_REG mapped_reg = rbit->second.getMappedReg();
-
-        auto it = regstate.find(mapped_reg);
-        if (it == regstate.end()) {
-            regstate.emplace(std::piecewise_construct,
-                             std::forward_as_tuple(mapped_reg),
-                             std::forward_as_tuple(mapped_reg,
-                                                   Registers::STF_REG_OPERAND_TYPE::REG_STATE,
-                                                   data));
-        }
-        else {
-            it->second.setVectorData(data);
-        }
-
-        return true ;
-    }
-
-    STFRegState& STFRegState::operator=(const STFRegState& rhs) {
-        regbank = rhs.regbank;
-        regstate.clear();
-        for(const auto& p: rhs.regstate) {
-            regstate.emplace(p.first, p.second);
-        }
-
-        return *this;
-    }
-
-    uint64_t STFRegState::getRegScalarValue(const Registers::STF_REG regno) const {
-        Registers::STF_REG mapped_reg;
-
-        const auto rbit = regbank.find(regno);
-        if (rbit == regbank.end()) {
-            throw RegNotFoundException();
-        }
-        mapped_reg = rbit->second.getMappedReg();
-
-        const auto it = regstate.find(mapped_reg);
-        if (it == regstate.end()) {
-            throw RegNotFoundException();
-        }
-
-        return (it->second.getScalarData() >> rbit->second.getShiftBits()) & rbit->second.getMask();
-    }
-
-    const InstRegRecord::VectorType& STFRegState::getRegVectorValue(const Registers::STF_REG regno) const {
-        Registers::STF_REG mapped_reg;
-
-        const auto rbit = regbank.find(regno);
-        if (rbit == regbank.end()) {
-            throw RegNotFoundException();
-        }
-        mapped_reg = rbit->second.getMappedReg();
-
-        const auto it = regstate.find(mapped_reg);
-        if (it == regstate.end()) {
-            throw RegNotFoundException();
-        }
-
-        return it->second.getVectorData();
-    }
-
-    // cppcheck-suppress unusedFunction
     void STFRegState::writeRegState(STFWriter& stf_writer) const {
-        for (const auto& r: regstate) {
-            stf_writer << r.second;
-        }
-    }
-
-    void STFRegState::insertSimpleRegister_(const Registers::STF_REG reg, const uint64_t mask) {
-        regbank.emplace(std::piecewise_construct,
-                        std::forward_as_tuple(reg),
-                        std::forward_as_tuple(reg, mask));
-    }
-
-    void STFRegState::insertMappedRegister_(const Registers::STF_REG reg,
-                                            const Registers::STF_REG mapped_reg,
-                                            const uint64_t mask,
-                                            const uint32_t shift) {
-        regbank.emplace(std::piecewise_construct,
-                        std::forward_as_tuple(reg),
-                        std::forward_as_tuple(reg, mapped_reg, mask, shift));
+        applyRegState(
+            [&stf_writer](const auto& r) {
+                stf_writer << *r.second;
+            }
+        );
     }
 
     void STFRegState::initRegBank(const ISA isa, const INST_IEM iem) {
-        regbank.clear();
+        regbank_.clear();
 
         uint64_t machine_length_mask = RegMapInfo::MASK64;
         uint64_t fp_length_mask = RegMapInfo::MASK64;
@@ -186,6 +72,7 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_X29, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_X30, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_X31, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_PC, machine_length_mask);
 
                 // init FPRs
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_F0, fp_length_mask);
@@ -243,6 +130,8 @@ namespace stf {
                                       Registers::STF_REG::STF_REG_CSR_SSTATUS,
                                       calcRegMask<Registers::Widths::SIE_WIDTH>(),
                                       Registers::Widths::SIE_SHIFT);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SEDELEG, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SIDELEG, machine_length_mask);
 
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_STVEC, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SCOUNTEREN, RegMapInfo::MASK32);
@@ -252,6 +141,22 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_STVAL, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SIP, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SATP, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SENVCFG, machine_length_mask);
+
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DMCONTROL, RegMapInfo::MASK32);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DMSTATUS, RegMapInfo::MASK32);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TSELECT, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TDATA1, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TDATA2, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TDATA3, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TINFO, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TCONTROL, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MCONTEXT, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SCONTEXT, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DCSR, RegMapInfo::MASK32);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DPC, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DSCRATCH0, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DSCRATCH1, machine_length_mask);
 
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MSTATUS, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MISA, machine_length_mask);
@@ -270,6 +175,18 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG1, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG2, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG3, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG4, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG5, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG6, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG7, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG8, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG9, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG10, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG11, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG12, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG13, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG14, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPCFG15, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR0, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR1, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR2, machine_length_mask);
@@ -286,13 +203,119 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR13, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR14, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR15, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR16, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR17, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR18, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR19, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR20, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR21, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR22, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR23, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR24, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR25, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR26, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR27, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR28, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR29, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR30, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR31, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR32, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR33, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR34, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR35, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR36, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR37, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR38, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR39, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR40, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR41, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR42, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR43, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR44, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR45, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR46, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR47, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR48, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR49, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR50, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR51, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR52, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR53, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR54, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR55, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR56, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR57, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR58, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR59, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR60, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR61, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR62, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_PMPADDR63, machine_length_mask);
 
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MCYCLE);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MINSTRET);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER3, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER4, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER5, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER6, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER7, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER8, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER9, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER10, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER11, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER12, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER13, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER14, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER15, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER16, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER17, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER18, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER19, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER20, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER21, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER22, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER23, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER24, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER25, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER26, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER27, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER28, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER29, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER30, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMCOUNTER31, machine_length_mask);
 
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_CYCLE);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_TIME);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_INSTRET);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER3, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER4, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER5, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER6, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER7, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER8, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER9, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER10, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER11, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER12, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER13, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER14, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER15, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER16, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER17, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER18, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER19, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER20, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER21, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER22, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER23, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER24, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER25, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER26, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER27, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER28, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER29, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER30, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HPMCOUNTER31, machine_length_mask);
 
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VL);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VTYPE);
@@ -323,12 +346,28 @@ namespace stf {
                                           Registers::STF_REG::STF_REG_CSR_INSTRET,
                                           calcRegMask<Registers::Widths::INSTRETH_WIDTH>(),
                                           Registers::Widths::INSTRETH_SHIFT);
+
+                    insertMappedRegister_(Registers::STF_REG::STF_REG_CSR_MSECCFGH,
+                                          Registers::STF_REG::STF_REG_CSR_MSECCFG,
+                                          calcRegMask<Registers::Widths::MSECCFGH_WIDTH>(),
+                                          Registers::Widths::MSECCFGH_SHIFT);
+
+                    insertMappedRegister_(Registers::STF_REG::STF_REG_CSR_MSTATUSH,
+                                          Registers::STF_REG::STF_REG_CSR_MSTATUS,
+                                          calcRegMask<Registers::Widths::MSTATUSH_WIDTH>(),
+                                          Registers::Widths::MSTATUSH_SHIFT);
+
+                    insertMappedRegister_(Registers::STF_REG::STF_REG_CSR_MENVCFGH,
+                                          Registers::STF_REG::STF_REG_CSR_MENVCFG,
+                                          calcRegMask<Registers::Widths::MENVCFGH_WIDTH>(),
+                                          Registers::Widths::MENVCFGH_SHIFT);
                 }
 
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MVENDORID, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MARCHID, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MIMPID, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHARTID, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MSECCFG, machine_length_mask);
 
                 // FIXME: Guessing on these widths
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_USCRATCH, machine_length_mask);
@@ -339,8 +378,19 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HSTATUS, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HEDELEG, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HIDELEG, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HIE, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HTIMEDELTA, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HCOUNTEREN, RegMapInfo::MASK32);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HGEIE, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HENVCFG, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HTVAL, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HIP, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HVIP, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HTINST, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HGATP, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HCONTEXT, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_HGEIP, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MCONFIGPTR, machine_length_mask);
 
                 // FIXME: Couldn't find definitions for these
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_UTVT);
@@ -367,10 +417,43 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VSIP);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_VSATP);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MTVT);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MENVCFG, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MCOUNTINHIBIT, RegMapInfo::MASK32);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT3, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT4, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT5, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT6, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT7, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT8, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT9, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT10, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT11, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT12, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT13, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT14, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT15, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT16, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT17, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT18, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT19, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT20, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT21, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT22, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT23, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT24, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT25, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT26, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT27, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT28, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT29, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT30, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MHPMEVENT31, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MNXTI);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MINTSTATUS);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MSCRATCHCSW);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MSCRATCHCSWL);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MTINST);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_MTVAL2);
 
                 // init vector registers
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_V0, vec_length_mask);

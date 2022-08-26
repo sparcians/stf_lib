@@ -66,7 +66,7 @@ namespace stf {
             }
 
             __attribute__((always_inline))
-            inline void skippedCleanup_() {
+            inline void skippedCleanup_(const STFBranch&) {
                 last_branch_ = nullptr;
             }
 

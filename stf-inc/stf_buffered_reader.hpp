@@ -100,17 +100,36 @@ namespace stf {
 
             /**
              * Default item skipping cleanup callback. Does nothing.
+             * \param item The item that was skipped
              */
             __attribute__((always_inline))
-            inline void skippedCleanup_() {
+            inline void skippedCleanup_(const ItemType& item) {
             }
 
             /**
              * Invokes subclass callback to clean up any addtional state when an item is skipped
+             * \param item The item that was skipped
              */
             __attribute__((always_inline))
-            inline void skippedItemCleanup_() {
-                static_cast<ReaderType*>(this)->skippedCleanup_();
+            inline void skippedItemCleanup_(const ItemType& item) {
+                static_cast<ReaderType*>(this)->skippedCleanup_(item);
+            }
+
+            /**
+             * Default callback for when we finish skipping. Does nothing.
+             * \param item The first non-skipped item after the skipped portion
+             */
+            __attribute__((always_inline))
+            inline void skippingDone_(ItemType& item) {
+            }
+
+            /**
+             * Invokes subclass callback to clean up after we finish skipping
+             * \param item The first non-skipped item after the skipped portion
+             */
+            __attribute__((always_inline))
+            inline void finishedSkippingCleanup_(ItemType& item) {
+                static_cast<ReaderType*>(this)->skippingDone_(item);
             }
 
             /**
@@ -120,17 +139,24 @@ namespace stf {
                 buf_ = std::make_unique<BufferT>(static_cast<size_t>(buffer_size_));
 
                 size_t i = 0;
+                bool did_skip = false;
                 while(i < buffer_size_) {
+                    auto& item = buf_[i];
                     try {
-                        readNextItem_(buf_[i]);
-                        if(STF_EXPECT_FALSE(itemSkipped_(buf_[i]))) {
-                            skippedItemCleanup_();
+                        readNextItem_(item);
+                        if(STF_EXPECT_FALSE(itemSkipped_(item))) {
+                            skippedItemCleanup_(item);
+                            did_skip = true;
                             continue;
                         }
                     }
                     catch(const EOFException&) {
                         last_item_read_ = true;
                         break;
+                    }
+                    if(STF_EXPECT_FALSE(did_skip)) {
+                        finishedSkippingCleanup_(item);
+                        did_skip = false;
                     }
                     ++tail_;
                     ++i;
@@ -294,19 +320,28 @@ namespace stf {
                 size_t pos = tail_;
                 const size_t init_item_cnt = numItemsReadFromReader_();
                 const size_t max_item_cnt = init_item_cnt + (buffer_size_ / 2);
+                bool did_skip = false;
                 while(numItemsReadFromReader_() < max_item_cnt) {
                     pos = (pos + 1) & buffer_mask_;
 
+                    auto& item = buf_[pos];
                     try {
-                        readNextItem_(buf_[pos]);
-                        if(STF_EXPECT_FALSE(itemSkipped_(buf_[pos]))) {
-                            skippedItemCleanup_();
+                        readNextItem_(item);
+                        if(STF_EXPECT_FALSE(itemSkipped_(item))) {
+                            skippedItemCleanup_(item);
+                            did_skip = true;
                             pos = (pos - 1) & buffer_mask_;
+                            continue;
                         }
                     }
                     catch(const EOFException&) {
                         last_item_read_ = true;
                         break;
+                    }
+
+                    if(STF_EXPECT_FALSE(did_skip)) {
+                        finishedSkippingCleanup_(item);
+                        did_skip = false;
                     }
                 }
 

@@ -2,7 +2,7 @@
 #define __STF_VECTOR_VIEW_HPP__
 
 #include <vector>
-#include "boost_small_vector.hpp"
+#include "boost_wrappers/small_vector.hpp"
 #include "stf_exception.hpp"
 
 namespace stf {

@@ -10,8 +10,10 @@
 #define __STF_COMMON_HELPER_HPP__
 
 #include <cstdint>
-#include <map>
 #include <stdexcept>
+
+#include "boost_wrappers/flat_map.hpp"
+
 #include "stf_reg_def.hpp"
 #include "stf_record_types.hpp"
 #include "util.hpp"
@@ -24,8 +26,7 @@ namespace stf {
      *
      * Struct that holds register mapping information
      */
-    class RegMapInfo
-    {
+    class RegMapInfo {
         private:
             Registers::STF_REG reg_; /**< register number */
             Registers::STF_REG mapped_reg_; /**< mapped register number */
@@ -67,29 +68,38 @@ namespace stf {
             /**
              * Gets register number
              */
-            Registers::STF_REG getReg() const {
+            inline Registers::STF_REG getReg() const {
                 return reg_;
             }
 
             /**
              * Gets mapped register number
              */
-            Registers::STF_REG getMappedReg() const {
+            inline Registers::STF_REG getMappedReg() const {
                 return mapped_reg_;
             }
 
             /**
              * Gets mask
              */
-            uint64_t getMask() const {
+            inline uint64_t getMask() const {
                 return mask_;
             }
 
             /**
              * Gets shift bits
              */
-            uint32_t getShiftBits() const {
+            inline uint32_t getShiftBits() const {
                 return shiftbits_;
+            }
+
+            /**
+             * Applies the givel field value with the correct shift and mask bits into the parent register value
+             * \param parent_reg_val Current value of the parent register
+             * \param field_val Field value to apply
+             */
+            inline uint64_t apply(const uint64_t parent_reg_val, const uint64_t field_val) const {
+                return (parent_reg_val & ~(mask_ << shiftbits_)) | ((field_val & mask_) << shiftbits_);
             }
     };
 
@@ -97,13 +107,13 @@ namespace stf {
      * \typedef RegStateMap
      * Maps Registers::STF_REG to corresponding InstRegRecord
      */
-    using RegStateMap = std::map<Registers::STF_REG, InstRegRecord>;
+    using RegStateMap = boost::container::flat_map<Registers::STF_REG, STFRecord::Handle<InstRegRecord>>;
 
     /**
      * \typedef RegBankMap
      * Maps Registers::STF_REG to corresponding RegMapInfo
      */
-    using RegBankMap = std::map<Registers::STF_REG, RegMapInfo>;
+    using RegBankMap = boost::container::flat_map<Registers::STF_REG, RegMapInfo>;
 
     /**
      * \class STFRegState
@@ -112,11 +122,64 @@ namespace stf {
      */
     class STFRegState {
         private:
-            RegStateMap regstate;
-            RegBankMap regbank;
+            RegStateMap regstate_;
+            RegBankMap regbank_;
 
-            void insertSimpleRegister_(Registers::STF_REG reg, uint64_t mask = RegMapInfo::MASK64);
-            void insertMappedRegister_(Registers::STF_REG reg, Registers::STF_REG mapped_reg, uint64_t mask, uint32_t shift = 0);
+            /**
+             * Inserts a simple (non-mapped) register
+             * \param reg register number
+             * \param mask mask to apply to register values
+             */
+            inline auto insertSimpleRegister_(const Registers::STF_REG reg, const uint64_t mask = RegMapInfo::MASK64) {
+                return regbank_.emplace(std::piecewise_construct,
+                                        std::forward_as_tuple(reg),
+                                        std::forward_as_tuple(reg, mask));
+            }
+
+            /**
+             * Inserts a mapped (simple register sub-field) register
+             * \param reg field register number
+             * \param mapped_reg parent register number
+             * \param mask mask to apply to field values
+             * \param shift shift to apply to field values
+             */
+            inline auto insertMappedRegister_(const Registers::STF_REG reg,
+                                              const Registers::STF_REG mapped_reg,
+                                              const uint64_t mask,
+                                              const uint32_t shift = 0) {
+                stf_assert(!Registers::isVector(reg), "Mapped vector registers are not currently supported");
+                return regbank_.emplace(std::piecewise_construct,
+                                        std::forward_as_tuple(reg),
+                                        std::forward_as_tuple(reg, mapped_reg, mask, shift));
+            }
+
+            /**
+             * Looks up a register in a map, throwing an exception if it isn't found
+             * \param map Map to use
+             * \param reg Register number
+             */
+            template<typename MapType>
+            static inline typename MapType::const_iterator find_(const MapType& map, const Registers::STF_REG reg) {
+                auto it = map.find(reg);
+                if(STF_EXPECT_FALSE(it == map.end())) {
+                    throw RegNotFoundException(reg);
+                }
+                return it;
+            }
+
+            /**
+             * Looks up a register in a map, throwing an exception if it isn't found
+             * \param map Map to use
+             * \param reg Register number
+             */
+            template<typename MapType>
+            static inline typename MapType::iterator find_(MapType& map, const Registers::STF_REG reg) {
+                auto it = map.find(reg);
+                if(STF_EXPECT_FALSE(it == map.end())) {
+                    throw RegNotFoundException(reg);
+                }
+                return it;
+            }
 
         public:
             /**
@@ -125,6 +188,35 @@ namespace stf {
              * Exception type thrown by getRegScalarValue/getRegVectorValue if a register is not found
              */
             class RegNotFoundException : public std::exception {
+                private:
+                    const std::string msg_;
+
+                    /**
+                     * Generates the exception message
+                     * \param reg Register number
+                     */
+                    static inline std::string genMsg_(const Registers::STF_REG reg) {
+                        std::stringstream ss;
+                        ss << "Unknown register specified: " << reg;
+                        return ss.str();
+                    }
+
+                public:
+                    /**
+                     * RegNotFoundException constructor
+                     * \param reg Register number that was not found
+                     */
+                    explicit RegNotFoundException(const Registers::STF_REG reg) :
+                        msg_(genMsg_(reg))
+                    {
+                    }
+
+                    /**
+                     * Gets the exception message
+                     */
+                    const char* what() const noexcept final {
+                        return msg_.c_str();
+                    }
             };
 
             STFRegState() = default;
@@ -147,7 +239,14 @@ namespace stf {
             /**
              * Copy assignment operator
              */
-            STFRegState& operator=(const STFRegState& rhs);
+            STFRegState& operator=(const STFRegState& rhs) {
+                regbank_ = rhs.regbank_;
+                regstate_.clear();
+                for(const auto& r: rhs.regstate_) {
+                    regstate_.emplace(r.first, r.second->copy());
+                }
+                return *this;
+            }
 
             /**
              * Constructs and initializes an STFRegState
@@ -163,8 +262,8 @@ namespace stf {
              * \param isa ISA
              * \param iem Instruction encoding
              */
-            void resetArch(const ISA isa, const INST_IEM iem) {
-                regStateClear();
+            inline void resetArch(const ISA isa, const INST_IEM iem) {
+                clear();
                 initRegBank(isa, iem);
             }
 
@@ -176,43 +275,115 @@ namespace stf {
             void initRegBank(ISA isa, INST_IEM iem);
 
             /**
-             * Clears state
+             * Clears register value state
              */
-            void regStateClear() {
-                regstate.clear();
-                regbank.clear();
+            inline void stateClear() {
+                regstate_.clear();
+            }
+
+            /**
+             * Clears EVERYTHING
+             */
+            inline void clear() {
+                stateClear();
+                regbank_.clear();
             }
 
             /**
              * Updates register state
+             * \param rec State is updated from this record
              */
-            bool regStateUpdate(const InstRegRecord& rec);
+            inline void regStateUpdate(const InstRegRecord& rec) {
+                const auto reg_num = rec.getReg();
+                RegBankMap::iterator rbit;
+                try {
+                    rbit = find_(regbank_, reg_num);
+                }
+                catch(const RegNotFoundException&) {
+                    if(!Registers::Codec::isNonstandardCSR(reg_num)) {
+                        throw;
+                    }
+                    // It's a nonstandard (e.g. vendor-specific) CSR. Go ahead and register it.
+                    rbit = insertSimpleRegister_(reg_num).first;
+                }
+
+                const Registers::STF_REG mapped_reg_num = rbit->second.getMappedReg();
+
+                // If reg_num != mapped_reg_num, that means this register is mapped as a field of another, larger register
+                // In this case, we also need to update the mapped register value
+                if(STF_EXPECT_FALSE(reg_num != mapped_reg_num)) {
+                    const auto mapped_it = regstate_.find(mapped_reg_num);
+                    // Insert the map entry if it doesn't exist
+                    if(STF_EXPECT_FALSE(mapped_it == regstate_.end())) {
+                        regstate_.emplace(mapped_reg_num,
+                                          InstRegRecord::make(mapped_reg_num,
+                                                              Registers::STF_REG_OPERAND_TYPE::REG_STATE,
+                                                              rbit->second.apply(0, rec.getScalarData())));
+                    }
+                    // Otherwise update the entry
+                    else {
+                        auto& mapped_reg = *mapped_it->second;
+                        mapped_reg.setScalarData(rbit->second.apply(mapped_reg.getScalarData(), rec.getScalarData()));
+                    }
+                }
+
+                const auto it = regstate_.find(reg_num);
+                // Insert the entry if it doesn't exist
+                if(STF_EXPECT_FALSE(it == regstate_.end())) {
+                    regstate_.emplace(reg_num,
+                                      InstRegRecord::make(rec, Registers::STF_REG_OPERAND_TYPE::REG_STATE));
+                }
+                // Otherwise update the entry
+                else {
+                    it->second->copyFrom(rec);
+                }
+            }
 
             /**
-             * Updates register state
+             * Gets register value (scalar version)
+             * \param regno Register number to look up
              */
-            bool regStateScalarUpdate(Registers::STF_REG regno, uint64_t data);
+            inline uint64_t getRegScalarValue(const Registers::STF_REG regno) const {
+                Registers::STF_REG mapped_reg;
+
+                const auto rbit = find_(regbank_, regno);
+                mapped_reg = rbit->second.getMappedReg();
+
+                const auto it = find_(regstate_, mapped_reg);
+                return (it->second->getScalarData() >> rbit->second.getShiftBits()) & rbit->second.getMask();
+            }
 
             /**
-             * Updates register state
+             * Gets register value (vector version)
+             * \param regno Register number to look up
              */
-            bool regStateVectorUpdate(Registers::STF_REG regno, const InstRegRecord::VectorType& data);
+            const InstRegRecord::VectorType& getRegVectorValue(const Registers::STF_REG regno) const {
+                Registers::STF_REG mapped_reg;
+
+                const auto rbit = find_(regbank_, regno);
+                mapped_reg = rbit->second.getMappedReg();
+
+                const auto it = find_(regstate_, mapped_reg);
+                return it->second->getVectorData();
+            }
 
             /**
-             * Gets register value
+             * Iterates over the register state, applying a callback function to each entry
+             * \param func Callback function
              */
-            uint64_t getRegScalarValue(Registers::STF_REG regno) const;
-
-            /**
-             * Gets register value
-             */
-            const InstRegRecord::VectorType& getRegVectorValue(Registers::STF_REG regno) const;
+            template<typename FuncType>
+            __attribute__((always_inline))
+            inline void applyRegState(FuncType&& func) const {
+                for(const auto& r: regstate_) {
+                    func(r);
+                }
+            }
 
             /**
              * Writes register state to STFWriter
+             * \param stf_writer STFWriter to use
              */
             void writeRegState(STFWriter& stf_writer) const;
-
    };
 } //end namespace stf
 

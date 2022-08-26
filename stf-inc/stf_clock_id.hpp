@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <iostream>
 
-#include <boost/container/flat_map.hpp>
+#include "boost_wrappers/flat_map.hpp"
 
 #include "stf_exception.hpp"
 

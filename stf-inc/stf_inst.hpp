@@ -9,9 +9,10 @@
 #include <type_traits>
 #include <vector>
 
-#include <boost/container/flat_map.hpp>
+#include "boost_wrappers/setup.hpp"
+#include "boost_wrappers/flat_map.hpp"
 #include <boost/container/flat_set.hpp>
-#include "boost_small_vector.hpp"
+#include "boost_wrappers/small_vector.hpp"
 
 #include "stf_branch_decoder.hpp"
 #include "stf_enums.hpp"
@@ -20,6 +21,7 @@
 #include "stf_record_map.hpp"
 #include "stf_record_types.hpp"
 #include "stf_reg_def.hpp"
+#include "stf_reg_state.hpp"
 #include "stf_writer.hpp"
 #include "util.hpp"
 
@@ -1534,6 +1536,18 @@ namespace stf {
                 __attribute__((always_inline))
                 static inline void setNop_(STFInst& inst) {
                     inst.setNop_();
+                }
+
+                __attribute__((always_inline))
+                static inline void applyRegisterState_(STFInst& inst, const STFRegState& reg_state) {
+                    auto& inst_reg_state = inst.getOperandVector_(Registers::STF_REG_OPERAND_TYPE::REG_STATE);
+                    inst_reg_state.clear();
+                    reg_state.applyRegState(
+                        [&inst, &inst_reg_state](const auto& r) {
+                            const auto* rec = appendOrigRecord_(inst, r.second->clone());
+                            inst_reg_state.emplace_back(&rec->template as<InstRegRecord>());
+                        }
+                    );
                 }
 
                 /**

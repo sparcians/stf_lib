@@ -1,6 +1,8 @@
 #ifndef __STF_OBJECT_HPP__
 #define __STF_OBJECT_HPP__
 
+#include "boost_wrappers/setup.hpp"
+
 #include "stf_ifstream.hpp"
 #include "stf_ofstream.hpp"
 #include "stf_packed_container.hpp"
@@ -247,8 +249,6 @@ namespace stf {
              */
             virtual void format(std::ostream& os) const = 0;
 
-            virtual inline ~STFObject() = default;
-
             /**
              * Creates a copy of the object
              */
@@ -379,6 +379,13 @@ namespace stf {
             template<typename ... Args>
             static inline auto make(Args&&... args) {
                 return STFObject<BaseType, IdType>::template make<Type>(std::forward<Args>(args)...);
+            }
+
+            /**
+             * Clones the object, returning it as a type-specific handle
+             */
+            inline auto copy() const {
+                return make(*static_cast<const Type*>(this));
             }
 
             /**

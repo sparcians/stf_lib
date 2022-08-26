@@ -69,6 +69,12 @@ namespace stf {
             case STF_REG::STF_REG_CSR_SSTATUS:
                 os << "REG_CSR_SSTATUS";
                 return;
+            case STF_REG::STF_REG_CSR_SEDELEG:
+                os << "REG_CSR_SEDELEG";
+                return;
+            case STF_REG::STF_REG_CSR_SIDELEG:
+                os << "REG_CSR_SIDELEG";
+                return;
             case STF_REG::STF_REG_CSR_SIE:
                 os << "REG_CSR_SIE";
                 return;
@@ -113,6 +119,48 @@ namespace stf {
                 return;
             case STF_REG::STF_REG_CSR_SENVCFG:
                 os << "REG_CSR_SENVCFG";
+                return;
+            case STF_REG::STF_REG_CSR_DMCONTROL:
+                os << "REG_CSR_DMCONTROL";
+                return;
+            case STF_REG::STF_REG_CSR_DMSTATUS:
+                os << "REG_CSR_DMSTATUS";
+                return;
+            case STF_REG::STF_REG_CSR_TSELECT:
+                os << "REG_CSR_TSELECT";
+                return;
+            case STF_REG::STF_REG_CSR_TDATA1:
+                os << "REG_CSR_TDATA1";
+                return;
+            case STF_REG::STF_REG_CSR_TDATA2:
+                os << "REG_CSR_TDATA2";
+                return;
+            case STF_REG::STF_REG_CSR_TDATA3:
+                os << "REG_CSR_TDATA3";
+                return;
+            case STF_REG::STF_REG_CSR_TINFO:
+                os << "REG_CSR_TINFO";
+                return;
+            case STF_REG::STF_REG_CSR_TCONTROL:
+                os << "REG_CSR_TCONTROL";
+                return;
+            case STF_REG::STF_REG_CSR_MCONTEXT:
+                os << "REG_CSR_MCONTEXT";
+                return;
+            case STF_REG::STF_REG_CSR_SCONTEXT:
+                os << "REG_CSR_SCONTEXT";
+                return;
+            case STF_REG::STF_REG_CSR_DCSR:
+                os << "REG_CSR_DCSR";
+                return;
+            case STF_REG::STF_REG_CSR_DPC:
+                os << "REG_CSR_DPC";
+                return;
+            case STF_REG::STF_REG_CSR_DSCRATCH0:
+                os << "REG_CSR_DSCRATCH0";
+                return;
+            case STF_REG::STF_REG_CSR_DSCRATCH1:
+                os << "REG_CSR_DSCRATCH1";
                 return;
             case STF_REG::STF_REG_CSR_VSSTATUS:
                 os << "REG_CSR_VSSTATUS";
@@ -174,6 +222,96 @@ namespace stf {
             case STF_REG::STF_REG_CSR_MENVCFGH:
                 os << "REG_CSR_MENVCFGH";
                 return;
+            case STF_REG::STF_REG_CSR_MCOUNTINHIBIT:
+                os << "REG_CSR_MCOUNTINHIBIT";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT3:
+                os << "REG_CSR_MHPMEVENT3";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT4:
+                os << "REG_CSR_MHPMEVENT4";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT5:
+                os << "REG_CSR_MHPMEVENT5";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT6:
+                os << "REG_CSR_MHPMEVENT6";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT7:
+                os << "REG_CSR_MHPMEVENT7";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT8:
+                os << "REG_CSR_MHPMEVENT8";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT9:
+                os << "REG_CSR_MHPMEVENT9";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT10:
+                os << "REG_CSR_MHPMEVENT10";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT11:
+                os << "REG_CSR_MHPMEVENT11";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT12:
+                os << "REG_CSR_MHPMEVENT12";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT13:
+                os << "REG_CSR_MHPMEVENT13";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT14:
+                os << "REG_CSR_MHPMEVENT14";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT15:
+                os << "REG_CSR_MHPMEVENT15";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT16:
+                os << "REG_CSR_MHPMEVENT16";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT17:
+                os << "REG_CSR_MHPMEVENT17";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT18:
+                os << "REG_CSR_MHPMEVENT18";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT19:
+                os << "REG_CSR_MHPMEVENT19";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT20:
+                os << "REG_CSR_MHPMEVENT20";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT21:
+                os << "REG_CSR_MHPMEVENT21";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT22:
+                os << "REG_CSR_MHPMEVENT22";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT23:
+                os << "REG_CSR_MHPMEVENT23";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT24:
+                os << "REG_CSR_MHPMEVENT24";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT25:
+                os << "REG_CSR_MHPMEVENT25";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT26:
+                os << "REG_CSR_MHPMEVENT26";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT27:
+                os << "REG_CSR_MHPMEVENT27";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT28:
+                os << "REG_CSR_MHPMEVENT28";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT29:
+                os << "REG_CSR_MHPMEVENT29";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT30:
+                os << "REG_CSR_MHPMEVENT30";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMEVENT31:
+                os << "REG_CSR_MHPMEVENT31";
+                return;
             case STF_REG::STF_REG_CSR_MSCRATCH:
                 os << "REG_CSR_MSCRATCH";
                 return;
@@ -200,6 +338,12 @@ namespace stf {
                 return;
             case STF_REG::STF_REG_CSR_MSCRATCHCSWL:
                 os << "REG_CSR_MSCRATCHCSWL";
+                return;
+            case STF_REG::STF_REG_CSR_MTINST:
+                os << "REG_CSR_MTINST";
+                return;
+            case STF_REG::STF_REG_CSR_MTVAL2:
+                os << "REG_CSR_MTVAL2";
                 return;
             case STF_REG::STF_REG_CSR_PMPCFG0:
                 os << "REG_CSR_PMPCFG0";
@@ -450,11 +594,41 @@ namespace stf {
             case STF_REG::STF_REG_CSR_HIDELEG:
                 os << "REG_CSR_HIDELEG";
                 return;
+            case STF_REG::STF_REG_CSR_HIE:
+                os << "REG_CSR_HIE";
+                return;
+            case STF_REG::STF_REG_CSR_HTIMEDELTA:
+                os << "REG_CSR_HTIMEDELTA";
+                return;
             case STF_REG::STF_REG_CSR_HCOUNTEREN:
                 os << "REG_CSR_HCOUNTEREN";
                 return;
+            case STF_REG::STF_REG_CSR_HGEIE:
+                os << "REG_CSR_HGEIE";
+                return;
+            case STF_REG::STF_REG_CSR_HENVCFG:
+                os << "REG_CSR_HENVCFG";
+                return;
+            case STF_REG::STF_REG_CSR_HTVAL:
+                os << "REG_CSR_HTVAL";
+                return;
+            case STF_REG::STF_REG_CSR_HIP:
+                os << "REG_CSR_HIP";
+                return;
+            case STF_REG::STF_REG_CSR_HVIP:
+                os << "REG_CSR_HVIP";
+                return;
+            case STF_REG::STF_REG_CSR_HTINST:
+                os << "REG_CSR_HTINST";
+                return;
             case STF_REG::STF_REG_CSR_HGATP:
                 os << "REG_CSR_HGATP";
+                return;
+            case STF_REG::STF_REG_CSR_HCONTEXT:
+                os << "REG_CSR_HCONTEXT";
+                return;
+            case STF_REG::STF_REG_CSR_HGEIP:
+                os << "REG_CSR_HGEIP";
                 return;
             case STF_REG::STF_REG_CSR_MSECCFG:
                 os << "REG_CSR_MSECCFG";
@@ -467,6 +641,93 @@ namespace stf {
                 return;
             case STF_REG::STF_REG_CSR_MINSTRET:
                 os << "REG_CSR_MINSTRET";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER3:
+                os << "REG_CSR_MHPMCOUNTER3";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER4:
+                os << "REG_CSR_MHPMCOUNTER4";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER5:
+                os << "REG_CSR_MHPMCOUNTER5";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER6:
+                os << "REG_CSR_MHPMCOUNTER6";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER7:
+                os << "REG_CSR_MHPMCOUNTER7";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER8:
+                os << "REG_CSR_MHPMCOUNTER8";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER9:
+                os << "REG_CSR_MHPMCOUNTER9";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER10:
+                os << "REG_CSR_MHPMCOUNTER10";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER11:
+                os << "REG_CSR_MHPMCOUNTER11";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER12:
+                os << "REG_CSR_MHPMCOUNTER12";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER13:
+                os << "REG_CSR_MHPMCOUNTER13";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER14:
+                os << "REG_CSR_MHPMCOUNTER14";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER15:
+                os << "REG_CSR_MHPMCOUNTER15";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER16:
+                os << "REG_CSR_MHPMCOUNTER16";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER17:
+                os << "REG_CSR_MHPMCOUNTER17";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER18:
+                os << "REG_CSR_MHPMCOUNTER18";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER19:
+                os << "REG_CSR_MHPMCOUNTER19";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER20:
+                os << "REG_CSR_MHPMCOUNTER20";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER21:
+                os << "REG_CSR_MHPMCOUNTER21";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER22:
+                os << "REG_CSR_MHPMCOUNTER22";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER23:
+                os << "REG_CSR_MHPMCOUNTER23";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER24:
+                os << "REG_CSR_MHPMCOUNTER24";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER25:
+                os << "REG_CSR_MHPMCOUNTER25";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER26:
+                os << "REG_CSR_MHPMCOUNTER26";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER27:
+                os << "REG_CSR_MHPMCOUNTER27";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER28:
+                os << "REG_CSR_MHPMCOUNTER28";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER29:
+                os << "REG_CSR_MHPMCOUNTER29";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER30:
+                os << "REG_CSR_MHPMCOUNTER30";
+                return;
+            case STF_REG::STF_REG_CSR_MHPMCOUNTER31:
+                os << "REG_CSR_MHPMCOUNTER31";
                 return;
             case STF_REG::STF_REG_CSR_MCYCLEH:
                 os << "REG_CSR_MCYCLEH";
@@ -482,6 +743,93 @@ namespace stf {
                 return;
             case STF_REG::STF_REG_CSR_INSTRET:
                 os << "REG_CSR_INSTRET";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER3:
+                os << "REG_CSR_HPMCOUNTER3";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER4:
+                os << "REG_CSR_HPMCOUNTER4";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER5:
+                os << "REG_CSR_HPMCOUNTER5";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER6:
+                os << "REG_CSR_HPMCOUNTER6";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER7:
+                os << "REG_CSR_HPMCOUNTER7";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER8:
+                os << "REG_CSR_HPMCOUNTER8";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER9:
+                os << "REG_CSR_HPMCOUNTER9";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER10:
+                os << "REG_CSR_HPMCOUNTER10";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER11:
+                os << "REG_CSR_HPMCOUNTER11";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER12:
+                os << "REG_CSR_HPMCOUNTER12";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER13:
+                os << "REG_CSR_HPMCOUNTER13";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER14:
+                os << "REG_CSR_HPMCOUNTER14";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER15:
+                os << "REG_CSR_HPMCOUNTER15";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER16:
+                os << "REG_CSR_HPMCOUNTER16";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER17:
+                os << "REG_CSR_HPMCOUNTER17";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER18:
+                os << "REG_CSR_HPMCOUNTER18";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER19:
+                os << "REG_CSR_HPMCOUNTER19";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER20:
+                os << "REG_CSR_HPMCOUNTER20";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER21:
+                os << "REG_CSR_HPMCOUNTER21";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER22:
+                os << "REG_CSR_HPMCOUNTER22";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER23:
+                os << "REG_CSR_HPMCOUNTER23";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER24:
+                os << "REG_CSR_HPMCOUNTER24";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER25:
+                os << "REG_CSR_HPMCOUNTER25";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER26:
+                os << "REG_CSR_HPMCOUNTER26";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER27:
+                os << "REG_CSR_HPMCOUNTER27";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER28:
+                os << "REG_CSR_HPMCOUNTER28";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER29:
+                os << "REG_CSR_HPMCOUNTER29";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER30:
+                os << "REG_CSR_HPMCOUNTER30";
+                return;
+            case STF_REG::STF_REG_CSR_HPMCOUNTER31:
+                os << "REG_CSR_HPMCOUNTER31";
                 return;
             case STF_REG::STF_REG_CSR_VL:
                 os << "REG_CSR_VL";
@@ -548,6 +896,7 @@ namespace stf {
             case STF_REG::STF_REG_X29:
             case STF_REG::STF_REG_X30:
             case STF_REG::STF_REG_X31:
+            case STF_REG::STF_REG_PC:
             case STF_REG::STF_REG_F0:
             case STF_REG::STF_REG_F1:
             case STF_REG::STF_REG_F2:
@@ -618,7 +967,14 @@ namespace stf {
 
         // An unknown (to us) but likely valid CSR register number
         std::ostringstream ss;
-        ss << "REG_CSR_UNK_" << std::hex << std::left << Codec::packRegNum(regno);
+
+        if(Codec::isNonstandardCSR(regno)) {
+            ss << "REG_CSR_NONST_";
+        }
+        else {
+            ss << "REG_CSR_UNK_";
+        }
+        ss << std::hex << std::left << Codec::packRegNum(regno);
         os << ss.str();
     }
 
@@ -644,7 +1000,10 @@ namespace stf {
     inline void Registers::format(std::ostream& os, const Registers::STF_REG regno) {
         format_utils::FlagSaver flags(os);
 
-        if (Registers::isFPR(regno)) {
+        if(STF_EXPECT_FALSE(regno == Registers::STF_REG::STF_REG_PC)) {
+            os << "PC";
+        }
+        else if (Registers::isFPR(regno)) {
             Registers::formatFPR_(os, regno);
         }
         else if (Registers::isCSR(regno)) {

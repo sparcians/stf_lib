@@ -1,6 +1,8 @@
 #ifndef __BOOST_POOL_HPP__
 #define __BOOST_POOL_HPP__
 
+#include "boost_wrappers/setup.hpp"
+
 #define BOOST_POOL_NO_MT
 #pragma push_macro("T0")
 #undef T0

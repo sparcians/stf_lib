@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "boost_small_vector.hpp"
+#include "boost_wrappers/small_vector.hpp"
 #include "format_utils.hpp"
 #include "stf_clock_id.hpp"
 #include "stf_descriptor.hpp"
@@ -1275,6 +1275,18 @@ namespace stf {
             }
 
             /**
+             * Copies an InstRegRecord, changing the operand type
+             * \param rec record to copy
+             * \param operand_type register operand type
+             */
+            InstRegRecord(const InstRegRecord& rec,
+                          const Registers::STF_REG_OPERAND_TYPE operand_type) :
+                InstRegRecord(rec.reg_, operand_type, rec.data_)
+            {
+                vlen_ = rec.vlen_;
+            }
+
+            /**
              * Constructs an InstRegRecord
              * \param reg register number
              * \param operand_type register operand type
@@ -1408,17 +1420,17 @@ namespace stf {
             /**
              * Gets the register number
              */
-            Registers::STF_REG getReg() const { return reg_; }
+            inline Registers::STF_REG getReg() const { return reg_; }
 
             /**
              * Gets the register operand type
              */
-            Registers::STF_REG_OPERAND_TYPE getOperandType() const { return operand_type_; }
+            inline Registers::STF_REG_OPERAND_TYPE getOperandType() const { return operand_type_; }
 
             /**
              * Gets the scalar register data
              */
-            ValueType getScalarData() const {
+            inline ValueType getScalarData() const {
                 stf_assert(!isVector(), "Attempted to get scalar data from a vector register");
                 stf_assert(data_.size() == 1, "Invalid data size for scalar register");
                 return data_.front();
@@ -1428,7 +1440,7 @@ namespace stf {
              * Sets the register data
              * \param data new value to set
              */
-            void setScalarData(const ValueType data) {
+            inline void setScalarData(const ValueType data) {
                 stf_assert(!isVector(), "Attempted to set scalar data on a vector register");
                 stf_assert(data_.size() == 1, "Invalid data size for scalar register");
                 data_.front() = data;
@@ -1437,7 +1449,7 @@ namespace stf {
             /**
              * Gets the vector register data
              */
-            const VectorType& getVectorData() const {
+            inline const VectorType& getVectorData() const {
                 stf_assert(isVector(), "Attempted to get vector data from a non-vector register");
                 return data_;
             }
@@ -1446,7 +1458,7 @@ namespace stf {
              * Sets the register data
              * \param data new value to set
              */
-            void setVectorData(const VectorType& data) {
+            inline void setVectorData(const VectorType& data) {
                 stf_assert(isVector(), "Attempted to set vector data on a scalar register");
                 stf_assert(data_.size() == data.size(), "Invalid data size for vector register");
                 data_ = data;
@@ -1456,10 +1468,21 @@ namespace stf {
              * Sets the register data
              * \param data new value to set
              */
-            void setVectorData(const std::vector<ValueType>& data) {
+            inline void setVectorData(const std::vector<ValueType>& data) {
                 stf_assert(isVector(), "Attempted to set vector data on a scalar register");
                 stf_assert(data_.size() == data.size(), "Invalid data size for vector register");
                 std::copy(data.begin(), data.end(), data_.begin());
+            }
+
+            /**
+             * Copies data from another InstRegRecord. Also updates vlen_ field, but does not change operand_type_;
+             * \param rhs InstRegRecord to copy from
+             */
+            inline void copyFrom(const InstRegRecord& rhs) {
+                stf_assert(reg_ == rhs.reg_,
+                           "Attempted to copy from register " << rhs.reg_ << " into register " << reg_);
+                data_ = rhs.data_;
+                vlen_ = rhs.vlen_;
             }
 
             /**

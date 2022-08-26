@@ -8,10 +8,10 @@
 #include <utility>
 #include <vector>
 
-#include "boost_pool.hpp"
+#include "boost_wrappers/pool.hpp"
 
 #define BOOST_POOL_NO_MT
-#include "boost_small_vector.hpp"
+#include "boost_wrappers/small_vector.hpp"
 #undef BOOST_POOL_NO_MT
 
 #include "stf_enums.hpp"

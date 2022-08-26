@@ -82,6 +82,8 @@ namespace stf {
             bool pending_user_syscall_ = false; // If true, the instruction that is currently being processed is a user syscall
             bool buffer_is_empty_ = true; // True if the buffer contains no instructions
 
+            STFRegState reg_state_;
+
             /**
              * \brief Helper function to read records in the separated PTE file.
              * The separate PTE trace file has header records - VERSION, COMMENT, TRACE_INFO;
@@ -380,6 +382,25 @@ namespace stf {
                 delegates::STFInstDelegate::setFlag_(inst, STFInst::INST_VALID);
             }
 
+            __attribute__((always_inline))
+            inline void skippedCleanup_(const STFInst& inst) {
+                for(const auto& op: inst.getRegisterStates()) {
+                    reg_state_.regStateUpdate(op.getRecord());
+                }
+                for(const auto& op: inst.getSourceOperands()) {
+                    reg_state_.regStateUpdate(op.getRecord());
+                }
+                for(const auto& op: inst.getDestOperands()) {
+                    reg_state_.regStateUpdate(op.getRecord());
+                }
+            }
+
+            __attribute__((always_inline))
+            inline void skippingDone_(STFInst& inst) {
+                delegates::STFInstDelegate::applyRegisterState_(inst, reg_state_);
+                reg_state_.stateClear();
+            }
+
         public:
             using ParentReader::getInitialIEM;
             using ParentReader::getISA;
@@ -601,6 +622,8 @@ namespace stf {
                     pte_end_ = true;
                     stf_assert(!check_stf_pte, "Check for stf-pte file was enabled but no stf-pte was found for " << filename);
                 }
+
+                reg_state_.initRegBank(getISA(), getInitialIEM());
             }
 
             /**

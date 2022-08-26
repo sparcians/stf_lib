@@ -102,6 +102,9 @@ namespace stf {
             }
 
         public:
+            using BufferedReader::getISA;
+            using BufferedReader::getInitialIEM;
+
             /**
              * \brief Constructor
              * \param only_user_mode If true, non-user-mode instructions will be skipped
