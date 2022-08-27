@@ -3,12 +3,6 @@
 
 #include <algorithm>
 #include <cstdint>
-
-#if defined(__cpp_lib_execution)
-#define HAS_STD_EXECUTION
-#include <execution>
-#endif
-
 #include <map>
 #include <numeric>
 #include <queue>
@@ -1010,15 +1004,9 @@ namespace stf {
              */
             static inline std::pair<OperandVector::const_iterator, bool> findOperand_(const OperandVector& vec,
                                                                                       const Registers::STF_REG reg) {
-#ifdef HAS_STD_EXECUTION
-                const auto it = std::find_if(std::execution::par, vec.begin(), vec.end(), [&reg](const Operand& op) {
-                    return op.getReg() == reg;
-                });
-#else
                 const auto it = std::find_if(vec.begin(), vec.end(), [&reg](const Operand& op) {
                     return op.getReg() == reg;
                 });
-#endif
                 const bool found_reg = (it != vec.end()) && (reg == it->getReg());
 
                 return std::make_pair(it, found_reg);
