@@ -82,26 +82,32 @@ namespace stf {
             /**
              * Translates an object ID to the constructor for that object
              */
-            template<Enum ObjectId>
-            static inline constexpr Constructor genConstructor_();
+            template<Enum ObjectId, typename dummy_type = void>
+            struct constructor_generator {
+                static inline constexpr Constructor get();
+            };
 
-            /**
-             * genConstructor_ specialization for __RESERVED_START object ID.
-             * Ensures we always throw an exception if we attempt to construct a __RESERVED_START ID.
-             */
-            template<>
-            static inline constexpr Constructor genConstructor_<Enum::__RESERVED_START>() {
-                return &defaultConstructor_;
-            }
+            template<typename dummy_type>
+            struct constructor_generator<Enum::__RESERVED_START, dummy_type> {
+                /**
+                 * get specialization for __RESERVED_START object ID.
+                 * Ensures we always throw an exception if we attempt to construct a __RESERVED_START ID.
+                 */
+                static inline constexpr Constructor get() {
+                    return &defaultConstructor_;
+                }
+            };
 
-            /**
-             * genConstructor_ specialization for __RESERVED_END object ID.
-             * Ensures we always throw an exception if we attempt to construct a __RESERVED_END ID.
-             */
-            template<>
-            static inline constexpr Constructor genConstructor_<Enum::__RESERVED_END>() {
-                return &defaultConstructor_;
-            }
+            template<typename dummy_type>
+            struct constructor_generator<Enum::__RESERVED_END, dummy_type> {
+                /**
+                 * get specialization for __RESERVED_END object ID.
+                 * Ensures we always throw an exception if we attempt to construct a __RESERVED_END ID.
+                 */
+                static inline constexpr Constructor get() {
+                    return &defaultConstructor_;
+                }
+            };
 
             /**
              * Used to initialize the constructors_ array at compile time.
@@ -111,7 +117,7 @@ namespace stf {
                 return enums::populateEnumArray<Constructor, Enum, &defaultConstructor_>(
                     [](auto Index, ConstructorArray constructor_array) {
                         if constexpr(const auto start_idx = convertToIndex_(Index); start_idx < constructor_array.size()) {
-                            constructor_array[start_idx] = genConstructor_<Index>();
+                            constructor_array[start_idx] = constructor_generator<Index>::get();
                         }
                         return constructor_array;
                     }
@@ -217,12 +223,16 @@ namespace stf {
     __TEST_NAMESPACE(STF, stf, "REGISTER_WITH_FACTORY should only be used in the stf namespace") \
     template<> \
     template<> \
-    inline constexpr object_type::factory_type::Constructor object_type::factory_type::genConstructor_<ObjectIdConverter::toTrace(cls::getTypeId())>() { \
-        return &object_type::pool_type::construct<cls>; \
-    } \
+    struct object_type::factory_type::constructor_generator<ObjectIdConverter::toTrace(cls::getTypeId())> { \
+        static inline constexpr object_type::factory_type::Constructor get() { \
+            return &object_type::pool_type::construct<cls>; \
+        } \
+    }; \
     template<> \
     template<> \
-    inline constexpr object_type::pool_type::DeleterFuncType object_type::pool_type::genDeleter_<cls::getTypeId()>() { \
-        return &object_type::pool_type::deleter_func_<cls>; \
-    }
+    struct object_type::pool_type::deleter_generator<cls::getTypeId()> { \
+        static inline constexpr object_type::pool_type::DeleterFuncType get() { \
+            return &object_type::pool_type::deleter_func_<cls>; \
+        } \
+    };
 #endif

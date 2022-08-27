@@ -380,6 +380,13 @@ namespace stf {
             }
 
             /**
+             * Gets the number of register states currently stored
+             */
+            inline size_t size() const {
+                return regstate_.size();
+            }
+
+            /**
              * Writes register state to STFWriter
              * \param stf_writer STFWriter to use
              */

@@ -1,7 +1,14 @@
 #ifndef __STF_INST_HPP__
 #define __STF_INST_HPP__
 
+#include <algorithm>
 #include <cstdint>
+
+#if defined(__cpp_lib_execution)
+#define HAS_STD_EXECUTION
+#include <execution>
+#endif
+
 #include <map>
 #include <numeric>
 #include <queue>
@@ -70,14 +77,14 @@ namespace stf {
              * Sets the content for the memory access
              * \param record Pointer to underlying InstMemContentRecord
              */
-            void setContent(const STFRecord* const record) {
+            inline void setContent(const STFRecord* const record) {
                 data_ = static_cast<const InstMemContentRecord*>(record);
             }
 
             /**
              * Resets the access
              */
-            void reset() {
+            inline void reset() {
                 access_ = nullptr;
                 data_ = nullptr;
             }
@@ -85,37 +92,37 @@ namespace stf {
             /**
              * Gets size of access
              */
-            uint64_t getSize() const { return access_->getSize(); }
+            inline uint64_t getSize() const { return access_->getSize(); }
 
             /**
              * Gets address of access
              */
-            uint64_t getAddress() const { return access_->getAddress(); }
+            inline uint64_t getAddress() const { return access_->getAddress(); }
 
             /**
              * Gets data of access
              */
-            uint64_t getData() const { return getContentRecord().getData(); }
+            inline uint64_t getData() const { return getContentRecord().getData(); }
 
             /**
              * Gets type of access
              */
-            INST_MEM_ACCESS getType() const { return access_->getType(); }
+            inline INST_MEM_ACCESS getType() const { return access_->getType(); }
 
             /**
              * Gets access attributes
              */
-            uint16_t getAttr() const { return access_->getAttr(); }
+            inline uint16_t getAttr() const { return access_->getAttr(); }
 
             /**
              * Gets underlying access record
              */
-            const InstMemAccessRecord& getAccessRecord() const { return *access_; }
+            inline const InstMemAccessRecord& getAccessRecord() const { return *access_; }
 
             /**
              * Gets underlying content record
              */
-            const InstMemContentRecord& getContentRecord() const {
+            inline const InstMemContentRecord& getContentRecord() const {
                 stf_assert(data_, "MemAccess has invalid content record");
                 return *data_;
             }
@@ -161,7 +168,7 @@ namespace stf {
             /**
              * Gets the underlying record
              */
-            const InstRegRecord& getRecord() const { return *rec_; }
+            inline const InstRegRecord& getRecord() const { return *rec_; }
 
             /**
              * Gets the corresponding label for the record
@@ -176,42 +183,42 @@ namespace stf {
             /**
              * Gets the operand value
              */
-            uint64_t getScalarValue() const {
+            inline uint64_t getScalarValue() const {
                 return rec_->getScalarData();
             }
 
             /**
              * Gets the operand register number
              */
-            Registers::STF_REG getReg() const {
+            inline Registers::STF_REG getReg() const {
                 return rec_->getReg();
             }
 
             /**
              * Gets the operand type
              */
-            Registers::STF_REG_OPERAND_TYPE getType() const {
+            inline Registers::STF_REG_OPERAND_TYPE getType() const {
                 return rec_->getOperandType();
             }
 
             /**
              * Gets whether this is a vector operand
              */
-            bool isVector() const {
+            inline bool isVector() const {
                 return rec_->isVector();
             }
 
             /**
              * Gets the vector operand value
              */
-            const InstRegRecord::VectorType& getVectorValue() const {
+            inline const InstRegRecord::VectorType& getVectorValue() const {
                 return rec_->getVectorData();
             }
 
             /**
              * Gets the vlen parameter that was set when the record was read
              */
-            vlen_t getVLen() const {
+            inline vlen_t getVLen() const {
                 return rec_->getVLen();
             }
     };
@@ -242,49 +249,49 @@ namespace stf {
              * Sets target record
              * \param event_target_record Target record corresponding to this event
              */
-            void setTarget(const STFRecord* const event_target_record) {
+            inline void setTarget(const STFRecord* const event_target_record) {
                 target_ = &event_target_record->as<EventPCTargetRecord>();
             }
 
             /**
              * Returns event
              */
-            auto getEvent() const {
+            inline auto getEvent() const {
                 return event_->getEvent();
             }
 
             /**
              * Returns data
              */
-            const auto& getData() const {
+            inline const auto& getData() const {
                 return event_->getData();
             }
 
             /**
              * Returns target
              */
-            auto getTarget() const {
+            inline auto getTarget() const {
                 return target_->getAddr();
             }
 
             /**
              * Returns whether data is valid
              */
-            bool dataValid() const {
+            inline bool dataValid() const {
                 return event_;
             }
 
             /**
              * Returns whether target is valid
              */
-            bool targetValid() const {
+            inline bool targetValid() const {
                 return target_;
             }
 
             /**
              * Resets the event
              */
-            void reset() {
+            inline void reset() {
                 event_ = nullptr;
                 target_ = nullptr;
             }
@@ -292,28 +299,28 @@ namespace stf {
             /**
              * Gets whether the event is a fault
              */
-            bool isFault() const {
+            inline bool isFault() const {
                 return event_->isFault();
             }
 
             /**
              * Gets whether the event is an interrupt
              */
-            bool isInterrupt() const {
+            inline bool isInterrupt() const {
                 return event_->isInterrupt();
             }
 
             /**
              * Gets whether the event is a mode change
              */
-            bool isModeChange() const {
+            inline bool isModeChange() const {
                 return event_->isModeChange();
             }
 
             /**
              * Gets whether the event is a syscall
              */
-            bool isSyscall() const {
+            inline bool isSyscall() const {
                 return event_->isSyscall();
             }
     };
@@ -411,8 +418,8 @@ namespace stf {
              * \typedef OperandVector
              * Vector that holds Operand objects
              */
-            using OperandVector = boost::container::small_vector<Operand,
-                                                                 OPERAND_VEC_SIZE>;
+            using OperandVector = boost::container::small_vector<Operand, OPERAND_VEC_SIZE>;
+
             /**
              * \typedef MemAccessVector
              * Vector that holds MemAccess objects
@@ -628,7 +635,7 @@ namespace stf {
                              * Addition operator
                              * \param n Amount to add to iterator
                              */
-                            inline iterator operator+(const difference_type n) {
+                            inline iterator operator+(const difference_type n) const {
                                 auto temp = *this;
                                 temp += n;
                                 return temp;
@@ -647,7 +654,7 @@ namespace stf {
                              * Subtraction operator
                              * \param n Amount to subtract
                              */
-                            inline iterator operator-(const difference_type n) {
+                            inline iterator operator-(const difference_type n) const {
                                 auto temp = *this;
                                 temp -= n;
                                 return temp;
@@ -793,7 +800,13 @@ namespace stf {
              */
             using CombinedMemAccessView = CombinedView<MemAccessVector>;
 
-            std::array<OperandVector, REG_RECORD_ARRAY_SIZE> register_records_; /**< register_records_ saves (possibly multiple) operands */
+            /**
+             * \typedef OperandArray
+             * Array that stores operands by operand type
+             */
+            using OperandArray = std::array<OperandVector, REG_RECORD_ARRAY_SIZE>;
+
+            OperandArray register_records_; /**< register_records_ saves (possibly multiple) operands */
             CombinedOperandView operands_{register_records_[REG_SOURCE_IDX], register_records_[REG_DEST_IDX]}; /**< combined view of register_records_ */
 
             static constexpr size_t MEM_READ_IDX = 0; /**< Index of memory read records in mem_access_records_ array */
@@ -844,14 +857,14 @@ namespace stf {
             /**
              * \brief Add original record to the instruction
              */
-            auto appendOrigRecord_(STFRecord::UniqueHandle&& urec) {
+            inline auto appendOrigRecord_(STFRecord::UniqueHandle&& urec) {
                 return orig_records_.emplace(std::move(urec));
             }
 
             /**
              * Turns this instruction into a nop
              */
-            void setNop_() {
+            inline void setNop_() {
                 // Override the opcode
                 opcode_ = NOP_OPCODE_;
 
@@ -863,35 +876,36 @@ namespace stf {
                 register_records_[REG_DEST_IDX].clear();
 
                 // Add r0 as a src operand
-                register_records_[REG_SOURCE_IDX].emplace_back(&x0_src_);
+                appendOperand_(Registers::STF_REG_OPERAND_TYPE::REG_SOURCE, x0_src_);
 
                 // Clear flags
                 inst_flags_ = INST_INIT_FLAGS;
             }
 
             /**
-             * Gets the vector of memory access records of the given type
+             * \brief Gets the vector of memory access records of the given type
              * \param type Type of memory access to get
              */
-            MemAccessVector& getMemAccessVector_(const INST_MEM_ACCESS type) {
+            inline MemAccessVector& getMemAccessVector_(const INST_MEM_ACCESS type) {
                 const auto idx = static_cast<size_t>(type) - 1;
                 return mem_access_records_[idx];
             }
 
             /**
-             * Gets the vector of operand records of the given type
-             * \param type Type of operand to get
+             * \brief Gets the vector of memory access records of the given type
+             * \param type Type of memory access to get
              */
-            const MemAccessVector& getMemAccessVector_(const INST_MEM_ACCESS type) const {
+            inline const MemAccessVector& getMemAccessVector_(const INST_MEM_ACCESS type) const {
                 const auto idx = static_cast<size_t>(type) - 1;
                 return mem_access_records_[idx];
             }
 
             /**
-             * Gets the vector of operand records of the given type
+             * \brief Gets the vector of operand records of the given type
              * \param type Type of operand to get
+             * \return Vector of Operand objects
              */
-            OperandVector& getOperandVector_(const Registers::STF_REG_OPERAND_TYPE type) {
+            inline OperandVector& getOperandVector_(const Registers::STF_REG_OPERAND_TYPE type) {
                 const auto idx = static_cast<size_t>(type) - 1;
                 return register_records_[idx];
             }
@@ -901,7 +915,7 @@ namespace stf {
              * \param type Type of operand to get
              * \return Vector of Operand objects
              */
-            const OperandVector& getOperandVector_(const Registers::STF_REG_OPERAND_TYPE type) const {
+            inline const OperandVector& getOperandVector_(const Registers::STF_REG_OPERAND_TYPE type) const {
                 const auto idx = static_cast<size_t>(type) - 1;
                 return register_records_[idx];
             }
@@ -911,7 +925,7 @@ namespace stf {
              *
              * Somewhat clunky solution, but this avoids some reallocations and speeds up reading
              */
-            void reset_() {
+            inline void reset_() {
                 STFItem::reset_();
                 branch_target_ = 0;
                 pc_ = 0;
@@ -967,6 +981,47 @@ namespace stf {
                 has_vl_ |= not_state && (rec.getReg() == Registers::STF_REG::STF_REG_CSR_VL);
                 // Otherwise, any vector instruction should have at least 1 vector operand
                 return not_state && (rec.isVector() || (has_vstart_ && has_vl_));
+            }
+
+            /**
+             * Appends an operand to the specified vector
+             * \param vec Operand vector to use
+             * \param rec Record to create operand from
+             */
+            static inline void appendOperand_(OperandVector& vec, const InstRegRecord& rec) {
+                vec.emplace_back(&rec);
+            }
+
+            /**
+             * Appends an operand of the specified type
+             * \param operand_type Operand type
+             * \param rec Record to create operand from
+             */
+            inline void appendOperand_(const Registers::STF_REG_OPERAND_TYPE operand_type, const InstRegRecord& rec) {
+                appendOperand_(getOperandVector_(operand_type), rec);
+            }
+
+            /**
+             * Gets the first operand for a specific register number
+             * \param vec OperandVector to search
+             * \param reg Register number to look up
+             * \returns std::pair of an iterator to the operand (if found) and a bool whose value will be true
+             * if the register was found, false otherwise
+             */
+            static inline std::pair<OperandVector::const_iterator, bool> findOperand_(const OperandVector& vec,
+                                                                                      const Registers::STF_REG reg) {
+#ifdef HAS_STD_EXECUTION
+                const auto it = std::find_if(std::execution::par, vec.begin(), vec.end(), [&reg](const Operand& op) {
+                    return op.getReg() == reg;
+                });
+#else
+                const auto it = std::find_if(vec.begin(), vec.end(), [&reg](const Operand& op) {
+                    return op.getReg() == reg;
+                });
+#endif
+                const bool found_reg = (it != vec.end()) && (reg == it->getReg());
+
+                return std::make_pair(it, found_reg);
             }
 
             /**
@@ -1115,7 +1170,7 @@ namespace stf {
             /**
              * \brief Returns whether the instruction is kernel code
              */
-            bool isKernelCode() const { // cppcheck-suppress functionStatic
+            inline bool isKernelCode() const { // cppcheck-suppress functionStatic
                 //FIXME: Needs to actually do something
                 return false;
             }
@@ -1124,112 +1179,128 @@ namespace stf {
              * \brief Taken branch or not
              * \return True if taken branch
              */
-            bool isTakenBranch() const { return inst_flags_ & INST_TAKEN_BRANCH; }
+            inline bool isTakenBranch() const { return inst_flags_ & INST_TAKEN_BRANCH; }
 
             /**
              * \brief 16-bit opcode or not
              * \return True if 16-bit opcode
              */
-            bool isOpcode16() const { return inst_flags_ & INST_OPCODE16; }
+            inline bool isOpcode16() const { return inst_flags_ & INST_OPCODE16; }
 
             /**
              * \brief Change of flow or not
              * \return True if change of flow
              */
-            bool isCoF() const { return inst_flags_ & INST_COF; }
+            inline bool isCoF() const { return inst_flags_ & INST_COF; }
 
             /**
              * \brief Load or not
              * \return True if load
              */
-            bool isLoad() const { return inst_flags_ & INST_IS_LOAD; }
+            inline bool isLoad() const { return inst_flags_ & INST_IS_LOAD; }
 
             /**
              * \brief Store or not
              * \return True if store
              */
-            bool isStore() const { return inst_flags_ & INST_IS_STORE; }
+            inline bool isStore() const { return inst_flags_ & INST_IS_STORE; }
 
             /**
              * \brief Syscall or not
              * \return True if syscall
              */
-            bool isSyscall() const { return inst_flags_ & INST_IS_SYSCALL; }
+            inline bool isSyscall() const { return inst_flags_ & INST_IS_SYSCALL; }
 
             /**
              * \brief Fault or not
              * \return True if fault
              */
-            bool isFault() const { return inst_flags_ & INST_IS_FAULT; }
+            inline bool isFault() const { return inst_flags_ & INST_IS_FAULT; }
 
             /**
              * \brief Fault or not
              * \return True if fault
              */
-            bool isInterrupt() const { return inst_flags_ & INST_IS_INTERRUPT; }
+            inline bool isInterrupt() const { return inst_flags_ & INST_IS_INTERRUPT; }
 
             /**
              * \brief FP or not
              * \return True if instruction is floating point
              */
-            bool isFP() const { return inst_flags_ & INST_IS_FP; }
+            inline bool isFP() const { return inst_flags_ & INST_IS_FP; }
 
             /**
              * \brief Vector or not
              * \return True if instruction is vector
              */
-            bool isVector() const { return inst_flags_ & INST_IS_VECTOR; }
+            inline bool isVector() const { return inst_flags_ & INST_IS_VECTOR; }
 
             /**
              * \brief Instruction is change from user mode
              * \return True if instruction changes from user mode to another mode
              */
-            bool isChangeFromUserMode() const { return inst_flags_ & INST_CHANGE_FROM_USER; }
+            inline bool isChangeFromUserMode() const { return inst_flags_ & INST_CHANGE_FROM_USER; }
 
             /**
              * \brief Instruction is change to user mode
              * \return True if instruction changes to user mode from another mode
              */
-            bool isChangeToUserMode() const { return inst_flags_ & INST_CHANGE_TO_USER; }
+            inline bool isChangeToUserMode() const { return inst_flags_ & INST_CHANGE_TO_USER; }
 
             /**
              * \brief Branch target virtual PC
              * \return The branch target virtual PC
              */
-            uint64_t branchTarget() const { return branch_target_; }
+            inline uint64_t branchTarget() const { return branch_target_; }
 
             /**
              * Get the map of all records related to this instruction
              */
-            const auto& getOrigRecords() const { return orig_records_; }
+            inline const auto& getOrigRecords() const { return orig_records_; }
 
             /**
              * Gets the register state records
              */
-            const OperandVector& getRegisterStates() const {
-                return register_records_[REG_STATE_IDX];
+            inline const OperandVector& getRegisterStates() const {
+                return getOperandVector_(Registers::STF_REG_OPERAND_TYPE::REG_STATE);
+            }
+
+            /**
+             * Gets the first register state record for a specific register number
+             * \param reg Register number to look up
+             * \returns std::pair of an iterator to the operand (if found) and a bool whose value will be true
+             * if the register was found, false otherwise
+             */
+            inline std::pair<OperandVector::const_iterator, bool> getRegisterState(const Registers::STF_REG reg) const {
+                return findOperand_(getRegisterStates(), reg);
             }
 
             /**
              * Gets the vector of CommentRecords
              */
-            const auto& getComments() const { return orig_records_.at(descriptors::internal::Descriptor::STF_COMMENT); }
+            inline const auto& getComments() const {
+                return orig_records_.at(descriptors::internal::Descriptor::STF_COMMENT);
+            }
 
             /**
              * Gets the vector of InstMicroOpRecords
              */
-            const auto& getMicroOps() const { return orig_records_.at(descriptors::internal::Descriptor::STF_INST_MICROOP); }
+            inline const auto& getMicroOps() const {
+                return orig_records_.at(descriptors::internal::Descriptor::STF_INST_MICROOP);
+            }
 
             /**
              * Gets the vector of InstReadyRegRecords
              */
-            const auto& getReadyRegs() const { return orig_records_.at(descriptors::internal::Descriptor::STF_INST_READY_REG); }
+            inline const auto& getReadyRegs() const {
+                return orig_records_.at(descriptors::internal::Descriptor::STF_INST_READY_REG);
+            }
 
             /**
              * \brief Get the vector of events associated with this instruction
              * \return Vector of Event objects
              */
-            const auto& getEvents() const {
+            inline const auto& getEvents() const {
                 return events_;
             }
 
@@ -1237,7 +1308,7 @@ namespace stf {
              * \brief Gets the register source and destination records
              * \return CombinedView of Operand objects
              */
-            const auto& getOperands() const {
+            inline const auto& getOperands() const {
                 return operands_;
             }
 
@@ -1245,23 +1316,43 @@ namespace stf {
              * \brief Gets the vector of source operands
              * \return Vector of Operand objects
              */
-            const auto& getSourceOperands() const {
+            inline const auto& getSourceOperands() const {
                 return getOperandVector_(stf::Registers::STF_REG_OPERAND_TYPE::REG_SOURCE);
+            }
+
+            /**
+             * Gets the first source operand record for a specific register number
+             * \param reg Register number to look up
+             * \returns std::pair of an iterator to the operand (if found) and a bool whose value will be true
+             * if the register was found, false otherwise
+             */
+            inline std::pair<OperandVector::const_iterator, bool> getSourceOperand(const Registers::STF_REG reg) const {
+                return findOperand_(getSourceOperands(), reg);
             }
 
             /**
              * \brief Gets the vector of destination operands
              * \return Vector of Operand objects
              */
-            const auto& getDestOperands() const {
+            inline const auto& getDestOperands() const {
                 return getOperandVector_(stf::Registers::STF_REG_OPERAND_TYPE::REG_DEST);
+            }
+
+            /**
+             * Gets the first destination operand record for a specific register number
+             * \param reg Register number to look up
+             * \returns std::pair of an iterator to the operand (if found) and a bool whose value will be true
+             * if the register was found, false otherwise
+             */
+            inline std::pair<OperandVector::const_iterator, bool> getDestOperand(const Registers::STF_REG reg) const {
+                return findOperand_(getDestOperands(), reg);
             }
 
             /**
              * \brief Gets all memory read and write records
              * \return CombinedView of MemAccess objects
              */
-            const auto& getMemoryAccesses() const {
+            inline const auto& getMemoryAccesses() const {
                 return mem_accesses_;
             }
 
@@ -1269,7 +1360,7 @@ namespace stf {
              * \brief Gets all memory read records
              * \return Vector of MemAccess objects
              */
-            const auto& getMemoryReads() const {
+            inline const auto& getMemoryReads() const {
                 return getMemAccessVector_(INST_MEM_ACCESS::READ);
             }
 
@@ -1277,7 +1368,7 @@ namespace stf {
              * \brief Gets all memory write records
              * \return CombinedView of MemAccess objects
              */
-            const auto& getMemoryWrites() const {
+            inline const auto& getMemoryWrites() const {
                 return getMemAccessVector_(INST_MEM_ACCESS::WRITE);
             }
 
@@ -1285,7 +1376,7 @@ namespace stf {
              * \brief Return the sum of memory access sizes this instruction makes
              * \return The total memory access size
              */
-            uint64_t totalMemAccessSize() const {
+            inline uint64_t totalMemAccessSize() const {
                 return std::accumulate(mem_accesses_.begin(),
                                        mem_accesses_.end(),
                                        0ULL,
@@ -1295,87 +1386,89 @@ namespace stf {
             /**
              * Gets the vector of PageTableWalkRecords
              */
-            const auto& getEmbeddedPTEs() const { return orig_records_.at(descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK); }
+            inline const auto& getEmbeddedPTEs() const {
+                return orig_records_.at(descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK);
+            }
 
 #ifdef STF_INST_HAS_PAGE_CROSS
             /**
              * \brief has instruction page cross
              * \return has instruction page cross
              */
-            bool hasInstPageCross() const { return page_utils::isValidPhysAddr(i_page_cross_); }
+            inline bool hasInstPageCross() const { return page_utils::isValidPhysAddr(i_page_cross_); }
 
             /**
              * \brief instruction page cross physical address
              * \return instruction page cross physical address
              */
-            uint64_t instPageCrossPhysAddr() const { return i_page_cross_; }
+            inline uint64_t instPageCrossPhysAddr() const { return i_page_cross_; }
 
             /**
              * \brief has data page cross
              * \return has data page cross
              */
-            bool hasDataPageCross() const { return page_utils::isValidPhysAddr(d_page_cross_); }
+            inline bool hasDataPageCross() const { return page_utils::isValidPhysAddr(d_page_cross_); }
 
             /**
              * \brief data page cross physical address
              * \return data page cross physical address
              */
-            uint64_t dataPageCrossPhysAddr() const { return d_page_cross_; }
+            inline uint64_t dataPageCrossPhysAddr() const { return d_page_cross_; }
 #endif
 
             /**
              * \brief Process ID
              * \return Process ID
              */
-            uint32_t asid() const { return asid_; }
+            inline uint32_t asid() const { return asid_; }
 
             /**
              * \brief Thread ID
              * \return Thread ID
              */
-            uint32_t tid() const { return tid_; }
+            inline uint32_t tid() const { return tid_; }
 
             /**
              * \brief Thread Group ID (tgid)
              * \return Thread Group ID (tgid)
              */
-            uint32_t tgid() const { return tgid_; }
+            inline uint32_t tgid() const { return tgid_; }
 
             /**
              * \brief Instruction virtual PC
              * \return Instruction virtual PC
              */
-            uint64_t pc() const { return pc_; }
+            inline uint64_t pc() const { return pc_; }
 
 #ifdef STF_INST_HAS_IEM
             /**
              * \brief Instruction Encoding Mode
              * \return Instruction Encoding Mode
              */
-            INST_IEM iem() const { return iem_; }
+            inline INST_IEM iem() const { return iem_; }
 
             /**
              * whether IEM has changed
              */
-            bool iem_changed() const { return iem_changed_; }
+            inline bool iem_changed() const { return iem_changed_; }
 #endif
             /**
              * \brief Opcode
              * \return Opcode
              */
-            uint32_t opcode() const { return opcode_; }
+            inline uint32_t opcode() const { return opcode_; }
 
             /**
              * \brief Opcode
              * \return Opcode
              */
-            uint8_t opcodeSize() const { return opcode_size_; }
+            inline uint8_t opcodeSize() const { return opcode_size_; }
 
             /**
              * \brief whether the information in this instance is valid
              * \return True if valid
              */
-            bool valid() const { return inst_flags_ & INST_VALID; };
+            inline bool valid() const { return inst_flags_ & INST_VALID; };
 
             /**
              * Get the string representation of the opcode width
@@ -1387,7 +1480,7 @@ namespace stf {
             /**
              * Gets whether the instruction is a branch
              */
-            bool isBranch() const {
+            inline bool isBranch() const {
                 return inst_flags_ & INST_IS_BRANCH;
             }
     };
@@ -1475,7 +1568,7 @@ namespace stf {
                                                   const Registers::STF_REG_OPERAND_TYPE type,
                                                   const InstRegRecord& rec) {
                     const bool not_state = type != Registers::STF_REG_OPERAND_TYPE::REG_STATE;
-                    inst.getOperandVector_(type).emplace_back(&rec);
+                    inst.appendOperand_(type, rec);
 
                     // Set FP flag if we have an FP source or dest register
                     // Set vector flag if we have a vector source or dest register
@@ -1542,10 +1635,11 @@ namespace stf {
                 static inline void applyRegisterState_(STFInst& inst, const STFRegState& reg_state) {
                     auto& inst_reg_state = inst.getOperandVector_(Registers::STF_REG_OPERAND_TYPE::REG_STATE);
                     inst_reg_state.clear();
+                    inst_reg_state.reserve(reg_state.size());
                     reg_state.applyRegState(
                         [&inst, &inst_reg_state](const auto& r) {
                             const auto* rec = appendOrigRecord_(inst, r.second->clone());
-                            inst_reg_state.emplace_back(&rec->template as<InstRegRecord>());
+                            STFInst::appendOperand_(inst_reg_state, rec->template as<InstRegRecord>());
                         }
                     );
                 }

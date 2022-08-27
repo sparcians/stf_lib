@@ -218,14 +218,6 @@ namespace stf {
             }
 
             /**
-             * Specialization for STFRecord - just counts how many records have been read/written
-             */
-            template<>
-            inline void readCallback<STFRecord>() {
-                ++num_records_read_;
-            }
-
-            /**
              * Gets how many records have been read/written
              */
             inline size_t getNumRecords() const {
@@ -289,6 +281,15 @@ namespace stf {
                 return protocol_id_;
             }
     };
+
+    /**
+     * Specialization for STFRecord - just counts how many records have been read/written
+     */
+    template<>
+    inline void STFFstream::readCallback<STFRecord>() {
+        ++num_records_read_;
+    }
+
 } // end namespace stf
 
 #endif

@@ -61,29 +61,35 @@ namespace stf {
                 invalid_descriptor_throw("Attempted to delete unregistered object");
             }
 
-            /**
-             * Translates an object ID to the deleter for that object
-             */
-            template<Enum ObjectId>
-            static inline constexpr DeleterFuncType genDeleter_();
+            template<Enum ObjectId, typename dummy_type = void>
+            struct deleter_generator {
+                /**
+                 * Translates an object ID to the deleter for that object
+                 */
+                static inline constexpr DeleterFuncType get();
+            };
 
-            /**
-             * genDeleter_ specialization for __RESERVED_START object ID.
-             * Ensures we always throw an exception if we attempt to delete a __RESERVED_START ID.
-             */
-            template<>
-            static inline constexpr DeleterFuncType genDeleter_<Enum::__RESERVED_START> () {
-                return &defaultDeleter_;
-            }
+            template<typename dummy_type>
+            struct deleter_generator<Enum::__RESERVED_START, dummy_type> {
+                /**
+                 * get specialization for __RESERVED_START object ID.
+                 * Ensures we always throw an exception if we attempt to delete a __RESERVED_START ID.
+                 */
+                static inline constexpr DeleterFuncType get() {
+                    return &defaultDeleter_;
+                }
+            };
 
-            /**
-             * genDeleter_ specialization for __RESERVED_END object ID.
-             * Ensures we always throw an exception if we attempt to delete a __RESERVED_END ID.
-             */
-            template<>
-            static inline constexpr DeleterFuncType genDeleter_<Enum::__RESERVED_END> () {
-                return &defaultDeleter_;
-            }
+            template<typename dummy_type>
+            struct deleter_generator<Enum::__RESERVED_END, dummy_type> {
+                /**
+                 * get specialization for __RESERVED_END object ID.
+                 * Ensures we always throw an exception if we attempt to delete a __RESERVED_END ID.
+                 */
+                static inline constexpr DeleterFuncType get() {
+                    return &defaultDeleter_;
+                }
+            };
 
             /**
              * Used to initialize the deleters_ array at compile time.
@@ -92,7 +98,7 @@ namespace stf {
             static inline constexpr DeleterArray populateDeleterArray_() {
                 return enums::populateEnumArray<DeleterFuncType, Enum, &defaultDeleter_>(
                     [](auto Index, DeleterArray deleter_array) {
-                        deleter_array[enums::to_int(Index())] = genDeleter_<Index>();
+                        deleter_array[enums::to_int(Index())] = deleter_generator<Index>::get();
                         return deleter_array;
                     }
                 );
