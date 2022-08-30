@@ -1,7 +1,7 @@
 #ifndef __BOOST_SMALL_VECTOR_HPP__
 #define __BOOST_SMALL_VECTOR_HPP__
 
-#include "boost_wrappers/setup.hpp"
+#include "setup.hpp"
 
 #pragma push_macro("S1")
 #undef S1
