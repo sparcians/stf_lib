@@ -2526,7 +2526,6 @@ namespace stf {
                 format_utils::formatLabel(os, "DELTA");
                 format_utils::formatDec(os, cycle_delta_);
                 os << std::endl;
-                format_utils::formatLabel(os, "PROTOCOL");
                 protocol_data_->format(os);
             }
 

@@ -20,7 +20,6 @@ namespace stf {
             }
         }
 
-        format_utils::formatLabel(os, "PROTOCOL");
         os << transaction.getProtocol() << std::endl;
         return os;
     }

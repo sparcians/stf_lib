@@ -392,7 +392,7 @@ namespace stf {
              * Formats a record into an ostream
              * \param os ostream to use
              */
-            void format(std::ostream& os) const final {
+            void format(std::ostream& os) const override {
                 os << getId() << ' ';
                 static_cast<const Type*>(this)->format_impl(os);
             }

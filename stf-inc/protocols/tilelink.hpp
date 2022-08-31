@@ -1000,7 +1000,6 @@ namespace stf {
                  * \param os ostream to use
                  */
                 inline void format_impl(std::ostream& os) const {
-                    os << std::endl;
                     format_utils::formatLabel(os, "CHANNEL");
                     channel_data_->format(os);
                 }

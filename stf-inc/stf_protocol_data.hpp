@@ -50,6 +50,14 @@ namespace stf {
                                "Attempted to write protocol " << getTypeId() <<
                                " to a trace configured for " << writer.getProtocolId());
                 }
+
+                /**
+                 * Formats a record into an ostream
+                 * \param os ostream to use
+                 */
+                void format(std::ostream& os) const final {
+                    static_cast<const T*>(this)->format_impl(os);
+                }
         };
 
     } // end namespace protocols
