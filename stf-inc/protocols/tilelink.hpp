@@ -396,11 +396,16 @@ namespace stf {
          * \class MaskedChannel
          *
          * TileLink AddressChannel that has a mask field
+         * The mask should be provided as a std::vector<uint8_t>, where each element of the vector corresponds to 1 bit in the mask
          */
         template<typename T, ChannelType channel_type>
         class MaskedChannel : public AddressChannel<T, channel_type> {
             private:
-                SerializableVector<uint8_t, uint16_t> mask_;
+                std::vector<uint8_t> mask_;
+
+                inline std::vector<uint8_t> allocatePackedMask_() const {
+                    return std::vector<uint8_t>((mask_.size() + 7) / 8);
+                }
 
             public:
                 MaskedChannel() = default;
@@ -479,8 +484,20 @@ namespace stf {
                  * \param reader STFIFstream to use
                  */
                 inline void unpack_impl(STFIFstream& reader) {
+                    uint16_t orig_mask_size;
+
                     AddressChannel<T, channel_type>::unpack_impl(reader);
-                    TypeAwareChannel<T, channel_type>::read_(reader, mask_);
+                    TypeAwareChannel<T, channel_type>::read_(reader, orig_mask_size);
+
+                    mask_.resize(orig_mask_size);
+                    auto packed_data = allocatePackedMask_();
+
+                    TypeAwareChannel<T, channel_type>::read_(reader, packed_data);
+
+                    // Unpack the mask bits so that each element of the vector contains 1 mask bit
+                    for(size_t i = 0; i < orig_mask_size; ++i) {
+                        mask_[i] = (packed_data[i / 8] >> (i & 7)) & 1;
+                    }
                 }
 
                 /**
@@ -488,8 +505,17 @@ namespace stf {
                  * \param writer STFOFstream to use
                  */
                 inline void pack_impl(STFOFstream& writer) const {
+                    auto packed_data = allocatePackedMask_();
+
+                    // Pack the mask bits to save space
+                    // Every 8 elements from the vector are packed into a single uint8_t
+                    for(size_t i = 0; i < mask_.size(); ++i) {
+                        packed_data[i / 8] |= (mask_[i] & 1) << (i & 7);
+                    }
+
                     AddressChannel<T, channel_type>::pack_impl(writer);
-                    TypeAwareChannel<T, channel_type>::write_(writer, mask_);
+                    TypeAwareChannel<T, channel_type>::write_(writer, static_cast<uint16_t>(mask_.size()));
+                    TypeAwareChannel<T, channel_type>::write_(writer, packed_data);
                 }
 
                 /**
@@ -500,7 +526,18 @@ namespace stf {
                     AddressChannel<T, channel_type>::format_impl(os);
                     os << std::endl;
                     format_utils::formatLabel(os, "MASK");
-                    os << mask_;
+                    os << '[';
+
+                    if(auto it = mask_.begin(); it != mask_.end()) {
+                        format_utils::formatHex(os, *it);
+
+                        for(++it; it != mask_.end(); ++it) {
+                            os << ", ";
+                            format_utils::formatHex(os, *it);
+                        }
+                    }
+
+                    os << ']';
                 }
 
                 /**

@@ -197,16 +197,16 @@ namespace stf {
              */
             friend std::ostream& operator<<(std::ostream& os, const SerializableVector& vec) {
                 os << '[';
-                bool first = true;
-                for(const auto v: vec) {
-                    if(STF_EXPECT_TRUE(!first)) {
+
+                if(auto it = vec.begin(); it != vec.end()) {
+                    SerializableVector::formatElement_(os, *it);
+
+                    for(++it; it != vec.end(); ++it) {
                         os << ", ";
+                        SerializableVector::formatElement_(os, *it);
                     }
-                    else {
-                        first = false;
-                    }
-                    SerializableVector::formatElement_(os, v);
                 }
+
                 os << ']';
 
                 return os;
