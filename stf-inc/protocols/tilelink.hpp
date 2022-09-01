@@ -976,12 +976,16 @@ namespace stf {
 
                 /**
                  * Constructs a TileLink channel wrapped in a TileLink protocol object, wrapped in a TransactionRecord
+                 * \param id_manager IdManager that tracks the ID values for the current transaction stream
                  * \param time_delta Time delta to use
                  * \param args Arguments passed to channel data constructor
                  */
                 template<typename ChannelType, typename ... Args>
-                static inline TransactionRecord makeTransactionWithDelta(const uint64_t time_delta, Args&&... args) {
-                    return TransactionRecord::createNext(
+                static inline TransactionRecord makeTransactionWithDelta(TransactionRecord::IdManager& id_manager,
+                                                                         const uint64_t time_delta,
+                                                                         Args&&... args) {
+                    return TransactionRecord(
+                        id_manager,
                         time_delta,
                         TileLink::pool_type::construct<TileLink>(
                             ChannelType::pool_type::template construct<ChannelType>(std::forward<Args>(args)...)
@@ -991,11 +995,14 @@ namespace stf {
 
                 /**
                  * Constructs a TileLink channel wrapped in a TileLink protocol object, wrapped in a TransactionRecord
+                 * \param id_manager IdManager that tracks the ID values for the current transaction stream
                  * \param args Arguments passed to channel data constructor
                  */
                 template<typename ChannelType, typename ... Args>
-                static inline TransactionRecord makeTransaction(Args&&... args) {
-                    return TransactionRecord::createNext(
+                static inline TransactionRecord makeTransaction(TransactionRecord::IdManager& id_manager,
+                                                                Args&&... args) {
+                    return TransactionRecord(
+                        id_manager,
                         TileLink::pool_type::construct<TileLink>(
                             ChannelType::pool_type::template construct<ChannelType>(std::forward<Args>(args)...)
                         )
