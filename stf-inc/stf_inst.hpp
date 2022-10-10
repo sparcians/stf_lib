@@ -210,6 +210,43 @@ namespace stf {
             }
 
             /**
+             * Gets the vector element value by the given index
+             */
+            template<typename ElementType>
+            inline ElementType getVectorValueAt(size_t idx) const
+            {
+                stf_assert((idx*sizeof(ElementType)/sizeof(InstRegRecord::VectorType::value_type)) < rec_->getVectorData().size(),
+                            "Invalid element index to access vector data");
+                if constexpr (std::is_same_v<ElementType, InstRegRecord::VectorType::value_type>) {
+                    return rec_->getVectorData()[idx];
+                }
+                else {
+                    return reinterpret_cast<const ElementType*>(rec_->getVectorData().data())[idx];
+                }
+            }
+
+            /**
+             * Gets the vector element value by the given index and width
+             */
+            inline uint64_t getVectorValueAt(size_t idx, size_t width) const
+            {
+                switch(width)
+                {
+                    case 8:
+                        return getVectorValueAt<uint8_t>(idx);
+                    case 16:
+                        return getVectorValueAt<uint16_t>(idx);
+                    case 32:
+                        return getVectorValueAt<uint32_t>(idx);
+                    case 64:
+                        return getVectorValueAt<uint64_t>(idx);
+                    default:
+                        stf_throw("Invalid vector data width: " << width);
+                }
+                __builtin_unreachable();
+            }
+
+            /**
              * Gets the vlen parameter that was set when the record was read
              */
             inline vlen_t getVLen() const {
