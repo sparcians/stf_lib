@@ -190,13 +190,13 @@ namespace stf
  * \def STF_EXPECT_TRUE
  * Convenience macro to mark a conditional as likely-true
  */
-#define STF_EXPECT_TRUE(x) __builtin_expect(x, 1)
+#define STF_EXPECT_TRUE(x) __builtin_expect(!!(x), true)
 
 /**
  * \def STF_EXPECT_FALSE
  * Convenience macro to mark a conditional as likely-false
  */
-#define STF_EXPECT_FALSE(x) __builtin_expect(x, 0)
+#define STF_EXPECT_FALSE(x) __builtin_expect(!!(x), false)
 
 /**
  * \def ADD_FILE_INFORMATION
