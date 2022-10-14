@@ -68,11 +68,10 @@ namespace stf {
             bool iem_changes_allowed_ = false;
 
             INST_IEM last_iem_ = INST_IEM::STF_INST_IEM_INVALID;         // the latest IEM
-            uint32_t tgid_;             // current tgid
-            uint32_t tid_;              // current tid;
-            uint32_t asid_;             // current asid;
-            uint32_t pte_asid_;         // current asid in pte file;
-            bool pte_end_;              // whether get all initial PTEs
+            uint32_t tgid_ = 0;             // current tgid
+            uint32_t tid_ = 0;              // current tid;
+            uint32_t asid_ = 0;             // current asid;
+            bool pte_end_ = false;              // whether get all initial PTEs
             STFReader pte_reader_;     // the stf-pte reader;
 
 #ifdef STF_INST_HAS_IEM
@@ -82,7 +81,7 @@ namespace stf {
             bool pending_user_syscall_ = false; // If true, the instruction that is currently being processed is a user syscall
             bool buffer_is_empty_ = true; // True if the buffer contains no instructions
 
-            STFRegState reg_state_;
+            std::unique_ptr<STFRegState> reg_state_; // Tracks register states when instructions are being skipped
 
             /**
              * \brief Helper function to read records in the separated PTE file.
@@ -385,20 +384,20 @@ namespace stf {
             __attribute__((always_inline))
             inline void skippedCleanup_(const STFInst& inst) {
                 for(const auto& op: inst.getRegisterStates()) {
-                    reg_state_.regStateUpdate(op.getRecord());
+                    reg_state_->regStateUpdate(op.getRecord());
                 }
                 for(const auto& op: inst.getSourceOperands()) {
-                    reg_state_.regStateUpdate(op.getRecord());
+                    reg_state_->regStateUpdate(op.getRecord());
                 }
                 for(const auto& op: inst.getDestOperands()) {
-                    reg_state_.regStateUpdate(op.getRecord());
+                    reg_state_->regStateUpdate(op.getRecord());
                 }
             }
 
             __attribute__((always_inline))
             inline void skippingDone_(STFInst& inst) {
-                delegates::STFInstDelegate::applyRegisterState_(inst, reg_state_);
-                reg_state_.stateClear();
+                delegates::STFInstDelegate::applyRegisterState_(inst, *reg_state_);
+                reg_state_->stateClear();
             }
 
         public:
@@ -623,7 +622,12 @@ namespace stf {
                     stf_assert(!check_stf_pte, "Check for stf-pte file was enabled but no stf-pte was found for " << filename);
                 }
 
-                reg_state_.initRegBank(getISA(), getInitialIEM());
+                if(STF_EXPECT_TRUE(reg_state_)) {
+                    reg_state_->initRegBank(getISA(), getInitialIEM());
+                }
+                else {
+                    reg_state_ = std::make_unique<STFRegState>(getISA(), getInitialIEM());
+                }
             }
 
             /**

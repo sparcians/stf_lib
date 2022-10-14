@@ -219,7 +219,14 @@ namespace stf {
                     }
             };
 
-            STFRegState() = default;
+            /**
+             * Constructs and initializes an STFRegState
+             * \param isa ISA
+             * \param iem Instruction encoding
+             */
+            STFRegState(const ISA isa, const INST_IEM iem) {
+                initRegBank(isa, iem);
+            }
 
             /**
              * Copy constructor
@@ -246,15 +253,6 @@ namespace stf {
                     regstate_.emplace(r.first, r.second->copy());
                 }
                 return *this;
-            }
-
-            /**
-             * Constructs and initializes an STFRegState
-             * \param isa ISA
-             * \param iem Instruction encoding
-             */
-            STFRegState(const ISA isa, const INST_IEM iem) {
-                initRegBank(isa, iem);
             }
 
             /**

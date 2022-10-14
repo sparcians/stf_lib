@@ -56,7 +56,7 @@ namespace stf {
                     void copyFrom_(const SmallVector& rhs) {
                         std::transform(std::begin(rhs),
                                        std::end(rhs),
-                                       std::back_inserter(data_),
+                                       std::back_inserter(*this),
                                        [](const auto& ptr) {
                                            return std::move(ptr->clone());
                                        }
@@ -75,6 +75,12 @@ namespace stf {
                      * const_iterator to the underlying vector
                      */
                     using const_iterator = vec_type::const_iterator;
+
+                    /**
+                     * \typedef value_type
+                     * value_type of underlying vector
+                     */
+                    using value_type = vec_type::value_type;
 
                     SmallVector() :
                         data_(1)
@@ -191,6 +197,14 @@ namespace stf {
                         }
 
                         return data_.emplace_back(std::move(rec)).get();
+                    }
+
+                    /**
+                     * Appends a new element to the back of the vector
+                     * \param rec New record to append
+                     */
+                    inline void push_back(STFRecord::UniqueHandle&& rec) {
+                        emplace_back(std::move(rec));
                     }
 
                     /**
