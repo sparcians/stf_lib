@@ -981,7 +981,7 @@ namespace stf {
                  * \param args Arguments passed to channel data constructor
                  */
                 template<typename ChannelType, typename ... Args>
-                static inline TransactionRecord makeTransactionWithDelta(TransactionRecord::IdManager& id_manager,
+                static inline TransactionRecord makeTransactionWithDelta(RecordIdManager& id_manager,
                                                                          const uint64_t time_delta,
                                                                          Args&&... args) {
                     return TransactionRecord(
@@ -999,7 +999,7 @@ namespace stf {
                  * \param args Arguments passed to channel data constructor
                  */
                 template<typename ChannelType, typename ... Args>
-                static inline TransactionRecord makeTransaction(TransactionRecord::IdManager& id_manager,
+                static inline TransactionRecord makeTransaction(RecordIdManager& id_manager,
                                                                 Args&&... args) {
                     return TransactionRecord(
                         id_manager,

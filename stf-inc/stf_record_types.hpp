@@ -13,6 +13,7 @@
 #include "stf_descriptor.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_record.hpp"
+#include "stf_record_id_manager.hpp"
 #include "stf_record_interfaces.hpp"
 #include "stf_serializable_container.hpp"
 #include "stf_enums.hpp"
@@ -2457,23 +2458,6 @@ namespace stf {
             }
 
         public:
-            /**
-             * \class IdManager
-             * Tracks the ID values for a single stream of transactions
-             */
-            class IdManager {
-                private:
-                    uint64_t next_transaction_id_ = 0;
-
-                public:
-                    /**
-                     * Gets the next sequential ID in the transaction stream
-                     */
-                    inline uint64_t getNextId() {
-                        return ++next_transaction_id_;
-                    }
-            };
-
             TransactionRecord() = default;
 
             /**
@@ -2485,13 +2469,13 @@ namespace stf {
             }
 
             /**
-             * Creates a new TransactionRecord. Automatically gets the ID from an IdManager.
-             * \param id_manager IdManager that tracks the ID values for the current transaction stream
+             * Creates a new TransactionRecord. Automatically gets the ID from an RecordIdManager.
+             * \param id_manager RecordIdManager that tracks the ID values for the current transaction stream
              * \param clock_id Clock domain ID for this transaction
              * \param cycle_delta Cycle delta between the previous transaction and this one
              * \param protocol_data Protocol data to populate this transaction
              */
-            TransactionRecord(IdManager& id_manager,
+            TransactionRecord(RecordIdManager& id_manager,
                               const ClockId clock_id,
                               const uint64_t cycle_delta,
                               protocols::ProtocolData::UniqueHandle&& protocol_data) :
@@ -2500,12 +2484,12 @@ namespace stf {
             }
 
             /**
-             * Creates a new TransactionRecord in the default clock domain. Automatically gets the ID from an IdManager.
-             * \param id_manager IdManager that tracks the ID values for the current transaction stream
+             * Creates a new TransactionRecord in the default clock domain. Automatically gets the ID from an RecordIdManager.
+             * \param id_manager RecordIdManager that tracks the ID values for the current transaction stream
              * \param cycle_delta Cycle delta between the previous transaction and this one
              * \param protocol_data Protocol data to populate this transaction
              */
-            TransactionRecord(IdManager& id_manager,
+            TransactionRecord(RecordIdManager& id_manager,
                               const uint64_t cycle_delta,
                               protocols::ProtocolData::UniqueHandle&& protocol_data) :
                 TransactionRecord(id_manager, ClockRegistry::getDefaultClock(), cycle_delta, std::move(protocol_data))
@@ -2513,11 +2497,11 @@ namespace stf {
             }
 
             /**
-             * Creates a new TransactionRecord. Automatically gets the ID from an IdManager.
-             * \param id_manager IdManager that tracks the ID values for the current transaction stream
+             * Creates a new TransactionRecord. Automatically gets the ID from an RecordIdManager.
+             * \param id_manager RecordIdManager that tracks the ID values for the current transaction stream
              * \param protocol_data Protocol data to populate this transaction
              */
-            TransactionRecord(IdManager& id_manager,
+            TransactionRecord(RecordIdManager& id_manager,
                               protocols::ProtocolData::UniqueHandle&& protocol_data) :
                 TransactionRecord(id_manager, 0, std::move(protocol_data))
             {
