@@ -982,6 +982,27 @@ namespace stf {
                  */
                 template<typename ChannelType, typename ... Args>
                 static inline TransactionRecord makeTransactionWithDelta(RecordIdManager& id_manager,
+                                                                         const ClockId clock_id,
+                                                                         const uint64_t time_delta,
+                                                                         Args&&... args) {
+                    return TransactionRecord(
+                        id_manager,
+                        clock_id,
+                        time_delta,
+                        TileLink::pool_type::construct<TileLink>(
+                            ChannelType::pool_type::template construct<ChannelType>(std::forward<Args>(args)...)
+                        )
+                    );
+                }
+
+                /**
+                 * Constructs a TileLink channel wrapped in a TileLink protocol object, wrapped in a TransactionRecord
+                 * \param id_manager IdManager that tracks the ID values for the current transaction stream
+                 * \param time_delta Time delta to use
+                 * \param args Arguments passed to channel data constructor
+                 */
+                template<typename ChannelType, typename ... Args>
+                static inline TransactionRecord makeTransactionWithDelta(RecordIdManager& id_manager,
                                                                          const uint64_t time_delta,
                                                                          Args&&... args) {
                     return TransactionRecord(
