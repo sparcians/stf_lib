@@ -18,7 +18,14 @@ get_directory_property(link_opts LINK_OPTIONS)
 set(extra_lib_dirs $<TARGET_FILE_DIR:stf> $<TARGET_FILE_DIR:mavis_json_files>)
 string(REPLACE ";" ":" include_dirs "${include_dirs}")
 string(REPLACE ";" ":" extra_lib_dirs "${extra_lib_dirs}")
-set(stf_libraries "stf pthread zstd mavis_json_files")
+
+# Get thread library name without -l
+set(thread_lib ${CMAKE_THREAD_LIBS_INIT})
+string(REPLACE "-l" "" thread_lib "${thread_lib}")
+# Convert -pthread -> pthread
+string(REPLACE "-p" "p" thread_lib "${thread_lib}")
+
+set(stf_libraries "stf ${thread_lib} zstd mavis_json_files")
 
 file(GLOB py_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.py")
 file(GLOB pyx_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.pyx" "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/stf_lib/*.pyx")

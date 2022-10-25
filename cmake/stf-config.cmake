@@ -9,10 +9,13 @@ endif()
 # zstd
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_MODULE_PATH})
 find_package(zstd)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+set_target_properties(Threads::Threads PROPERTIES IMPORTED_GLOBAL TRUE)
 
 include_directories (${zstd_INCLUDE_DIRS})
 
-set (STF_LINK_LIBS pthread stf ${zstd_LIBRARIES})
+set (STF_LINK_LIBS Threads::Threads stf ${zstd_LIBRARIES})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
