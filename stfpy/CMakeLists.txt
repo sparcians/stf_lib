@@ -8,6 +8,7 @@ include_directories(${STF_BASE}/stf-inc)
 add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-ignored-optimization-argument)
     add_link_options(-Wno-unused-command-line-argument -Wno-ignored-optimization-argument)
 endif()
 
