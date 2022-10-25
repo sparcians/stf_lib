@@ -510,7 +510,7 @@ namespace stf {
                     // Pack the mask bits to save space
                     // Every 8 elements from the vector are packed into a single uint8_t
                     for(size_t i = 0; i < mask_.size(); ++i) {
-                        packed_data[i / 8] |= (mask_[i] & 1) << (i & 7);
+                        packed_data[i / 8] |= static_cast<uint8_t>((mask_[i] & 1) << (i & 7));
                     }
 
                     AddressChannel<T, channel_type>::pack_impl(writer);
