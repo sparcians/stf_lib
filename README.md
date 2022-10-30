@@ -73,7 +73,8 @@ stf::STFWriter stf_writer;
 stf_writer.open("my_trace.zstf");  // If you do not want compression, drop the 'z': my_trace.stf
 stf_writer.addTraceInfo(stf::TraceInfoRecord(stf::STF_GEN::STF_GEN_IMPERAS, 1, 2, 0, "Trace from Imperas"));
 stf_writer.setISA(stf::ISA::RISCV);
-stf_writer.setVLen( /*VLEN*/ );
+// make sure to setVLen when there are vector instructions in the trace 
+// stf_writer.setVLen( /*VLEN*/ );
 stf_writer.setHeaderIEM(stf::INST_IEM::STF_INST_IEM_RV64);
 stf_writer.setTraceFeature(stf::TRACE_FEATURES::STF_CONTAIN_RV64);
 stf_writer.setTraceFeature(stf::TRACE_FEATURES::STF_CONTAIN_PHYSICAL_ADDRESS);
