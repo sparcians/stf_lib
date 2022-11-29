@@ -242,15 +242,15 @@ namespace stf
     if(__builtin_expect(!(e), 0)) { stf_throw_impl(#e, insertions) }
 
 /**
- * \def VA_NARGS_IMPL
+ * \def STF_VA_NARGS_IMPL
  * For internal use only
  */
-#define VA_NARGS_IMPL(_1, _2, _3, _4, _5, N, ...) N
+#define STF_VA_NARGS_IMPL(_1, _2, _3, _4, _5, N, ...) N
 /**
- * \def VA_NARGS
+ * \def STF_VA_NARGS
  * For internal use only
  */
-#define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 5, 4, 3, 2, 1)
+#define STF_VA_NARGS(...) STF_VA_NARGS_IMPL(__VA_ARGS__, 5, 4, 3, 2, 1, 0)
 /**
  * \def stf_assert_impl2
  * For internal use only
@@ -265,7 +265,7 @@ namespace stf
  * \def stf_assert
  * Throws an stf::STFException if the provided condition is false
  */
-#define stf_assert(...) stf_assert_impl(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+#define stf_assert(...) stf_assert_impl(STF_VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 /**
  * \def stf_throw
