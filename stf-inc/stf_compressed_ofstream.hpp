@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <future>
 
+#include <signal.h>
+
 #include "stf_compression_buffer.hpp"
 #include "stf_compressed_chunked_base.hpp"
 #include "stf_ofstream.hpp"
@@ -36,7 +38,7 @@ namespace stf {
              * \param size Number of elements in the buffer
              */
             template <typename T>
-            void direct_write_(const T* data, size_t size) {
+            inline void direct_write_(const T* data, size_t size) {
                 STFOFstream::fwrite_(data, sizeof(T), size);
             }
 
@@ -45,7 +47,7 @@ namespace stf {
              * \param data Data to write
              */
             template <typename T>
-            std::enable_if_t<std::is_arithmetic_v<T>>
+            inline std::enable_if_t<std::is_arithmetic_v<T>>
             direct_write_(const T data) {
                 direct_write_(&data, 1);
             }
@@ -55,7 +57,7 @@ namespace stf {
              * \param data Data to write
              */
             template <typename T>
-            std::enable_if_t<std::negation_v<std::is_arithmetic<T>>>
+            inline std::enable_if_t<std::negation_v<std::is_arithmetic<T>>>
             direct_write_(const T& data) {
                 direct_write_(&data, 1);
             }
@@ -64,7 +66,7 @@ namespace stf {
              * Writes a ChunkOffset directly to the file, bypassing the compressor
              * \param data Data to write
              */
-            void direct_write_(const ChunkOffset& data) {
+            inline void direct_write_(const ChunkOffset& data) {
                 direct_write_(data.getOffset());
                 direct_write_(data.getStartPC());
                 direct_write_(data.getUncompressedChunkSize());
@@ -76,7 +78,7 @@ namespace stf {
              * \param size Number of elements to write
              */
             template <typename T>
-            std::enable_if_t<std::is_arithmetic_v<T>>
+            inline std::enable_if_t<std::is_arithmetic_v<T>>
             direct_write_(const std::vector<T>& data, size_t size) {
                 direct_write_(size);
                 direct_write_(data.data(), size);
@@ -88,7 +90,7 @@ namespace stf {
              * \param size Number of elements to write
              */
             template <typename T>
-            std::enable_if_t<std::negation_v<std::is_arithmetic<T>>>
+            inline std::enable_if_t<std::negation_v<std::is_arithmetic<T>>>
             direct_write_(const std::vector<T>& data, size_t size) {
                 direct_write_(size);
                 for(size_t i = 0; i < size; ++i) {
@@ -101,7 +103,7 @@ namespace stf {
              * \param data Data to write
              */
             template <typename T>
-            void direct_write_(const std::vector<T>& data) {
+            inline void direct_write_(const std::vector<T>& data) {
                 direct_write_(data, data.size());
             }
 
@@ -111,7 +113,7 @@ namespace stf {
              * \param size Size of an element
              * \param num Number of elements to read
              */
-            size_t fwrite_(const void* data, size_t size, size_t num) override {
+            inline size_t fwrite_(const void* data, size_t size, size_t num) override {
                 const size_t num_bytes = size * num;
                 cur_chunk_buf_.fit(num_bytes);
                 const auto ptr = reinterpret_cast<const uint8_t*>(data);
@@ -121,14 +123,14 @@ namespace stf {
                 return num;
             }
 
-            void compressChunkAsync_(const uint64_t next_chunk_pc) {
+            inline void compressChunkAsync_(const uint64_t next_chunk_pc) {
                 const size_t num_bytes = compression_chunk_buf_.end();
                 compressor_.compress(out_buf_, compression_chunk_buf_);
                 bytes_written_ += num_bytes;
                 endChunk_(next_chunk_pc);
             }
 
-            void compressChunk_() {
+            inline void compressChunk_() {
                 if(STF_EXPECT_TRUE(compression_in_progress_)) {
                     compression_done_.get();
                     compression_in_progress_ = false;
@@ -148,7 +150,7 @@ namespace stf {
             /**
              * Writes compressed data out to the file
              */
-            void writeChunk_() {
+            inline void writeChunk_() {
                 // Only bother trying to write if there's some data in the buffer
                 if(out_buf_.end()) {
                     direct_write_(out_buf_.get(), out_buf_.end());
@@ -156,10 +158,28 @@ namespace stf {
                 }
             }
 
+            static inline sigset_t initSigSet_() {
+                sigset_t set;
+                sigemptyset(&set);
+                sigaddset(&set, SIGINT);
+                sigaddset(&set, SIGTERM);
+                sigaddset(&set, SIGABRT);
+                sigaddset(&set, SIGSEGV);
+
+                return set;
+            }
+
             /**
              * Ends the current compressed chunk and flushes it to the file
              */
-            void endChunk_(const uint64_t next_chunk_pc) {
+            inline void endChunk_(const uint64_t next_chunk_pc) {
+                static const sigset_t set = initSigSet_();
+
+                // Mask signals until we're done writing to the file
+                int err = pthread_sigmask(SIG_BLOCK, &set, nullptr);
+
+                stf_assert(err == 0, "Failed to mask signals with error: " << strerror(err));
+
                 // Empty the buffer if it's full
                 if(out_buf_.full()) {
                     writeChunk_();
@@ -171,8 +191,27 @@ namespace stf {
                 writeChunk_();
                 chunk_indices_.back().setUncompressedChunkSize(bytes_written_);
                 bytes_written_ = 0;
+
+                // Get the current file offset so we can write it back at the beginning
+                const off_t end = ftell(stream_);
+
                 // Start a new chunk
-                chunk_indices_.emplace_back(ftell(stream_), next_chunk_pc, 0);
+                chunk_indices_.emplace_back(end, next_chunk_pc, 0);
+
+                // Write the chunk offsets to the end of the file
+                direct_write_(chunk_indices_, chunk_indices_.size() - 1);
+
+                // Write the end of the last chunk into the spot we reserved when we opened the file
+                fseek(stream_, Compressor::getMagic().size() + sizeof(marker_record_chunk_size_), SEEK_SET);
+                direct_write_(end);
+
+                // Seek back to the end of the chunk we just wrote
+                fseek(stream_, end, SEEK_SET);
+
+                // Unmask signals
+                err = pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
+
+                stf_assert(err == 0, "Failed to unmask signals with error: " << strerror(err));
             }
 
         public:
@@ -246,7 +285,7 @@ namespace stf {
                 static constexpr off_t ZERO = 0;
 
                 // Open the file
-                STFFstream::open(filename, "w");
+                STFFstream::open(filename, "wb");
 
                 // Write the magic string for the compressor
                 direct_write_(Compressor::getMagic().data(), Compressor::getMagic().size());
@@ -288,13 +327,6 @@ namespace stf {
                     compression_done_.get();
                     compression_in_progress_ = false;
                 }
-                // Get the current file offset so we can write it back at the beginning
-                const off_t end = ftell(stream_);
-                // Write the chunk offsets to the end of the file
-                direct_write_(chunk_indices_, chunk_indices_.size() - 1);
-                // Write the end of the last chunk into the spot we reserved when we opened the file
-                fseek(stream_, Compressor::getMagic().size() + sizeof(marker_record_chunk_size_), SEEK_SET);
-                direct_write_(end);
                 return STFOFstream::close();
             }
 
