@@ -31,6 +31,7 @@ namespace stf {
             bool compression_in_progress_ = false;
             bool pending_chunk_ = false; /**< True if there is pending data in the output buffer */
             size_t bytes_written_ = 0; /**< Number of uncompressed bytes written so far */
+            bool incomplete_chunk_ = false;
 
             /**
              * Writes directly to the file, bypassing the compressor
@@ -120,6 +121,7 @@ namespace stf {
                 std::copy(ptr, ptr + num_bytes, cur_chunk_buf_.get() + cur_chunk_buf_.end());
                 cur_chunk_buf_.advanceWritePtr(num_bytes);
                 pending_chunk_ = true;
+                incomplete_chunk_ = true;
                 return num;
             }
 
@@ -136,6 +138,7 @@ namespace stf {
                     compression_in_progress_ = false;
                 }
                 if(STF_EXPECT_TRUE(pending_chunk_)) {
+                    stf_assert(!incomplete_chunk_, "Attempted to write a chunk that doesn't end with a marker record");
                     pending_chunk_ = false;
                     compression_in_progress_ = true;
                     std::swap(cur_chunk_buf_, compression_chunk_buf_);
@@ -321,7 +324,12 @@ namespace stf {
 
                 // Finish any pending chunk
                 if(pending_chunk_) {
-                    compressChunk_();
+                    if(incomplete_chunk_) {
+                        std::cerr << "WARNING: The pending chunk in the STF compressed writer buffer is in an inconsistent state. It will not be written to the output file." << std::endl;
+                    }
+                    else {
+                        compressChunk_();
+                    }
                 }
                 if(compression_in_progress_) {
                     compression_done_.get();
@@ -332,6 +340,7 @@ namespace stf {
 
             void markerRecordCallback() override {
                 STFOFstream::markerRecordCallback();
+                incomplete_chunk_ = false;
 
                 // If we've crossed the chunk boundary, close the current chunk and start a new one
                 if(STF_EXPECT_FALSE(num_marker_records_ >= next_chunk_end_)) {
