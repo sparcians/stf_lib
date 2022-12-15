@@ -201,11 +201,8 @@ namespace stf {
                 // Get the current file offset so we can write it back at the beginning
                 const off_t end = ftell(stream_);
 
-                // Start a new chunk
-                chunk_indices_.emplace_back(end, next_chunk_pc, 0);
-
                 // Write the chunk offsets to the end of the file
-                direct_write_(chunk_indices_, chunk_indices_.size() - 1);
+                direct_write_(chunk_indices_, chunk_indices_.size());
 
                 // Write the end of the last chunk into the spot we reserved when we opened the file
                 fseek(stream_, Compressor::getMagic().size() + sizeof(marker_record_chunk_size_), SEEK_SET);
@@ -218,6 +215,9 @@ namespace stf {
                 err = pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
 
                 stf_assert(err == 0, "Failed to unmask signals with error: " << strerror(err));
+
+                // Start a new chunk
+                chunk_indices_.emplace_back(end, next_chunk_pc, 0);
             }
 
         public:
