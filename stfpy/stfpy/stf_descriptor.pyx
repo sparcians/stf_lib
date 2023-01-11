@@ -1,0 +1,29 @@
+from stfpy.stf_lib.stf_descriptor cimport *
+
+cpdef enum InternalDescriptor:
+        STF_INST_REG = <uint8_t> _STF_INST_REG
+        STF_INST_OPCODE16 = <uint8_t> _STF_INST_OPCODE16
+        STF_INST_OPCODE32 = <uint8_t> _STF_INST_OPCODE32
+        STF_INST_MEM_ACCESS = <uint8_t> _STF_INST_MEM_ACCESS
+        STF_INST_MEM_CONTENT = <uint8_t> _STF_INST_MEM_CONTENT
+        STF_INST_PC_TARGET = <uint8_t> _STF_INST_PC_TARGET
+        STF_EVENT = <uint8_t> _STF_EVENT
+        STF_EVENT_PC_TARGET = <uint8_t> _STF_EVENT_PC_TARGET
+        STF_PAGE_TABLE_WALK = <uint8_t> _STF_PAGE_TABLE_WALK
+        STF_BUS_MASTER_ACCESS = <uint8_t> _STF_BUS_MASTER_ACCESS
+        STF_BUS_MASTER_CONTENT = <uint8_t> _STF_BUS_MASTER_CONTENT
+        STF_COMMENT = <uint8_t> _STF_COMMENT
+        STF_FORCE_PC = <uint8_t> _STF_FORCE_PC
+        STF_INST_READY_REG = <uint8_t> _STF_INST_READY_REG
+        STF_PROCESS_ID_EXT = <uint8_t> _STF_PROCESS_ID_EXT
+        STF_INST_MICROOP = <uint8_t> _STF_INST_MICROOP
+        STF_IDENTIFIER = <uint8_t> _STF_IDENTIFIER
+        STF_ISA = <uint8_t> _STF_ISA
+        STF_INST_IEM = <uint8_t> _STF_INST_IEM
+        STF_TRACE_INFO = <uint8_t> _STF_TRACE_INFO
+        STF_TRACE_INFO_FEATURE = <uint8_t> _STF_TRACE_INFO_FEATURE
+        STF_VERSION = <uint8_t> _STF_VERSION
+        STF_VLEN_CONFIG = <uint8_t> _STF_VLEN_CONFIG
+        STF_END_HEADER = <uint8_t> _STF_END_HEADER
+        STF_RESERVED = <uint8_t> _STF_RESERVED
+        STF_RESERVED_END = <uint8_t> _RESERVED_END

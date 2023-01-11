@@ -1,7 +1,7 @@
 # distutils: language = c++
 
 from cython.operator cimport dereference as deref
-from stfpy.stf_lib.stf_reg_def cimport STF_REG
+from stfpy.stf_reg_def import STF_REG
 
 cdef class STFBranch:
     def index(self):

@@ -1,8 +1,8 @@
 # distutils: language = c++
 
 from cython.operator cimport dereference, preincrement
-from stfpy.stf_lib.stf_enums cimport INST_MEM_ACCESS
-from stfpy.stf_lib.stf_reg_def cimport STF_REG, STF_REG_OPERAND_TYPE
+from stfpy.stf_enums import INST_MEM_ACCESS
+from stfpy.stf_reg_def import STF_REG, STF_REG_OPERAND_TYPE
 from stfpy.stf_record_map cimport STFRecordMap, STFRecordMapSmallVector
 from stfpy.stf_record_map import STFRecordMap, STFRecordMapSmallVector
 
