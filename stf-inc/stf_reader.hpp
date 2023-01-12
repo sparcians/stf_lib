@@ -23,6 +23,7 @@ namespace stf {
     class InstIEMRecord;
     class ForcePCRecord;
     class ProcessIDExtRecord;
+    class VLenConfigRecord;
     class STFWriter;
 
     /**
@@ -36,6 +37,7 @@ namespace stf {
             STFRecord::ConstHandle<InstIEMRecord> initial_iem_;
             STFRecord::ConstHandle<ForcePCRecord> initial_pc_;
             STFRecord::ConstHandle<ProcessIDExtRecord> initial_process_id_;
+            STFRecord::ConstHandle<VLenConfigRecord> vlen_config_;
 
             /**
              * Reads the STF header

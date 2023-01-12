@@ -67,7 +67,8 @@ namespace stf {
                         STFRecord::grabOwnership(initial_process_id_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
-                        // This record is handled internally by the STFIFstream
+                        stf_assert(!vlen_config_, "Header has multiple VLEN_CONFIG records");
+                        STFRecord::grabOwnership(vlen_config_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_END_HEADER:
                         complete_header = true;
@@ -142,6 +143,8 @@ namespace stf {
         isa_.reset();
         initial_iem_.reset();
         initial_pc_.reset();
+        initial_process_id_.reset();
+        vlen_config_.reset();
 
         return STFReaderBase::close();
     }
@@ -180,6 +183,10 @@ namespace stf {
         }
         trace_features_->format(os);
         os << std::endl;
+        if(vlen_config_) {
+            vlen_config_->format(os);
+            os << std::endl;
+        }
     }
 
 } // end namespace stf
