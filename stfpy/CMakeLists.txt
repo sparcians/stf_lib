@@ -8,7 +8,7 @@ include_directories(${STF_BASE}/stf-inc)
 add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wno-ignored-optimization-argument)
+    add_compile_options(-Wno-ignored-optimization-argument -Wno-unknown-warning-option)
     add_link_options(-Wno-unused-command-line-argument -Wno-ignored-optimization-argument)
 endif()
 
@@ -16,7 +16,7 @@ get_directory_property(include_dirs INCLUDE_DIRECTORIES)
 get_directory_property(compile_opts COMPILE_OPTIONS)
 get_directory_property(link_opts LINK_OPTIONS)
 
-set(extra_lib_dirs $<TARGET_FILE_DIR:stf> $<TARGET_FILE_DIR:mavis_json_files>)
+set(extra_lib_dirs $<TARGET_FILE_DIR:stf>)
 string(REPLACE ";" ":" include_dirs "${include_dirs}")
 string(REPLACE ";" ":" extra_lib_dirs "${extra_lib_dirs}")
 
@@ -26,7 +26,7 @@ string(REPLACE "-l" "" thread_lib "${thread_lib}")
 # Convert -pthread -> pthread
 string(REPLACE "-p" "p" thread_lib "${thread_lib}")
 
-set(stf_libraries "stf ${thread_lib} zstd mavis_json_files")
+set(stf_libraries "stf ${thread_lib} zstd")
 
 file(GLOB py_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.py")
 file(GLOB pyx_files "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/*.pyx" "${CMAKE_CURRENT_SOURCE_DIR}/stfpy/stf_lib/*.pyx")
