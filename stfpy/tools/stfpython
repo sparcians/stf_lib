@@ -1,8 +1,10 @@
 #!/bin/bash
 
 SCRIPTPATH="$( cd -- "$(dirname "$(realpath "$0")")" >/dev/null 2>&1 ; pwd -P )"
+LIBPATH=${SCRIPTPATH}/lib
 
-site_packages_dir=$(find ${SCRIPTPATH}/lib -type d -name "site-packages")
+site_packages_dir=$(find ${LIBPATH} -type d -name "site-packages")
 
 export PYTHONPATH=${site_packages_dir}:$PYTHONPATH
+export PYTHONSTARTUP=${LIBPATH}/stfpy_init.py
 python $@
