@@ -51,7 +51,7 @@ stf::STFInstReader reader(trace_filename,  // *.zstf, *.stf
 
 // Iterate through the trace
 for(const stf::STFInst & inst : reader) {
-    std::cout << std::hex << "PC: 0x" << inst.pc() << " Opcode: 0x" << inst.getOpcode() << std::endl;
+    std::cout << std::hex << "PC: 0x" << inst.pc() << " Opcode: 0x" << inst.opcode() << std::endl;
 }
 
 ```
