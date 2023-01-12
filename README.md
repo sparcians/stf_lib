@@ -36,7 +36,7 @@ make
 API documentation: `doc_doxygen/html/classstf_1_1STFInstReaderBase.html`
 Example Usage:
 ```
-#include "stf-inc/stf_reader.hpp"
+#include "stf-inc/stf_inst_reader.hpp"
 #include "stf-inc/stf_record_types.hpp"
 
 constexpr bool skip_nonuser_mode = true; // example
@@ -51,7 +51,7 @@ stf::STFInstReader reader(trace_filename,  // *.zstf, *.stf
 
 // Iterate through the trace
 for(const stf::STFInst & inst : reader) {
-    std::cout << std::hex << "PC: 0x" << inst.pc() << "Opcode: 0x" << inst.getOpcode() << std::endl;
+    std::cout << std::hex << "PC: 0x" << inst.pc() << " Opcode: 0x" << inst.getOpcode() << std::endl;
 }
 
 ```
@@ -73,6 +73,8 @@ stf::STFWriter stf_writer;
 stf_writer.open("my_trace.zstf");  // If you do not want compression, drop the 'z': my_trace.stf
 stf_writer.addTraceInfo(stf::TraceInfoRecord(stf::STF_GEN::STF_GEN_IMPERAS, 1, 2, 0, "Trace from Imperas"));
 stf_writer.setISA(stf::ISA::RISCV);
+// make sure to setVLen when there are vector instructions in the trace 
+// stf_writer.setVLen( /*VLEN*/ );
 stf_writer.setHeaderIEM(stf::INST_IEM::STF_INST_IEM_RV64);
 stf_writer.setTraceFeature(stf::TRACE_FEATURES::STF_CONTAIN_RV64);
 stf_writer.setTraceFeature(stf::TRACE_FEATURES::STF_CONTAIN_PHYSICAL_ADDRESS);
