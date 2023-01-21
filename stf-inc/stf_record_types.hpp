@@ -2427,6 +2427,11 @@ namespace stf {
     REGISTER_RECORD(TraceInfoFeatureRecord)
 
     /**
+     * Writes a TraceInfoFeatureRecord to an ostream
+     */
+    std::ostream& operator<<(std::ostream& os, const TraceInfoFeatureRecord& rec);
+
+    /**
      * \class TransactionRecord
      *
      * Represents a timestamped bus transaction in the trace
@@ -2525,7 +2530,7 @@ namespace stf {
             TransactionRecord(TransactionRecord&&) = default;
 
             /**
-             * Packs an STFIdentifierRecord into an STFOFstream
+             * Packs a TransactionRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
             inline void pack_impl(STFOFstream& writer) const {
@@ -2538,7 +2543,7 @@ namespace stf {
             }
 
             /**
-             * Unpacks an STFIdentifierRecord from an STFIFstream
+             * Unpacks a TransactionRecord from an STFIFstream
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
@@ -2552,7 +2557,7 @@ namespace stf {
             }
 
             /**
-             * Formats a TraceInfoRecord to an std::ostream
+             * Formats a TransactionRecord to an std::ostream
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
@@ -2664,7 +2669,7 @@ namespace stf {
             }
 
             /**
-             * Packs an STFIdentifierRecord into an STFOFstream
+             * Packs a TransactionDependencyRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
             inline void pack_impl(STFOFstream& writer) const {
@@ -2675,7 +2680,7 @@ namespace stf {
             }
 
             /**
-             * Unpacks an STFIdentifierRecord from an STFIFstream
+             * Unpacks a TransactionDependencyRecord from an STFIFstream
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
@@ -2687,7 +2692,7 @@ namespace stf {
             }
 
             /**
-             * Formats a TraceInfoRecord to an std::ostream
+             * Formats a TransactionDependencyRecord to an std::ostream
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {

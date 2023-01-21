@@ -120,4 +120,74 @@ namespace stf {
         stf_throw("Invalid BUS_MEM_ACCESS value: " << enums::to_printable_int(access));
     }
 
+    std::ostream& operator<<(std::ostream& os, const TRACE_FEATURES feat) {
+        switch(feat) {
+            case TRACE_FEATURES::STF_CONTAIN_PHYSICAL_ADDRESS:
+                os << "STF_CONTAIN_PHYSICAL_ADDRESS";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_DATA_ATTRIBUTE:
+                os << "STF_CONTAIN_DATA_ATTRIBUTE";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_OPERAND_VALUE:
+                os << "STF_CONTAIN_OPERAND_VALUE";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_EVENT:
+                os << "STF_CONTAIN_EVENT";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_SYSTEMCALL_VALUE:
+                os << "STF_CONTAIN_SYSTEMCALL_VALUE";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_RV64:
+                os << "STF_CONTAIN_RV64";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_INT_DIV_OPERAND_VALUE:
+                os << "STF_CONTAIN_INT_DIV_OPERAND_VALUE";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_SAMPLING:
+                os << "STF_CONTAIN_SAMPLING";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_PTE:
+                os << "STF_CONTAIN_PTE";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_SIMPOINT:
+                os << "STF_CONTAIN_SIMPOINT";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_PROCESS_ID:
+                os << "STF_CONTAIN_PROCESS_ID";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_PTE_ONLY:
+                os << "STF_CONTAIN_PTE_ONLY";
+                return os;
+            case TRACE_FEATURES::STF_NEED_POST_PROCESS:
+                os << "STF_NEED_POST_PROCESS";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_REG_STATE:
+                os << "STF_CONTAIN_REG_STATE";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_MICROOP:
+                os << "STF_CONTAIN_MICROOP";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_MULTI_THREAD:
+                os << "STF_CONTAIN_MULTI_THREAD";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_MULTI_CORE:
+                os << "STF_CONTAIN_MULTI_CORE";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_PTE_HW_AD:
+                os << "STF_CONTAIN_PTE_HW_AD";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_VEC:
+                os << "STF_CONTAIN_VEC";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_EVENT64:
+                os << "STF_CONTAIN_EVENT64";
+                return os;
+            case TRACE_FEATURES::STF_CONTAIN_TRANSACTIONS:
+                os << "STF_CONTAIN_TRANSACTIONS";
+                return os;
+        };
+
+        stf_throw("Invalid TRACE_FEATURES value: " << enums::to_printable_int(feat));
+    }
+
 } // end namespace stf

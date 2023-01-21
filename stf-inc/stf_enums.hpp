@@ -143,6 +143,11 @@ namespace stf {
     };
 
     /**
+     * Writes a string representation of a TRACE_FEATURES enum to an ostream
+     */
+    std::ostream& operator<<(std::ostream& os, TRACE_FEATURES feat);
+
+    /**
      * \enum EXECUTION_MODE
      *
      * Defines execution modes for use with MODE_CHANGE events

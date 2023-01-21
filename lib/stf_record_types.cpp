@@ -116,6 +116,16 @@ namespace stf {
         return os;
     }
 
+    std::ostream& operator<<(std::ostream& os, const TraceInfoFeatureRecord& rec) {
+        for(size_t i = 0; i < byte_utils::bitSize<enums::int_t<TRACE_FEATURES>>(); ++i) {
+            const auto feat = static_cast<TRACE_FEATURES>(1ULL << i);
+            if(rec.hasFeature(feat)) {
+                os << feat << std::endl;
+            }
+        }
+        return os;
+    }
+
     // REQUIRED to properly instantiate RecordFactory and all STFRecord types
     // Should only be specified ONCE in a .cpp file
     FINALIZE_FACTORY(STFRecord)
