@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <vector>
 
 #include "boost_wrappers/flat_map.hpp"
 
@@ -25,7 +26,9 @@ namespace stf {
     class ClockRegistry {
         private:
             ClockId default_clock_;
-            boost::container::flat_map<ClockId, std::string> clocks_;
+
+            using MapType = boost::container::flat_map<ClockId, std::string>;
+            MapType clocks_;
 
             ClockRegistry() = default;
 
@@ -55,6 +58,22 @@ namespace stf {
 
             inline const std::string& getClockName_(const ClockId clock_id) const {
                 return clocks_.at(clock_id);
+            }
+
+            using DumpType = std::vector<MapType::value_type>;
+            inline DumpType dumpClocks_() const {
+                DumpType clocks;
+                const auto default_clock = clocks_.find(getDefaultClock_());
+                stf_assert(default_clock != clocks_.end(),
+                           "Default clock could not be found in clock registry");
+                clocks.emplace_back(*default_clock);
+                for(auto it = clocks_.begin(); it != clocks_.end(); ++it) {
+                    if(STF_EXPECT_TRUE(it != default_clock)) {
+                        clocks.emplace_back(*it);
+                    }
+                }
+
+                return clocks;
             }
 
         public:
@@ -89,6 +108,13 @@ namespace stf {
              */
             static inline const std::string& getClockName(const ClockId clock_id) {
                 return get_().getClockName_(clock_id);
+            }
+
+            /**
+             * Dumps clocks into a vector with the default clock in the first element
+             */
+            static inline DumpType dumpClocks() {
+                return get_().dumpClocks_();
             }
     };
 } // end namespace stf

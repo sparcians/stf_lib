@@ -26,6 +26,7 @@ namespace stf {
         STF_GEN_ATHENA,                     /**< Athena */
         STF_GEN_STF_MORPH,                  /**< stf_morph */
         STF_GEN_DROMAJO,                    /**< Dromajo */
+        STF_GEN_STF_TRANSACTION_EXTRACT,    /**< stf_transaction_extract */
         // 0x40 is the beginning of example tools
         STF_TRANSACTION_EXAMPLE = 0x40,
 

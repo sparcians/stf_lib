@@ -40,6 +40,9 @@ namespace stf {
             case STF_GEN::STF_GEN_DROMAJO:
                 os << "Dromajo";
                 return os;
+            case STF_GEN::STF_GEN_STF_TRANSACTION_EXTRACT:
+                os << "stf_transaction_extract";
+                return os;
             case STF_GEN::STF_TRANSACTION_EXAMPLE:
                 os << "stf_transaction_example";
                 return os;

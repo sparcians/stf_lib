@@ -72,7 +72,8 @@ namespace stf {
         if(!(header_comments_written_ &&
              trace_info_records_written_ &&
              trace_features_written_ &&
-             protocol_id_written_)) {
+             protocol_id_written_ &&
+             clock_ids_written_)) {
             flushHeader();
         }
 

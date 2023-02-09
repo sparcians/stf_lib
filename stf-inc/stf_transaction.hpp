@@ -6,6 +6,7 @@
 #include "stf_record_map.hpp"
 #include "stf_record_types.hpp"
 #include "stf_item.hpp"
+#include "stf_transaction_writer.hpp"
 
 namespace stf {
     class STFTransactionReader;
@@ -220,6 +221,24 @@ namespace stf {
              */
             inline const auto& getDependencies() const {
                 return dependencies_;
+            }
+
+            /**
+             * Gets the vector of CommentRecords
+             */
+            inline const auto& getComments() const {
+                return orig_records_.at(descriptors::internal::Descriptor::STF_COMMENT);
+            }
+
+            /**
+             * \brief Write all records in this transaction to STFTransactionWriter
+             */
+            inline void write(STFTransactionWriter& stf_writer) const {
+                for (const auto& vec_pair: orig_records_.sorted()) {
+                    for(const auto& record: vec_pair.second) {
+                        stf_writer << *record;
+                    }
+                }
             }
     };
 

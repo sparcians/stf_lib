@@ -98,6 +98,9 @@ namespace stf {
         stf_writer.addTraceInfoRecords(trace_info_records_);
         stf_writer.setTraceFeature(trace_features_->getFeatures());
         stf_writer.setProtocolId(getProtocolId());
+        for(const auto& clock_info: ClockRegistry::dumpClocks()) {
+            stf_writer.addClock(clock_info.first, clock_info.second);
+        }
     }
 
     // cppcheck-suppress unusedFunction
