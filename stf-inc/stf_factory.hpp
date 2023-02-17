@@ -67,7 +67,7 @@ namespace stf {
             inline PtrType construct_(STFIFstream& strm, const Enum object_id) const {
                 try {
                     const auto& constructor = getConstructor_(object_id);
-                    auto ptr = constructor(strm);
+                    auto ptr = constructor(strm); // cppcheck-suppress danglingTempReference
                     strm.readCallback<typename PoolType::base_type>();
                     return ptr;
                 }

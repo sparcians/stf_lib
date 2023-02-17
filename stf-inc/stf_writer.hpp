@@ -25,7 +25,7 @@ namespace stf {
      *
      * Holds the internal state of a STF [trace] writer instance.
      */
-    class STFWriter : public STFWriterBase {
+    class STFWriter final : public STFWriterBase {
         private:
             descriptors::encoded::Descriptor last_desc_ = descriptors::encoded::Descriptor::STF_RESERVED; /**< Last record type written */
 
@@ -58,9 +58,9 @@ namespace stf {
              * \param compression_level Compression level to use (-1 for default).
              * \param chunk_size Chunk size to use (Defaults to DEFAULT_CHUNK_SIZE)
              */
-            explicit STFWriter(std::string_view filename,
-                               int compression_level = -1,
-                               size_t chunk_size = DEFAULT_CHUNK_SIZE) :
+            explicit STFWriter(const std::string_view filename, // cppcheck-suppress passedByValue
+                               const int compression_level = -1,
+                               const size_t chunk_size = DEFAULT_CHUNK_SIZE) :
                 STFWriterBase(filename, compression_level, chunk_size)
             {
             }

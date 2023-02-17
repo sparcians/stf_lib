@@ -30,7 +30,7 @@ namespace stf {
                 private:
                     struct RegPair {
                         Registers::STF_REG reg;
-                        uint64_t val;
+                        uint64_t val; // cppcheck-suppress unusedStructMember
                     };
 
                     size_t wr_index_ = 0;

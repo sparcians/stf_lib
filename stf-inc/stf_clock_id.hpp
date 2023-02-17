@@ -91,7 +91,7 @@ namespace stf {
              * \param clock_id ID of the clock
              * \param name Name of the clock
              */
-            static inline void registerClock(const ClockId clock_id, const std::string_view name) {
+            static inline void registerClock(const ClockId clock_id, const std::string_view name) { // cppcheck-suppress passedByValue
                 get_().registerClock_(clock_id, std::string(name));
             }
 

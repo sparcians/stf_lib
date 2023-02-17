@@ -11,7 +11,7 @@ namespace stf {
      * \class STFTransactionReader
      * Buffered transaction record reader. Returns STFTransaction objects.
      */
-    class STFTransactionReader : public STFBufferedReader<STFTransaction, DummyFilter, STFTransactionReader, STFTransactionRecordReader> {
+    class STFTransactionReader final : public STFBufferedReader<STFTransaction, DummyFilter, STFTransactionReader, STFTransactionRecordReader> {
         private:
             using ParentReader = STFBufferedReader<STFTransaction, DummyFilter, STFTransactionReader, STFTransactionRecordReader>;
             friend ParentReader;

@@ -983,6 +983,7 @@ namespace stf {
                 /**
                  * Constructs a TileLink channel wrapped in a TileLink protocol object, wrapped in a TransactionRecord
                  * \param id_manager IdManager that tracks the ID values for the current transaction stream
+                 * \param clock_id ID of the clock domain corresponding to this channel
                  * \param time_delta Time delta to use
                  * \param args Arguments passed to channel data constructor
                  */

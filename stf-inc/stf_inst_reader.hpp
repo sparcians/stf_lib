@@ -23,6 +23,8 @@
 #include "stf_exception.hpp"
 #include "stf_filter_types.hpp"
 #include "stf_inst.hpp"
+#include "stf_page_table.hpp"
+#include "stf_pte_reader.hpp"
 #include "stf_record.hpp"
 #include "stf_record_types.hpp"
 
@@ -43,7 +45,7 @@ namespace stf {
      *
      */
     template<typename FilterType>
-    class STFInstReaderBase: public STFUserModeSkippingReader<STFInst, FilterType, STFInstReaderBase<FilterType>> {
+    class STFInstReaderBase final : public STFUserModeSkippingReader<STFInst, FilterType, STFInstReaderBase<FilterType>> {
         private:
             using ParentReader = STFUserModeSkippingReader<STFInst, FilterType, STFInstReaderBase<FilterType>>;
             friend ParentReader;
@@ -64,6 +66,7 @@ namespace stf {
             using ParentReader::skippingEnabled_;
 
             const bool filter_mode_change_events_ = false; // Filters out all mode change events if true
+            bool enable_address_translation_ = false;
 
             bool iem_changes_allowed_ = false;
 
@@ -71,8 +74,7 @@ namespace stf {
             uint32_t tgid_ = 0;             // current tgid
             uint32_t tid_ = 0;              // current tid;
             uint32_t asid_ = 0;             // current asid;
-            bool pte_end_ = false;              // whether get all initial PTEs
-            STFReader pte_reader_;     // the stf-pte reader;
+            std::unique_ptr<STFPTEReader> pte_reader_;       // the STF PTE reader;
 
 #ifdef STF_INST_HAS_IEM
             bool initial_iem_ = true;
@@ -83,34 +85,12 @@ namespace stf {
 
             std::unique_ptr<STFRegState> reg_state_; // Tracks register states when instructions are being skipped
 
-            /**
-             * \brief Helper function to read records in the separated PTE file.
-             * The separate PTE trace file has header records - VERSION, COMMENT, TRACE_INFO;
-             * and PTE_ASID and PTE records; One ASID associates with the following PTEs.
-             */
-            bool readPte_(STFRecord::ConstHandle<PageTableWalkRecord> &pte) {
-                if(pte_end_) {
-                    return false;
-                }
-
-                STFRecord::UniqueHandle rec;
-                while(pte_reader_ >> rec) {
-                    if(STF_EXPECT_FALSE(rec->getId() == IntDescriptor::STF_PAGE_TABLE_WALK)) {
-                        STFRecord::grabOwnership(pte, rec);
-                        break;
-                    }
-                }
-
-                pte_end_ = !static_cast<bool>(pte_reader_);
-                return !pte_end_;
-            }
-
             __attribute__((hot, always_inline))
             inline size_t rawNumRead_() const {
                 return rawNumInstsRead();
             }
 
-            // read STF records to construction a STFInst instance
+            // read STF records to construct an STFInst instance
             __attribute__((hot, always_inline))
             inline void readNext_(STFInst& inst) {
                 delegates::STFInstDelegate::reset_(inst);
@@ -264,19 +244,19 @@ namespace stf {
 
                             // These descriptors don't need any special handling
                             case IntDescriptor::STF_COMMENT:
-                            case IntDescriptor::STF_INST_MICROOP:
                             case IntDescriptor::STF_INST_READY_REG:
                             case IntDescriptor::STF_PAGE_TABLE_WALK:
                             case IntDescriptor::STF_BUS_MASTER_ACCESS:
                             case IntDescriptor::STF_BUS_MASTER_CONTENT:
+                            case IntDescriptor::STF_INST_MICROOP:
                                 break;
 
                             // These descriptors *should* never be seen since they are header-only
-                            case IntDescriptor::STF_TRACE_INFO:
                             case IntDescriptor::STF_IDENTIFIER:
-                            case IntDescriptor::STF_VERSION:
                             case IntDescriptor::STF_ISA:
+                            case IntDescriptor::STF_TRACE_INFO:
                             case IntDescriptor::STF_TRACE_INFO_FEATURE:
+                            case IntDescriptor::STF_VERSION:
                             case IntDescriptor::STF_VLEN_CONFIG:
                             case IntDescriptor::STF_END_HEADER:
                                 stf_throw("Saw an unexpected record outside of the header: " << desc);
@@ -300,55 +280,6 @@ namespace stf {
                         };
                     }
                 }
-            }
-
-            /**
-             * \brief Helper function to open the separated PTE file.
-             * The trace file has file extension .stf and the separated PTE file
-             * has .stf-pte as file extension.
-             * \param stffn The trace file name
-             * \param force_single_threaded_stream If true, forces single threaded mode in reader
-             */
-            bool openPTE_(const std::string_view stffn, const bool force_single_threaded_stream = false) {
-                static constexpr std::string_view stf_extension = ".stf";
-                static constexpr std::string_view stf_compressed_extension = ".stf.?z";
-                static constexpr std::string_view stf_xz_extension = ".stf.xz";
-                static constexpr std::string_view stf_gz_extension = ".stf.gz";
-
-                size_t len = stffn.length();
-                if (len <= stf_extension.size()) {
-                    return false;
-                }
-
-                // get pte file name;
-                std::string ptefn;
-
-                // Check if the file is compressed; 7 is length of ".stf.xz" etc;
-                if (len > stf_compressed_extension.size()) {
-                    if (stffn.rfind(stf_xz_extension) != std::string::npos) {
-                        ptefn = stffn;
-                        ptefn.replace(len - stf_xz_extension.size(), stf_xz_extension.size(), ".stf-pte.xz");
-                    } else if (stffn.rfind(stf_gz_extension) != std::string::npos) {
-                        ptefn = stffn;
-                        ptefn.replace(len - stf_gz_extension.size(), stf_gz_extension.size(), ".stf-pte.gz");
-                    }
-                }
-
-                // Check the uncompressed file with extension ".stf". 4 is length of extension
-                if (ptefn.empty() && (len > stf_xz_extension.size())) {
-                    if (stffn.find_last_of(".stf") == len - 1) {
-                        ptefn = stffn;
-                        ptefn += "-pte";
-                    }
-                }
-
-                // check if stf-pte exist;
-                struct stat buffer;
-                if (!ptefn.empty() && (stat(ptefn.c_str(), &buffer) == 0)) {
-                    pte_reader_.open(ptefn, force_single_threaded_stream);
-                }
-
-                return static_cast<bool>(pte_reader_);
             }
 
             __attribute__((always_inline))
@@ -379,6 +310,10 @@ namespace stf {
 
                 initItemIndex_(inst);
                 delegates::STFInstDelegate::setFlag_(inst, STFInst::INST_VALID);
+
+                if(enable_address_translation_) {
+                    delegates::STFInstDelegate::setPTEReader_(inst, pte_reader_.get());
+                }
             }
 
             __attribute__((always_inline))
@@ -400,6 +335,14 @@ namespace stf {
                 reg_state_->stateClear();
             }
 
+            /**
+             * Disables fast seeking when non-user mode skipping is enabled
+             */
+            __attribute__((always_inline))
+            inline bool slowSeek_() const {
+                return ParentReader::slowSeek_();
+            }
+
         public:
             using ParentReader::getInitialIEM;
             using ParentReader::getISA;
@@ -408,7 +351,7 @@ namespace stf {
              * \brief Constructor
              * \param filename The trace file name
              * \param only_user_mode If true, non-user-mode instructions will be skipped
-             * \param check_stf_pte Check for a PTE STF
+             * \param enable_address_translation If true, will spawn an additional thread to read page translations
              * \param filter_mode_change_events If true, all mode change events will be filtered out
              * \param buffer_size The size of the instruction sliding window
              * \param force_single_threaded_stream If true, forces single threaded mode in reader
@@ -416,147 +359,15 @@ namespace stf {
             template<typename StrType>
             explicit STFInstReaderBase(const StrType& filename,
                                        const bool only_user_mode = false,
-                                       const bool check_stf_pte = false,
+                                       const bool enable_address_translation = false,
                                        const bool filter_mode_change_events = false,
                                        const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
                                        const bool force_single_threaded_stream = false) :
                 ParentReader(only_user_mode, buffer_size),
                 filter_mode_change_events_(filter_mode_change_events)
             {
-                open(filename, check_stf_pte, force_single_threaded_stream);
+                open(filename, enable_address_translation, force_single_threaded_stream);
             }
-
-            /**
-             * \class pte_iterator
-             *
-             * Class that implements an iterator for page table entries
-             */
-            class pte_iterator {
-                private:
-                    STFInstReaderBase *sir_ = nullptr;        // the instruction reader
-                    bool end_ = true;                  // whether this is an end iterator
-                    STFRecord::ConstHandle<PageTableWalkRecord> pte_; // store the current PTE content
-                    size_t index_ = 0;            // index to the PTEs
-
-                public:
-                    /**
-                     * \typedef difference_type
-                     * Type used for finding difference between two iterators
-                     */
-                    using difference_type = std::ptrdiff_t;
-
-                    /**
-                     * \typedef value_type
-                     * Type pointed to by this iterator
-                     */
-                    using value_type = PageTableWalkRecord;
-
-                    /**
-                     * \typedef pointer
-                     * Pointer to a value_type
-                     */
-                    using pointer = const PageTableWalkRecord*;
-
-                    /**
-                     * \typedef reference
-                     * Reference to a value_type
-                     */
-                    using reference = const PageTableWalkRecord&;
-
-                    /**
-                     * \typedef iterator_category
-                     * Iterator type - using forward_iterator_tag because backwards iteration is not currently supported
-                     */
-                    using iterator_category = std::forward_iterator_tag;
-
-                    /**
-                     * \brief Default constructor
-                     *
-                     */
-                    pte_iterator() = default;
-
-                    /**
-                     * \brief Constructor
-                     * \param sir The STF instruction reader to iterate
-                     * \param end Whether this is an end iterator
-                     *
-                     */
-                    explicit pte_iterator(STFInstReaderBase *sir, const bool end = false) :
-                        sir_(sir),
-                        index_(1)
-                    {
-                        if (!end) {
-                            stf_assert(sir, "A pte_iterator must have a valid STFInstReader unless it is an end iterator");
-                        }
-
-                        end_ = end | sir_->pte_end_;
-                        if (!end_) {
-                            end_ = !sir->readPte_(pte_);
-                        }
-                    }
-
-                    ~pte_iterator() = default;
-
-                    /**
-                     * \brief Pre-increment operator
-                     */
-                    pte_iterator & operator++() {
-                        stf_assert(!end_, "Can't increment the end pte_iterator");
-                        end_ = !sir_->readPte_(pte_);
-                        index_ ++;
-                        return *this;
-                    }
-
-                    /**
-                     * \brief Post-increment operator
-                     */
-                    pte_iterator & operator++(int) {
-                        return operator++();
-                    }
-
-                    /**
-                     * \brief The equal operator to check ending
-                     * \param rv The iterator to compare with
-                     */
-                    bool operator==(const pte_iterator& rv) const {
-                        if (end_ || rv.end_) {
-                            return end_ && rv.end_;
-                        }
-
-                        return index_ == rv.index_;
-                    }
-
-                    /**
-                     * \brief The unequal operator to check ending
-                     * \param rv The iterator to compare with
-                     */
-                    bool operator!=(const pte_iterator& rv) const {
-                        return !operator==(rv);
-                    }
-
-                    /**
-                     * \brief Return the STFPTE pointer the iterator points to
-                     */
-                    const auto& current() const {
-                        static const decltype(pte_) NULL_PTR;
-
-                        if (!end_) {
-                            return pte_;
-                        }
-
-                        return NULL_PTR;
-                    }
-
-                    /**
-                     * \brief Return the STFPTE pointer the iterator points to
-                     */
-                    const value_type& operator*() const { return *current(); }
-
-                    /**
-                     * \brief Return the STFPTE pointer the iterator points to
-                     */
-                    pointer operator->() const { return current().get(); }
-            };
 
             /**
              * \class iterator
@@ -585,41 +396,29 @@ namespace stf {
             };
 
             /**
-             * \brief The beginning of the PTE stream
-             *
-             */
-            inline pte_iterator pteBegin() { return pte_iterator(this); }
-
-            /**
-             * \brief The end of the PTE stream
-             *
-             */
-            inline const pte_iterator& pteEnd() {
-                static const auto end_it = pte_iterator(this, true);
-                return end_it;
-            }
-
-            /**
              * \brief Opens a file
              * \param filename The trace file name
-             * \param check_stf_pte Check for a PTE STF
+             * \param enable_address_translation If true, will spawn an additional thread to read page translations
              * \param force_single_threaded_stream If true, forces single threaded mode in reader
              */
             void open(const std::string_view filename,
-                      const bool check_stf_pte = false,
+                      const bool enable_address_translation = false,
                       const bool force_single_threaded_stream = false) {
                 ParentReader::open(filename, force_single_threaded_stream);
                 asid_ = 0;
                 tid_ = 0;
                 tgid_ = 0;
-                pte_end_ = false;
                 last_iem_ = getInitialIEM();
                 iem_changes_allowed_ = (getISA() != ISA::RISCV);
+                enable_address_translation_ = enable_address_translation;
 
-                //open pte file;
-                if (!openPTE_(filename)) {
-                    pte_end_ = true;
-                    stf_assert(!check_stf_pte, "Check for stf-pte file was enabled but no stf-pte was found for " << filename);
+                if(enable_address_translation_) {
+                    if(!pte_reader_) {
+                        pte_reader_ = std::make_unique<STFPTEReader>(filename);
+                    }
+                    else {
+                        pte_reader_->open(filename);
+                    }
                 }
 
                 if(STF_EXPECT_TRUE(reg_state_)) {
@@ -635,7 +434,9 @@ namespace stf {
              */
             int close() final {
                 last_iem_ = INST_IEM::STF_INST_IEM_INVALID;
-                pte_reader_.close();
+                if(enable_address_translation_ && pte_reader_) {
+                    pte_reader_->close();
+                }
                 return ParentReader::close();
             }
 

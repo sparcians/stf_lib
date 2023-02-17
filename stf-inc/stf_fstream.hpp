@@ -46,7 +46,7 @@ namespace stf {
              * \param filename filename to check
              * \param ext extension to check for
              */
-            static inline bool check_extension_(const std::string_view filename, const std::string_view ext) {
+            static inline bool check_extension_(const std::string_view filename, const std::string_view ext) { // cppcheck-suppress passedByValue
                 return filename.rfind(ext) != std::string_view::npos;
             }
 
@@ -56,7 +56,7 @@ namespace stf {
              * \param filename filename to run command with
              * \param mode read-write mode
              */
-            static inline FILE* popen_cmd_(const std::string_view cmd, const std::string_view filename, const char* mode) {
+            static inline FILE* popen_cmd_(const std::string_view cmd, const std::string_view filename, const char* mode) { // cppcheck-suppress passedByValue
                 std::stringstream ss;
                 ss << cmd << filename;
                 return popen(ss.str().c_str(), mode);
@@ -130,7 +130,7 @@ namespace stf {
              * \param filename The filename to run the command with
              * \param rw_mode R/W mode
              */
-            inline void openWithProcess(const std::string_view cmd, const std::string_view filename, const char* rw_mode) {
+            inline void openWithProcess(const std::string_view cmd, const std::string_view filename, const char* rw_mode) { // cppcheck-suppress passedByValue
                 stream_ = popen_cmd_(cmd, filename, rw_mode);
                 used_popen_ = true;
                 stf_assert(stream_, "Failed to run command: " << cmd << ' ' << filename);
@@ -142,7 +142,7 @@ namespace stf {
              * \param filename The file to open
              * \param rw_mode R/W mode
              */
-            inline void open(const std::string_view filename, const std::string_view rw_mode) {
+            inline void open(const std::string_view filename, const std::string_view rw_mode) { // cppcheck-suppress passedByValue
                 // special handling for stdin/stdout
                 if(filename.compare("-") == 0) {
                     if(rw_mode.compare("rb") == 0) {

@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace stf {
-    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType>
+    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered>
     class STFBufferedReader;
 
     template<typename ItemType, typename FilterType, typename ReaderType>
@@ -59,6 +59,7 @@ namespace stf {
     class STFSkippableItem : public STFItem {
         private:
             friend class delegates::STFSkippableItemDelegate;
+            uint64_t unskipped_index_ = 0; /**< Corresponds to actual index in the trace, i.e. index item would have if there was no skipping enabled */
             bool skipped_ = false; /**< If true, item should be skipped */
 
         protected:
@@ -80,13 +81,33 @@ namespace stf {
                 skipped_ = skipped;
             }
 
+            /**
+             * Sets the index
+             * \param index Index value to set
+             * \param unskipped_index Actual index within the trace (i.e., the index the item would
+             * have if there was no skipping)
+             */
+            __attribute__((always_inline))
+            inline void setIndex_(const uint64_t index, const uint64_t unskipped_index) {
+                STFItem::setIndex_(index);
+                unskipped_index_ = unskipped_index;
+            }
+
         public:
             /**
-             * \brief Item index (starting from 1)
-             * \return Item index
+             * \brief Returns whether an item should be skipped
+             * \return True if the item should be skipped
              */
             inline bool skipped() const {
                 return skipped_;
+            }
+
+            /**
+             * \brief Returns the index this item would have if there was no skipping
+             * \return Unskipped index
+             */
+            inline uint64_t unskippedIndex() const {
+                return unskipped_index_;
             }
     };
 
@@ -107,7 +128,7 @@ namespace stf {
                     item.setIndex_(index);
                 }
 
-                template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType>
+                template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered>
                 friend class stf::STFBufferedReader;
         };
 
@@ -127,8 +148,22 @@ namespace stf {
                     item.setSkipped_(skipped);
                 }
 
+                /**
+                 * Sets the index
+                 * \param item Item to modify
+                 * \param index Index value to set
+                 * \param unskipped_index Actual index within the trace (i.e., the index the item would
+                 * have if there was no skipping)
+                 */
+                __attribute__((always_inline))
+                static inline void setIndex_(STFSkippableItem& item,
+                                             const uint64_t index,
+                                             const uint64_t unskipped_index) {
+                    item.setIndex_(index, unskipped_index);
+                }
+
                 template<typename ItemType, typename FilterType, typename ReaderType>
-                friend class STFUserModeSkippingReader;
+                friend class stf::STFUserModeSkippingReader;
         };
     } // end namespace delegates
 } // end namespace stf

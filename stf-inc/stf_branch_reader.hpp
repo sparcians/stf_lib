@@ -38,7 +38,7 @@ namespace stf {
      * \class STFBranchReader
      * \brief The STF branch reader provides an iterator to the branches in the instruction stream
      */
-    class STFBranchReader: public STFUserModeSkippingReader<STFBranch, DummyFilter, STFBranchReader> {
+    class STFBranchReader final : public STFUserModeSkippingReader<STFBranch, DummyFilter, STFBranchReader> {
         private:
             using ParentReader = STFUserModeSkippingReader<STFBranch, DummyFilter, STFBranchReader>;
             friend ParentReader;
@@ -285,13 +285,6 @@ namespace stf {
             void open(const std::string_view filename,
                       const bool force_single_threaded_stream = false) {
                 ParentReader::open(filename, force_single_threaded_stream);
-            }
-
-            /**
-             * \brief Closes the file
-             */
-            int close() {
-                return STFReader::close();
             }
 
             /**

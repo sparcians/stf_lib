@@ -62,7 +62,7 @@ namespace stf {
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
             template <typename T>
-            inline size_t direct_read_(T* data, size_t size, bool ignore_end_of_chunks = false) {
+            inline size_t direct_read_(T* data, size_t size, const bool ignore_end_of_chunks = false) {
                 last_read_pos_ = ftell(stream_);
                 const off_t next_read_end = last_read_pos_ + static_cast<off_t>(size);
 
@@ -88,7 +88,7 @@ namespace stf {
              */
             template <typename T>
             inline std::enable_if_t<std::is_enum_v<T>, size_t>
-            direct_read_(T& data, bool ignore_end_of_chunks = false) {
+            direct_read_(T& data, const bool ignore_end_of_chunks = false) {
                 enums::int_t<T> val;
                 size_t num_bytes = direct_read_(&val, 1, ignore_end_of_chunks);
                 data = static_cast<T>(val);
@@ -102,7 +102,7 @@ namespace stf {
              */
             template <typename T>
             inline std::enable_if_t<std::is_arithmetic_v<T>, size_t>
-            direct_read_(T& data, bool ignore_end_of_chunks = false) {
+            direct_read_(T& data, const bool ignore_end_of_chunks = false) {
                 return direct_read_(&data, 1, ignore_end_of_chunks);
             }
 
@@ -111,7 +111,7 @@ namespace stf {
              * \param data Buffer to read data into
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
-            inline size_t direct_read_(ChunkOffset& data, bool ignore_end_of_chunks = false) {
+            inline size_t direct_read_(ChunkOffset& data, const bool ignore_end_of_chunks = false) {
                 off_t offset;
                 uint64_t start_pc;
                 size_t chunk_size;
@@ -128,7 +128,7 @@ namespace stf {
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
             template <typename T, size_t N>
-            inline size_t direct_read_(std::array<T, N>& data, bool ignore_end_of_chunks = false) {
+            inline size_t direct_read_(std::array<T, N>& data, const bool ignore_end_of_chunks = false) {
                 return direct_read_(data, N, ignore_end_of_chunks);
             }
 
@@ -139,7 +139,7 @@ namespace stf {
              * \param ignore_end_of_chunks if true, will allow reading past the end of the compressed chunks
              */
             template <typename T, size_t N>
-            inline size_t direct_read_(std::array<T, N>& data, size_t size, bool ignore_end_of_chunks = false) {
+            inline size_t direct_read_(std::array<T, N>& data, const size_t size, const bool ignore_end_of_chunks = false) {
                 return direct_read_(data.data(), size, ignore_end_of_chunks);
             }
 
@@ -150,7 +150,7 @@ namespace stf {
              */
             template <typename T>
             inline std::enable_if_t<type_utils::is_arithmetic_or_enum_v<T>, size_t>
-            direct_read_(std::vector<T>& data, bool ignore_end_of_chunks = false) {
+            direct_read_(std::vector<T>& data, const bool ignore_end_of_chunks = false) {
                 size_t size;
                 direct_read_(size, ignore_end_of_chunks);
                 data.resize(size);
@@ -165,7 +165,7 @@ namespace stf {
              */
             template <typename T>
             inline std::enable_if_t<std::negation_v<type_utils::is_arithmetic_or_enum<T>>, size_t>
-            direct_read_(std::vector<T>& data, bool ignore_end_of_chunks = false) {
+            direct_read_(std::vector<T>& data, const bool ignore_end_of_chunks = false) {
                 size_t size;
                 direct_read_(size, ignore_end_of_chunks);
                 data.resize(size);
@@ -376,7 +376,7 @@ namespace stf {
              * Opens a file
              * \param filename Filename to open
              */
-            void open(const std::string_view filename) override {
+            void open(const std::string_view filename) override { // cppcheck-suppress passedByValue
                 STFFstream::open(filename, "r");
                 // Check the magic string
                 std::array<char, Decompressor::getMagic().size() + 1> magic_str = {'\0'};

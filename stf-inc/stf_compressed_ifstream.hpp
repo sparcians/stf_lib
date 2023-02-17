@@ -17,7 +17,7 @@ namespace stf {
      * Provides transparent on-the-fly decompression of a compressed STF file
      */
     template<typename Decompressor>
-    class STFCompressedIFstream : public STFCompressedIFstreamBase<Decompressor, STFCompressedIFstream<Decompressor>> {
+    class STFCompressedIFstream final : public STFCompressedIFstreamBase<Decompressor, STFCompressedIFstream<Decompressor>> {
         private:
             using base_class = STFCompressedIFstreamBase<Decompressor, STFCompressedIFstream<Decompressor>>;
 
@@ -84,7 +84,7 @@ namespace stf {
              *
              * \param filename Filename to open
              */
-            explicit STFCompressedIFstream(const std::string_view filename) :
+            explicit STFCompressedIFstream(const std::string_view filename) : // cppcheck-suppress passedByValue
                 STFCompressedIFstream()
             {
                 open(filename);
@@ -101,7 +101,7 @@ namespace stf {
              * Opens a file
              * \param filename Filename to open
              */
-            void open(const std::string_view filename) final {
+            void open(const std::string_view filename) final { // cppcheck-suppress passedByValue
                 base_class::open(filename);
                 decompressed_buf_.initSize(block_size_);
                 // Read the next chunk

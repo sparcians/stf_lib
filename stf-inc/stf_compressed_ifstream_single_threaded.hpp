@@ -15,7 +15,7 @@ namespace stf {
      * Provides transparent on-the-fly decompression of a compressed STF file. Single-threaded implementation.
      */
     template<typename Decompressor>
-    class STFCompressedIFstreamSingleThreaded : public STFCompressedIFstreamBase<Decompressor, STFCompressedIFstreamSingleThreaded<Decompressor>> {
+    class STFCompressedIFstreamSingleThreaded final : public STFCompressedIFstreamBase<Decompressor, STFCompressedIFstreamSingleThreaded<Decompressor>> {
         private:
             using base_class = STFCompressedIFstreamBase<Decompressor, STFCompressedIFstreamSingleThreaded<Decompressor>>;
 
@@ -65,7 +65,7 @@ namespace stf {
              *
              * \param filename Filename to open
              */
-            explicit STFCompressedIFstreamSingleThreaded(const std::string_view filename) :
+            explicit STFCompressedIFstreamSingleThreaded(const std::string_view filename) : // cppcheck-suppress passedByValue
                 STFCompressedIFstreamSingleThreaded()
             {
                 base_class::open(filename);

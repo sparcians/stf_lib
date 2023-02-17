@@ -27,7 +27,7 @@ namespace stf {
              * \param filename filename to check
              * \param ext extension to check for
              */
-            static constexpr bool check_extension_(const std::string_view filename, const std::string_view ext) {
+            static constexpr bool check_extension_(const std::string_view filename, const std::string_view ext) { // cppcheck-suppress passedByValue
                 return filename.rfind(ext) != std::string_view::npos;
             }
 
@@ -38,7 +38,7 @@ namespace stf {
              * Gets and remembers the file type based on the file extension
              * \param filename Filename to get the file type for
              */
-            STF_FILE_TYPE getFileType_(const std::string_view filename) {
+            STF_FILE_TYPE getFileType_(const std::string_view filename) { // cppcheck-suppress passedByValue
                 file_type_ = guessFileType(filename);
                 return file_type_;
             }
@@ -82,7 +82,7 @@ namespace stf {
              * Guesses the file type based on the file extension
              * \param filename Filename to get file type for
              */
-            static constexpr STF_FILE_TYPE guessFileType(std::string_view filename) {
+            static constexpr STF_FILE_TYPE guessFileType(const std::string_view filename) { // cppcheck-suppress passedByValue
                 constexpr std::string_view gz_ext = ".stf.gz";
                 constexpr std::string_view xz_ext = ".stf.xz";
                 constexpr std::string_view sh_ext = ".sh";
@@ -114,7 +114,7 @@ namespace stf {
             /**
              * Returns whether the file is compressed
              */
-            static constexpr bool isCompressedFile(STF_FILE_TYPE filetype) {
+            static constexpr bool isCompressedFile(const STF_FILE_TYPE filetype) {
                 switch(filetype) {
                     case STF_FILE_TYPE::ZSTF:
                     case STF_FILE_TYPE::STF_GZ:
@@ -133,7 +133,7 @@ namespace stf {
             /**
              * Returns whether the file is compressed
              */
-            static inline bool isCompressedFile(std::string_view filename) {
+            static inline bool isCompressedFile(const std::string_view filename) { // cppcheck-suppress passedByValue
                 return isCompressedFile(guessFileType(filename));
             }
 

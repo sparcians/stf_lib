@@ -30,8 +30,8 @@ namespace stf {
      * \class STFBufferedReader
      * \brief The STFBufferedReader provides an iterator to a buffered stream of objects constructed from a trace
      */
-    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType>
-    class STFBufferedReader: public BaseReaderType {
+    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered = false>
+    class STFBufferedReader : public BaseReaderType {
         private:
             static_assert(std::is_base_of_v<STFReaderBase, BaseReaderType>,
                           "BaseReaderType must inherit from STFReaderBase");
@@ -299,6 +299,14 @@ namespace stf {
             }
 
             /**
+             * Returns the number of items that have been skipped
+             */
+            __attribute__((always_inline))
+            inline size_t numItemsSkipped_() const {
+                return num_skipped_items_;
+            }
+
+            /**
              * Initializes item index
              */
             __attribute__((always_inline))
@@ -384,8 +392,8 @@ namespace stf {
                 STFRecord::UniqueHandle urec;
                 BaseReaderType::operator>>(urec);
 
-                if(STF_EXPECT_FALSE(filter_.isFiltered(urec->getId()))) {
-                    return nullptr;
+                if(STF_EXPECT(filter_.isFiltered(urec->getId()), assume_filtered)) {
+                        return nullptr;
                 }
 
                 return handleNewItemRecord_(item, std::move(urec));

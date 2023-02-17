@@ -187,16 +187,22 @@ namespace stf
 } //end namespace stf
 
 /**
+ * \def STF_EXPECT
+ * Convenience macro to mark the likely direction of a conditional
+ */
+#define STF_EXPECT(x, dir) __builtin_expect(!!(x), (dir))
+
+/**
  * \def STF_EXPECT_TRUE
  * Convenience macro to mark a conditional as likely-true
  */
-#define STF_EXPECT_TRUE(x) __builtin_expect(!!(x), true)
+#define STF_EXPECT_TRUE(x) STF_EXPECT(x, true)
 
 /**
  * \def STF_EXPECT_FALSE
  * Convenience macro to mark a conditional as likely-false
  */
-#define STF_EXPECT_FALSE(x) __builtin_expect(!!(x), false)
+#define STF_EXPECT_FALSE(x) STF_EXPECT(x, false)
 
 /**
  * \def ADD_FILE_INFORMATION

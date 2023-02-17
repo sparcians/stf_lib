@@ -24,11 +24,10 @@ namespace stf {
         format_utils::formatSpaces(os, 7);
         format_utils::formatVA(os, access.getAddress());
 
-        /* TODO: Figure out physical address support
         if (format_utils::showPhys()) {
             os << ':';
-            format_utils::formatPA(os, access.paddr_);
-        }*/
+            format_utils::formatPA(os, access.getPhysAddress());
+        }
         format_utils::formatSpaces(os, 5);
         format_utils::formatData(os, access.getData());
 
@@ -55,9 +54,6 @@ namespace stf {
         }
         format_utils::formatOperandLabel(os, reg.getLabel());
         format_utils::formatRegisterName(os, reg.rec_->getReg());
-        if(format_utils::showPhys()) {
-            format_utils::formatSpaces(os, format_utils::PA_WIDTH + 1);
-        }
         if(STF_EXPECT_FALSE(reg.rec_->isVector())) {
             const size_t INDENT = format_utils::OPERAND_LABEL_WIDTH +
                                   format_utils::REGISTER_NAME_WIDTH +

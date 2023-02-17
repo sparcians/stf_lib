@@ -60,9 +60,9 @@ namespace stf {
              * \param compression_level Compression level to use (-1 for default).
              * \param chunk_size Chunk size to use (Defaults to DEFAULT_CHUNK_SIZE)
              */
-            explicit STFWriterBase(std::string_view filename,
-                                   int compression_level = -1,
-                                   size_t chunk_size = DEFAULT_CHUNK_SIZE);
+            explicit STFWriterBase(const std::string_view filename, // cppcheck-suppress passedByValue
+                                   const int compression_level = -1,
+                                   const size_t chunk_size = DEFAULT_CHUNK_SIZE);
 
             /**
              * Opens the specified file for writing
@@ -196,7 +196,7 @@ namespace stf {
              * Writes an STFRecord
              * \param rec Record to write
              */
-            inline virtual STFWriterBase& operator<<(const STFRecord& rec) {
+            virtual inline STFWriterBase& operator<<(const STFRecord& rec) {
                 *stream_ << rec;
                 return *this;
             }

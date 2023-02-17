@@ -238,7 +238,7 @@ namespace stf {
              * \param args Optional arguments that will be passed to the underlying compressor
              */
             template<typename ... CompressorArgs>
-            STFCompressedOFstream(const std::string_view filename, const size_t chunk_size, CompressorArgs... args) :
+            STFCompressedOFstream(const std::string_view filename, const size_t chunk_size, CompressorArgs... args) : // cppcheck-suppress passedByValue
                 STFCompressedOFstream(args...)
             {
                 setChunkSize(chunk_size);
@@ -251,7 +251,7 @@ namespace stf {
              * \param args Optional arguments that will be passed to the underlying compressor
              */
             template<typename ... CompressorArgs>
-            explicit STFCompressedOFstream(const std::string_view filename, CompressorArgs... args) :
+            explicit STFCompressedOFstream(const std::string_view filename, CompressorArgs... args) : // cppcheck-suppress passedByValue
                 STFCompressedOFstream(filename, DEFAULT_CHUNK_SIZE, args...)
             {
             }
@@ -278,7 +278,7 @@ namespace stf {
              * \param filename Filename to open
              * \param chunk_size Number of marker records per chunk
              */
-            void open(const std::string_view filename, const size_t chunk_size) {
+            void open(const std::string_view filename, const size_t chunk_size) { // cppcheck-suppress passedByValue
                 setChunkSize(chunk_size);
                 open(filename);
             }
@@ -287,7 +287,7 @@ namespace stf {
              * Opens a file
              * \param filename Filename to open
              */
-            void open(const std::string_view filename) override {
+            void open(const std::string_view filename) override { // cppcheck-suppress passedByValue
                 static constexpr off_t ZERO = 0;
 
                 // Open the file

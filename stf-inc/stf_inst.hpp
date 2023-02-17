@@ -18,6 +18,7 @@
 #include "stf_branch_decoder.hpp"
 #include "stf_enums.hpp"
 #include "stf_item.hpp"
+#include "stf_pte_reader.hpp"
 #include "stf_record.hpp"
 #include "stf_record_map.hpp"
 #include "stf_record_types.hpp"
@@ -34,6 +35,8 @@ namespace stf {
         class STFInstDelegate;
     } // end namespace delegates
 
+    class STFInst;
+
     /**
      * \class MemAccess
      * \brief Defines address and data of a memory access
@@ -41,27 +44,19 @@ namespace stf {
      */
     class MemAccess {
         private:
+            const STFInst* inst_;
             const InstMemAccessRecord* access_ = nullptr;
             const InstMemContentRecord* data_ = nullptr;
 
         public:
-            MemAccess() = default;
-
             /**
              * Constructs a MemAccess
-             * \param record Pointer to underlying InstMemAccessRecord
-             */
-            explicit MemAccess(const STFRecord* const record) :
-                access_(static_cast<const InstMemAccessRecord*>(record))
-            {
-            }
-
-            /**
-             * Constructs a MemAccess
+             * \param inst Parent STFInst object
              * \param access_record Pointer to underlying InstMemAccessRecord
              * \param content_record Pointer to underlying InstMemContentRecord
              */
-            MemAccess(const STFRecord* const access_record, const STFRecord* const content_record) :
+            MemAccess(const STFInst* inst, const STFRecord* const access_record, const STFRecord* const content_record = nullptr) :
+                inst_(inst),
                 access_(static_cast<const InstMemAccessRecord*>(access_record)),
                 data_(static_cast<const InstMemContentRecord*>(content_record))
             {
@@ -92,6 +87,16 @@ namespace stf {
              * Gets address of access
              */
             inline uint64_t getAddress() const { return access_->getAddress(); }
+
+            /**
+             * Gets physical address of access
+             */
+            inline uint64_t getPhysAddress() const;
+
+            /**
+             * Gets whether address translation is available
+             */
+            inline bool addressTranslationEnabled() const;
 
             /**
              * Gets data of access
@@ -402,6 +407,8 @@ namespace stf {
             static const boost::container::flat_set<descriptors::internal::Descriptor> SKIPPED_PAIRED_RECORDS_;
 
         protected:
+            const STFPTEReader* pte_reader_ = nullptr; /**< Pointer to page table */
+
             uint64_t branch_target_ = 0; /**< branch target PC */
             uint64_t pc_ = 0; /**< PC of the instruction */
 
@@ -923,6 +930,18 @@ namespace stf {
             }
 
             /**
+             * \brief Appends a new MemAccess
+             * \param type Memory access type
+             * \param access_record Memory access record
+             * \param content_record Memory content record
+             */
+            inline void appendMemAccess_(const INST_MEM_ACCESS type,
+                                         const STFRecord* const access_record,
+                                         const STFRecord* const content_record) {
+                getMemAccessVector_(type).emplace_back(this, access_record, content_record);
+            }
+
+            /**
              * \brief Gets the vector of memory access records of the given type
              * \param type Type of memory access to get
              */
@@ -949,6 +968,13 @@ namespace stf {
             inline const OperandVector& getOperandVector_(const Registers::STF_REG_OPERAND_TYPE type) const {
                 const auto idx = static_cast<size_t>(type) - 1;
                 return register_records_[idx];
+            }
+
+            /**
+             * Sets the pointer to the PTE reader to enable address translation
+             */
+            inline void setPTEReader_(const STFPTEReader* pte_reader) {
+                pte_reader_ = pte_reader;
             }
 
             /**
@@ -1047,6 +1073,50 @@ namespace stf {
                 const bool found_reg = (it != vec.end()) && (reg == it->getReg());
 
                 return std::make_pair(it, found_reg);
+            }
+
+            /**
+             * Translates a virtual address to a physical address based on the translation information present at the
+             * given trace index
+             * \param va Virtual address
+             * \param index Trace index
+             */
+            inline uint64_t getPA_(const uint64_t va, const uint64_t index) const {
+                if(!addressTranslationEnabled()) {
+                    return va;
+                }
+
+                try {
+                    return pte_reader_->translate(va, index);
+                }
+                catch(const STFTranslationException&) {
+                    // We were looking at a different index, but we don't know anything about other indices
+                    // It will probably cause a fault later, so return 0 for now
+                    if(index != unskippedIndex()) {
+                        return 0;
+                    }
+
+                    for(const auto& event: events_) {
+                        switch(event.getEvent()) {
+                            case EventRecord::TYPE::INST_ADDR_FAULT:
+                            case EventRecord::TYPE::LOAD_ACCESS_FAULT:
+                            case EventRecord::TYPE::STORE_ACCESS_FAULT:
+                            case EventRecord::TYPE::INST_PAGE_FAULT:
+                            case EventRecord::TYPE::LOAD_PAGE_FAULT:
+                            case EventRecord::TYPE::STORE_PAGE_FAULT:
+                                // Check if this fault corresponds to the given VA by checking the STVAL register
+                                if(const auto [it, found] = getDestOperand(Registers::STF_REG::STF_REG_CSR_STVAL); STF_EXPECT_FALSE(found && it->getScalarValue() == va)) {
+                                    // This instruction caused a fault by accessing the address, so return 0
+                                    return 0;
+                                }
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+                    stf_throw("Failed to translate address " << std::hex << va << " for non-faulting instruction at index " << std::dec << index);
+                }
             }
 
             /**
@@ -1279,6 +1349,16 @@ namespace stf {
             inline uint64_t branchTarget() const { return branch_target_; }
 
             /**
+             * \brief Branch target physical PC
+             * \return The branch target physical PC
+             */
+            inline uint64_t physBranchTarget() const {
+                // Branch target may not get translated until the
+                // *next* instruction, so use index + 1
+                return getPA_(branch_target_, unskippedIndex() + 1);
+            }
+
+            /**
              * Get the map of all records related to this instruction
              */
             inline const auto& getOrigRecords() const { return orig_records_; }
@@ -1409,7 +1489,7 @@ namespace stf {
             }
 
             /**
-             * Gets the vector of PageTableWalkRecords
+             * Gets the vector of PTEReaderWalkRecords
              */
             inline const auto& getEmbeddedPTEs() const {
                 return orig_records_.at(descriptors::internal::Descriptor::STF_PAGE_TABLE_WALK);
@@ -1465,6 +1545,14 @@ namespace stf {
              */
             inline uint64_t pc() const { return pc_; }
 
+            /**
+             * \brief Instruction virtual PC
+             * \return Instruction virtual PC
+             */
+            inline uint64_t physPc() const {
+                return getPA(pc_);
+            }
+
 #ifdef STF_INST_HAS_IEM
             /**
              * \brief Instruction Encoding Mode
@@ -1508,7 +1596,33 @@ namespace stf {
             inline bool isBranch() const {
                 return inst_flags_ & INST_IS_BRANCH;
             }
+
+            /**
+             * Gets whether address translation is enabled for this instruction
+             */
+            inline bool addressTranslationEnabled() const {
+                return pte_reader_;
+            }
+
+            /**
+             * Translates the given virtual address to a physical
+             * address using the translation information visible to
+             * this instruction
+             */
+            inline uint64_t getPA(const uint64_t va) const {
+                return getPA_(va, unskippedIndex());
+            }
     };
+
+    /**
+     * Gets physical address of access
+     */
+    inline bool MemAccess::addressTranslationEnabled() const { return inst_->addressTranslationEnabled(); }
+
+    /**
+     * Gets physical address of access
+     */
+    inline uint64_t MemAccess::getPhysAddress() const { return inst_->getPA(getAddress()); }
 
     namespace delegates {
         /**
@@ -1529,7 +1643,7 @@ namespace stf {
                                                     const INST_MEM_ACCESS type,
                                                     const STFRecord* const access_record,
                                                     const STFRecord* const content_record) {
-                    inst.getMemAccessVector_(type).emplace_back(access_record, content_record);
+                    inst.appendMemAccess_(type, access_record, content_record);
                 }
 
                 /**
@@ -1667,6 +1781,11 @@ namespace stf {
                             STFInst::appendOperand_(inst_reg_state, rec->template as<InstRegRecord>());
                         }
                     );
+                }
+
+                __attribute__((always_inline))
+                static inline void setPTEReader_(STFInst& inst, const STFPTEReader* pte_reader) {
+                    inst.setPTEReader_(pte_reader);
                 }
 
                 /**

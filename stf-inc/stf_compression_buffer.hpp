@@ -330,7 +330,7 @@ namespace stf {
      * Subclass of STFCompressionBuffer that grows its size exponentially instead of linearly
      * Useful for compression-side buffers that need to grow quickly
      */
-    class STFExponentialCompressionBuffer : public STFCompressionBuffer {
+    class STFExponentialCompressionBuffer final : public STFCompressionBuffer {
         private:
             /**
              * Gets the next physical size to store the desired new size

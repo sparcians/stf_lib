@@ -19,13 +19,13 @@ cdef class STFInstReader:
     def __cinit__(self,
                   string filename,
                   bint only_user_mode = False,
-                  bint check_stf_pte = False,
+                  bint enable_address_translation = False,
                   bint filter_mode_change_events = False,
                   size_t buffer_size = __DEFAULT_BUFFER_SIZE,
                   bint force_single_threaded_stream = False):
         self.c_reader = new _STFInstReader(filename,
                                           only_user_mode,
-                                          check_stf_pte,
+                                          enable_address_translation,
                                           filter_mode_change_events,
                                           buffer_size,
                                           force_single_threaded_stream)

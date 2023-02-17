@@ -33,9 +33,9 @@ namespace stf {
              * \param compression_level Compression level to use (-1 for default).
              * \param chunk_size Chunk size to use (Defaults to DEFAULT_CHUNK_SIZE)
              */
-            explicit STFTransactionWriter(std::string_view filename,
-                                          int compression_level = -1,
-                                          size_t chunk_size = DEFAULT_CHUNK_SIZE) :
+            explicit STFTransactionWriter(const std::string_view filename, // cppcheck-suppress passedByValue
+                                          const int compression_level = -1,
+                                          const size_t chunk_size = DEFAULT_CHUNK_SIZE) :
                 STFWriterBase(filename, compression_level, chunk_size)
             {
             }

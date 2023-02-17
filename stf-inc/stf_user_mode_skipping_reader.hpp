@@ -29,6 +29,8 @@ namespace stf {
 
             using BufferedReader::DEFAULT_BUFFER_SIZE_;
             using BufferedReader::getItem_;
+            using BufferedReader::rawNumItemsRead_;
+            using BufferedReader::numItemsSkipped_;
 
             /**
              * Returns whether the the specified item shouldbe skipped.
@@ -99,6 +101,17 @@ namespace stf {
             __attribute__((always_inline))
             static inline bool skipped_(const ItemType& item) {
                 return item.skipped();
+            }
+
+            /**
+             * Initializes item index
+             */
+            __attribute__((always_inline))
+            inline void initItemIndex_(ItemType& item) const {
+                const auto unskipped_index = rawNumItemsRead_();
+                delegates::STFSkippableItemDelegate::setIndex_(item,
+                                                               unskipped_index - numItemsSkipped_(),
+                                                               unskipped_index);
             }
 
         public:

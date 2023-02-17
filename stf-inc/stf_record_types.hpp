@@ -488,7 +488,7 @@ namespace stf {
              * \param clock_id clock ID value
              * \param name clock name
              */
-            explicit ClockIdRecord(const ClockId clock_id, const std::string_view name) :
+            explicit ClockIdRecord(const ClockId clock_id, const std::string_view name) : // cppcheck-suppress passedByValue
                 clock_id_(clock_id),
                 name_(std::string(name))
             {
@@ -662,8 +662,8 @@ namespace stf {
                      * Gets the PPN from the PTE
                      */
                     uint64_t getPPN() const {
-                        static constexpr size_t PTE_SHIFT = 10;
-                        return (pte_ >> PTE_SHIFT);
+                        static constexpr size_t PPN_SHIFT = 10;
+                        return pte_ >> PPN_SHIFT;
                     }
             };
 
@@ -2166,7 +2166,7 @@ namespace stf {
              * Sets the version from a formatted version string
              * \param ver_str Version string to parse
              */
-            void setVersion(const std::string_view ver_str) {
+            void setVersion(const std::string_view ver_str) { // cppcheck-suppress passedByValue
                 version_str_.clear();
 
                 std::stringstream ss(ver_str.data());
@@ -2254,7 +2254,7 @@ namespace stf {
              * Sets the comment
              * \param comment Comment string
              */
-            void setComment(const std::string_view comment) {
+            void setComment(const std::string_view comment) { // cppcheck-suppress passedByValue
                 comment_ = std::string(comment);
             }
 
@@ -2421,6 +2421,24 @@ namespace stf {
              */
             bool hasFeature(const TRACE_FEATURES feature) const {
                 return getFeatures() & enums::to_int(feature);
+            }
+
+            /**
+             * Checks whether any of the specified features are enabled
+             * \param features features to check
+             */
+            template<typename ... FeatureType>
+            std::enable_if_t<type_utils::are_same_v<TRACE_FEATURES, FeatureType...>, bool> hasAnyFeatures(const FeatureType... features) const {
+                return (hasFeature(features) || ...);
+            }
+
+            /**
+             * Checks whether all of the specified features are enabled
+             * \param features features to check
+             */
+            template<typename ... FeatureType>
+            std::enable_if_t<type_utils::are_same_v<TRACE_FEATURES, FeatureType...>, bool> hasAllFeatures(const FeatureType... features) const {
+                return (hasFeature(features) && ...);
             }
     };
 

@@ -75,37 +75,37 @@ namespace stf {
              * Contains widths for mapped registers
              */
             struct Widths {
-                static constexpr size_t FFLAGS_WIDTH = 5; /**< Width of FFLAGS register */
-                static constexpr size_t FRM_WIDTH = 3; /**< Width of FRM register */
-                static constexpr size_t FRM_SHIFT = FFLAGS_WIDTH; /**< FRM shift amount */
+                static constexpr size_t FFLAGS_WIDTH = 5; /**< Width of FFLAGS register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t FRM_WIDTH = 3; /**< Width of FRM register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t FRM_SHIFT = FFLAGS_WIDTH; /**< FRM shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t UIE_WIDTH = 1; /**< Width of UIE register */
-                static constexpr size_t SIE_WIDTH = 1; /**< Width of SIE register */
-                static constexpr size_t SIE_SHIFT = UIE_WIDTH; /**< SIE shift amount */
+                static constexpr size_t UIE_WIDTH = 1; /**< Width of UIE register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t SIE_WIDTH = 1; /**< Width of SIE register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t SIE_SHIFT = UIE_WIDTH; /**< SIE shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t MCYCLEH_WIDTH = 32; /**< Width of MCYCLEH register */
-                static constexpr size_t MCYCLEH_SHIFT = 32; /**< MCYCLEH shift amount */
+                static constexpr size_t MCYCLEH_WIDTH = 32; /**< Width of MCYCLEH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t MCYCLEH_SHIFT = 32; /**< MCYCLEH shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t MINSTRETH_WIDTH = 32; /**< Width of MINSTRETH register */
-                static constexpr size_t MINSTRETH_SHIFT = 32; /**< MINSTRETH shift amount */
+                static constexpr size_t MINSTRETH_WIDTH = 32; /**< Width of MINSTRETH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t MINSTRETH_SHIFT = 32; /**< MINSTRETH shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t CYCLEH_WIDTH = 32; /**< Width of CYCLEH register */
-                static constexpr size_t CYCLEH_SHIFT = 32; /**< CYCLEH shift amount */
+                static constexpr size_t CYCLEH_WIDTH = 32; /**< Width of CYCLEH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t CYCLEH_SHIFT = 32; /**< CYCLEH shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t TIMEH_WIDTH = 32; /**< Width of TIMEH register */
-                static constexpr size_t TIMEH_SHIFT = 32; /**< TIMEH shift amount */
+                static constexpr size_t TIMEH_WIDTH = 32; /**< Width of TIMEH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t TIMEH_SHIFT = 32; /**< TIMEH shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t INSTRETH_WIDTH = 32; /**< Width of INSTRETH register */
-                static constexpr size_t INSTRETH_SHIFT = 32; /**< INSTRETH shift amount */
+                static constexpr size_t INSTRETH_WIDTH = 32; /**< Width of INSTRETH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t INSTRETH_SHIFT = 32; /**< INSTRETH shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t MSECCFGH_WIDTH = 32; /**< Width of MSECCFGH register */
-                static constexpr size_t MSECCFGH_SHIFT = 32; /**< MSECCFGH shift amount */
+                static constexpr size_t MSECCFGH_WIDTH = 32; /**< Width of MSECCFGH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t MSECCFGH_SHIFT = 32; /**< MSECCFGH shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t MSTATUSH_WIDTH = 32; /**< Width of MSTATUSH register */
-                static constexpr size_t MSTATUSH_SHIFT = 32; /**< MSTATUSH shift amount */
+                static constexpr size_t MSTATUSH_WIDTH = 32; /**< Width of MSTATUSH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t MSTATUSH_SHIFT = 32; /**< MSTATUSH shift amount */ // cppcheck-suppress unusedStructMember
 
-                static constexpr size_t MENVCFGH_WIDTH = 32; /**< Width of MENVCFGH register */
-                static constexpr size_t MENVCFGH_SHIFT = 32; /**< MENVCFGH shift amount */
+                static constexpr size_t MENVCFGH_WIDTH = 32; /**< Width of MENVCFGH register */ // cppcheck-suppress unusedStructMember
+                static constexpr size_t MENVCFGH_SHIFT = 32; /**< MENVCFGH shift amount */ // cppcheck-suppress unusedStructMember
             };
 
             /**

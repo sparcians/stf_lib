@@ -65,7 +65,6 @@ namespace stf {
 
             /**
              * \brief Check STF and trace versions for compatibility
-             * \return true if the STF libray supports the trace; otherwise false
              */
             inline void checkVersion() const {
                 stf::checkVersion(major(), minor());

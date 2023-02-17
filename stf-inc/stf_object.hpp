@@ -335,6 +335,7 @@ namespace stf {
             static_assert(std::is_base_of_v<STFObject<BaseType, IdType, typename BaseType::factory_id_type>, BaseType>,
                         "BaseType must inherit from STFObject");
 
+            // cppcheck-suppress unusedPrivateFunction
             inline void pack(STFOFstream& writer) const final {
                 static_cast<const Type*>(this)->writeTraceId(writer);
                 static_cast<const Type*>(this)->pack_impl(writer);

@@ -3,7 +3,7 @@
 
 #include "setup.hpp"
 
-#define BOOST_POOL_NO_MT
+//#define BOOST_POOL_NO_MT
 #pragma push_macro("T0")
 #undef T0
 #pragma GCC diagnostic push
@@ -11,6 +11,6 @@
 #include <boost/pool/pool_alloc.hpp>
 #pragma GCC diagnostic pop
 #pragma pop_macro("T0")
-#undef BOOST_POOL_NO_MT
+//#undef BOOST_POOL_NO_MT
 
 #endif

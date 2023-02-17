@@ -325,7 +325,7 @@ namespace stf {
              * \param cmd Command to run
              * \param filename Filename to run the command on
              */
-            inline void openWithProcess(const std::string_view cmd, const std::string_view filename) {
+            inline void openWithProcess(const std::string_view cmd, const std::string_view filename) { // cppcheck-suppress passedByValue
                 STFFstream::openWithProcess(cmd, filename, "r");
             }
 
@@ -333,7 +333,7 @@ namespace stf {
              * Opens a file
              * \param filename Filename to open
              */
-            virtual void open(const std::string_view filename) {
+            virtual void open(const std::string_view filename) { // cppcheck-suppress passedByValue
                 STFFstream::open(filename, "rb");
             }
 

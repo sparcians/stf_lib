@@ -11,12 +11,12 @@
 #include "boost_wrappers/setup.hpp"
 #include "boost_wrappers/pool.hpp"
 
-#define BOOST_POOL_NO_MT
+//#define BOOST_POOL_NO_MT
 #pragma push_macro("S1")
 #undef S1
 #include <boost/container/static_vector.hpp>
 #pragma pop_macro("S1")
-#undef BOOST_POOL_NO_MT
+//#undef BOOST_POOL_NO_MT
 
 #include "stf_enum_utils.hpp"
 #include "type_utils.hpp"
@@ -28,9 +28,7 @@ namespace stf {
     /**
      * \class STFPool
      *
-     * Pool allocator for generic objects and derived classes
-     *
-     * NOT thread-safe
+     * Thread-safe pool allocator for generic objects and derived classes
      */
     template<typename BaseObjectType, typename Enum>
     class STFPool {
@@ -204,7 +202,7 @@ namespace stf {
                 public:
                     __attribute__((always_inline))
                     static inline STFObjectCache& get() {
-                        static STFObjectCache cache;
+                        static thread_local STFObjectCache cache;
                         return cache;
                     }
 
