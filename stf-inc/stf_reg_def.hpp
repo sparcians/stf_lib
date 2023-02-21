@@ -422,6 +422,7 @@ namespace stf {
         STF_REG_CSR_STVEC         = Codec::toCSR(0x105),
         STF_REG_CSR_SCOUNTEREN    = Codec::toCSR(0x106),
         STF_REG_CSR_STVT          = Codec::toCSR(0x107),
+        STF_REG_CSR_SENVCFG       = Codec::toCSR(0x10a),
         STF_REG_CSR_SSCRATCH      = Codec::toCSR(0x140),
         STF_REG_CSR_SEPC          = Codec::toCSR(0x141),
         STF_REG_CSR_SCAUSE        = Codec::toCSR(0x142),
@@ -432,7 +433,6 @@ namespace stf {
         STF_REG_CSR_SSCRATCHCSW   = Codec::toCSR(0x148),
         STF_REG_CSR_SSCRATCHCSWL  = Codec::toCSR(0x149),
         STF_REG_CSR_SATP          = Codec::toCSR(0x180),
-        STF_REG_CSR_SENVCFG       = Codec::toCSR(0x19a),
 
         // External debug
         STF_REG_CSR_DMCONTROL     = Codec::toCSR(0x010),
