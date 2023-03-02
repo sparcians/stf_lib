@@ -120,6 +120,9 @@ namespace stf {
             case STF_REG::STF_REG_CSR_SENVCFG:
                 os << "REG_CSR_SENVCFG";
                 return;
+            case STF_REG::STF_REG_CSR_SENVCFG_COMPAT:
+                os << "REG_CSR_SENVCFG";
+                return;
             case STF_REG::STF_REG_CSR_DMCONTROL:
                 os << "REG_CSR_DMCONTROL";
                 return;

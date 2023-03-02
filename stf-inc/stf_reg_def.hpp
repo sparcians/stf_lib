@@ -433,6 +433,9 @@ namespace stf {
         STF_REG_CSR_SSCRATCHCSW   = Codec::toCSR(0x148),
         STF_REG_CSR_SSCRATCHCSWL  = Codec::toCSR(0x149),
         STF_REG_CSR_SATP          = Codec::toCSR(0x180),
+        // SENVCFG was (erroneously) defined as 0x19a originally. We need to keep this definition around until there
+        // is an official 0x19a CSR to prevent breakage with existing traces
+        STF_REG_CSR_SENVCFG_COMPAT = Codec::toCSR(0x19a),
 
         // External debug
         STF_REG_CSR_DMCONTROL     = Codec::toCSR(0x010),

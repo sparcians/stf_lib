@@ -142,6 +142,7 @@ namespace stf {
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SIP, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SATP, machine_length_mask);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SENVCFG, machine_length_mask);
+                insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_SENVCFG_COMPAT, machine_length_mask);
 
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DMCONTROL, RegMapInfo::MASK32);
                 insertSimpleRegister_(Registers::STF_REG::STF_REG_CSR_DMSTATUS, RegMapInfo::MASK32);
