@@ -6,7 +6,7 @@ function(setup_stf_linker set_compiler_options)
     set(STF_COMPILE_FLAGS )
 
     # Don't need to change default linker on OS X
-    if (NOT CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
+    if (NOT APPLE)
       find_program(GOLD "ld.gold")
       find_program(LLD "ld.lld")
 
