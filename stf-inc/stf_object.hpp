@@ -1,8 +1,6 @@
 #ifndef __STF_OBJECT_HPP__
 #define __STF_OBJECT_HPP__
 
-#include "boost_wrappers/setup.hpp"
-
 #include "stf_ifstream.hpp"
 #include "stf_ofstream.hpp"
 #include "stf_packed_container.hpp"

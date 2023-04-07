@@ -10,7 +10,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "boost_wrappers/setup.hpp"
 #include "boost_wrappers/flat_map.hpp"
 #include <boost/container/flat_set.hpp>
 #include "boost_wrappers/small_vector.hpp"

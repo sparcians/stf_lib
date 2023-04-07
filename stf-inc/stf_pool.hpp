@@ -8,7 +8,6 @@
 #include <iostream>
 #endif
 
-#include "boost_wrappers/setup.hpp"
 #include "boost_wrappers/pool.hpp"
 
 //#define BOOST_POOL_NO_MT
