@@ -162,7 +162,7 @@ namespace stf {
                              * \brief Tracks PTEs and implements address translation for a particular
                              * virtual addressing mode
                              */
-                            template<VAMode virt_addr_type>
+                            template<VAMode virt_addr_type, typename DummyType = void>
                             class PageTableMap final : public PageTableMapBase {
                                 private:
                                     // The NO_TRANSLATION case is handled by a template specialization
@@ -345,8 +345,8 @@ namespace stf {
                             };
 
                             // Specialization for no-translation case
-                            template<>
-                            class PageTableMap<VAMode::NO_TRANSLATION> : public PageTableMapBase {
+                            template<typename Dummy>
+                            class PageTableMap<VAMode::NO_TRANSLATION, Dummy> : public PageTableMapBase {
                                 public:
                                     void update(const PageTableWalkRecord&) final {
                                         // There's nothing to update if translation isn't enabled
@@ -558,6 +558,7 @@ namespace stf {
             case VAMode::NO_TRANSLATION:
                 return std::make_unique<PageTableMap<VAMode::NO_TRANSLATION>>();
         }
+        __builtin_unreachable();
     }
 } // end namespace stf
 
