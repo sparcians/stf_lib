@@ -82,14 +82,22 @@ namespace stf {
                 }
             }
 
+            __attribute__((hot, always_inline))
+            inline void resetOperandMaps_() {
+                src_operands_.clear();
+                src_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
+
+                dest_operands_.clear();
+                dest_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
+            }
+
             template<typename InstRecordType>
             __attribute__((hot, always_inline))
             inline void finalizeNotABranch_(STFBranch& branch, const STFRecord* const rec) {
                 updateLastBranch_(rec->as<InstRecordType>());
                 updateSkipping_();
                 delegates::STFBranchDelegate::reset_(branch);
-                src_operands_.clear();
-                dest_operands_.clear();
+                resetOperandMaps_();
             }
 
             template<typename InstRecordType>
@@ -102,20 +110,8 @@ namespace stf {
                 if(STF_EXPECT_TRUE(!STFBranchDecoder::decode(getInitialIEM(), inst_rec, branch))) {
                     stf_assert(!branch.isTaken(), "Branch was marked taken but also didn't decode as a branch");
                     delegates::STFBranchDelegate::reset_(branch);
-                    src_operands_.clear();
-                    dest_operands_.clear();
+                    resetOperandMaps_();
                     return false;
-                }
-
-                // X0 records may not exist in the trace, so fix up the operand maps if necessary
-                if(STF_EXPECT_FALSE(((branch.getRS1() == Registers::STF_REG::STF_REG_X0) ||
-                                     (branch.getRS1() == Registers::STF_REG::STF_REG_X0)) &&
-                                    !src_operands_.hasOperand(Registers::STF_REG::STF_REG_X0))) {
-                    src_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
-                }
-                if(STF_EXPECT_FALSE((branch.getRD() == Registers::STF_REG::STF_REG_X0) &&
-                                    !dest_operands_.hasOperand(Registers::STF_REG::STF_REG_X0))) {
-                    dest_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
                 }
 
                 delegates::STFBranchDelegate::setOperandValues_(branch, src_operands_, dest_operands_);
@@ -140,8 +136,7 @@ namespace stf {
             // read STF records to construction a STFInst instance
             __attribute__((hot, always_inline))
             inline void readNext_(STFBranch &branch) {
-                src_operands_.clear();
-                dest_operands_.clear();
+                resetOperandMaps_();
                 delegates::STFBranchDelegate::reset_(branch);
 
                 updateSkipping_();
