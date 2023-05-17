@@ -2456,10 +2456,196 @@ namespace stf {
      *
      */
     class TransactionRecord : public TypeAwareSTFRecord<TransactionRecord, descriptors::internal::Descriptor::STF_TRANSACTION> {
+        public:
+            /**
+             * \class Metadata
+             *
+             * Class that can be used to store arbitrary integral metadata in a TransactionRecord
+             */
+            class Metadata {
+                private:
+                    friend class TransactionRecord;
+
+                    SerializableVector<uint8_t, uint16_t> metadata_;
+
+                    mutable size_t read_ptr_ = 0;
+
+                    __attribute__((always_inline))
+                    inline void checkRead_(const size_t len) const {
+                        stf_assert(read_ptr_ + len <= metadata_.size(),
+                                   "Attempted to read past the end of the metadata stream");
+                    }
+
+                    __attribute__((always_inline))
+                    inline void pack_(STFOFstream& writer) const {
+                        writer << metadata_;
+                    }
+
+                    __attribute__((always_inline))
+                    inline void unpack_(STFIFstream& reader) {
+                        reader >> metadata_;
+                        read_ptr_ = 0;
+                    }
+
+                    __attribute__((always_inline))
+                    inline auto getRange_(const size_t len) const {
+                        using difference_type = decltype(metadata_)::const_iterator::difference_type;
+
+                        const auto start_it = std::next(metadata_.begin(),
+                                                        static_cast<difference_type>(read_ptr_));
+                        return std::make_pair(start_it,
+                                              std::next(start_it,
+                                                        static_cast<difference_type>(len)));
+                    }
+
+                public:
+                    /**
+                     * Appends new data
+                     */
+                    template<typename T>
+                    inline std::enable_if_t<std::is_integral_v<T>> append(const T val) {
+                        for(size_t i = 0; i < byte_utils::bitSize<T>(); i += 8) {
+                            append(static_cast<uint8_t>((val >> i) & 0xFFU));
+                        }
+                    }
+
+                    /**
+                     * Appends new data
+                     */
+                    template<>
+                    inline void append<uint8_t>(const uint8_t val) {
+                        metadata_.emplace_back(val);
+                    }
+
+                    /**
+                     * Appends new data from an array
+                     */
+                    template<typename T>
+                    inline std::enable_if_t<std::is_integral_v<T>> append(const T* const val,
+                                                                          const size_t len) {
+                        stf_assert(val, "Tried to copy a null pointer into metadata");
+                        for(size_t i = 0; i < len; ++i) {
+                            append(val[i]);
+                        }
+                    }
+
+                    /**
+                     * Appends new data from an array
+                     */
+                    template<>
+                    __attribute__((always_inline))
+                    inline void append(const uint8_t* val, const size_t len) {
+                        stf_assert(val, "Tried to copy a null pointer into metadata");
+                        metadata_.insert(metadata_.end(), val, val + len);
+                    }
+
+                    /**
+                     * Appends new data from a vector
+                     */
+                    template<typename T>
+                    inline std::enable_if_t<std::is_integral_v<T>> append(const std::vector<T>& val) {
+                        for(const auto& v: val) {
+                            append(v);
+                        }
+                    }
+
+                    /**
+                     * Appends new data from a vector
+                     */
+                    template<>
+                    inline void append<uint8_t>(const std::vector<uint8_t>& val) {
+                        metadata_.insert(metadata_.end(), val.begin(), val.end());
+                    }
+
+                    /**
+                     * Reads data
+                     */
+                    template<typename T>
+                    inline std::enable_if_t<std::is_integral_v<T>, T> read() const {
+                        checkRead_(sizeof(T));
+                        T val;
+                        for(size_t i = 0; i < sizeof(val); ++i) {
+                            val |= metadata_[read_ptr_ + i] << (i*8);
+                        }
+                        read_ptr_ += sizeof(val);
+                        return val;
+                    }
+
+                    /**
+                     * Reads data
+                     */
+                    template<>
+                    inline uint8_t read<uint8_t>() const {
+                        checkRead_(1);
+                        return metadata_[read_ptr_++];
+                    }
+
+                    /**
+                     * Reads data into an array
+                     */
+                    template<typename T>
+                    inline std::enable_if_t<std::is_integral_v<T>> read(T* const val,
+                                                                        const size_t len) const {
+                        const size_t num_bytes = sizeof(T) * len;
+                        checkRead_(num_bytes);
+                        for(size_t i = 0; i < len; ++i) {
+                            val[i] = read<T>();
+                        }
+                        read_ptr_ += num_bytes;
+                    }
+
+                    /**
+                     * Reads data into an array
+                     */
+                    template<>
+                    inline void read(uint8_t* const val, const size_t len) const {
+                        checkRead_(len);
+                        const auto [start_it, end_it] = getRange_(len);
+                        std::copy(start_it, end_it, val);
+                        read_ptr_ += len;
+                    }
+
+                    /**
+                     * Reads data into a vector
+                     * NOTE: Reads val.size() elements, so the vector must already be sized accordingly
+                     */
+                    template<typename T>
+                    inline std::enable_if_t<std::is_integral_v<T>> read(std::vector<T>& val) const {
+                        const size_t len = val.size();
+                        const size_t num_bytes = sizeof(T) * len;
+                        checkRead_(num_bytes);
+                        for(size_t i = 0; i < len; ++i) {
+                            val[i] = read<T>();
+                        }
+                        read_ptr_ += num_bytes;
+                    }
+
+                    /**
+                     * Reads data into a vector
+                     * NOTE: Reads val.size() elements, so the vector must already be sized accordingly
+                     */
+                    template<>
+                    inline void read<uint8_t>(std::vector<uint8_t>& val) const {
+                        const size_t len = val.size();
+                        checkRead_(len);
+                        const auto [start_it, end_it] = getRange_(len);
+                        std::copy(start_it, end_it, val.begin());
+                        read_ptr_ += len;
+                    }
+
+                    /**
+                     * Gets the raw byte vector
+                     */
+                    const auto& getData() const {
+                        return metadata_;
+                    }
+            };
+
         private:
             uint64_t transaction_id_ = 0;
             uint64_t cycle_delta_ = 0;
             ClockId clock_id_ = INVALID_CLOCK_ID;
+            Metadata metadata_;
             protocols::ProtocolData::UniqueHandle protocol_data_;
 
             /**
@@ -2556,6 +2742,7 @@ namespace stf {
                        transaction_id_,
                        cycle_delta_,
                        clock_id_);
+                metadata_.pack_(writer);
                 protocol_data_->pack(writer);
                 writer.markerRecordCallback();
             }
@@ -2570,8 +2757,45 @@ namespace stf {
                       transaction_id_,
                       cycle_delta_,
                       clock_id_);
+                metadata_.unpack_(reader);
                 reader >> protocol_data_;
                 reader.markerRecordCallback();
+            }
+
+            /**
+             * Formats the non-protocol-specific fields to an std::ostream
+             */
+            static inline void formatNonProtocolFields(std::ostream& os,
+                                                       const uint64_t transaction_id,
+                                                       const ClockId clock_id,
+                                                       const uint64_t cycle_delta,
+                                                       const Metadata& metadata) {
+                format_utils::formatLabel(os, "TXN_ID");
+                format_utils::formatDec(os, transaction_id);
+                os << std::endl;
+                format_utils::formatLabel(os, "CLOCK");
+                os << ClockRegistry::getClockName(clock_id) << std::endl;
+                format_utils::formatLabel(os, "DELTA");
+                format_utils::formatDec(os, cycle_delta);
+                os << std::endl;
+                if(const auto& metadata_raw = metadata.getData(); !metadata_raw.empty()) {
+                    format_utils::formatLabel(os, "METADATA");
+                    static constexpr size_t COLUMN_WIDTH = 32;
+                    const size_t metadata_size = metadata_raw.size();
+                    for(size_t i = 0; i < metadata_size; i += COLUMN_WIDTH) {
+                        if(STF_EXPECT_TRUE(i != 0)) {
+                            format_utils::formatSpaces(os, format_utils::LABEL_WIDTH);
+                        }
+                        // Don't overrun the end of the vector
+                        const size_t end_idx = std::min(i + COLUMN_WIDTH, metadata_size);
+                        for(size_t j = i; j < end_idx; ++j) {
+                            // First element in a line doesn't need any extra spaces
+                            const int width = j == i ? 2 : 3;
+                            format_utils::formatHex(os, metadata_raw[j], width, ' ');
+                        }
+                        os << std::endl;
+                    }
+                }
             }
 
             /**
@@ -2579,14 +2803,7 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                format_utils::formatLabel(os, "ID");
-                format_utils::formatDec(os, transaction_id_);
-                os << std::endl;
-                format_utils::formatLabel(os, "CLOCK");
-                os << ClockRegistry::getClockName(clock_id_) << std::endl;
-                format_utils::formatLabel(os, "DELTA");
-                format_utils::formatDec(os, cycle_delta_);
-                os << std::endl;
+                formatNonProtocolFields(os, transaction_id_, clock_id_, cycle_delta_, metadata_);
                 protocol_data_->format(os);
             }
 
@@ -2632,6 +2849,20 @@ namespace stf {
             template<typename T>
             inline const auto& getProtocolAs() const {
                 return protocol_data_->as<T>();
+            }
+
+            /**
+             * Gets the transaction metadata field
+             */
+            Metadata& getMetadata() {
+                return metadata_;
+            }
+
+            /**
+             * Gets the transaction metadata field
+             */
+            const Metadata& getMetadata() const {
+                return metadata_;
             }
     };
 

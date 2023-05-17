@@ -3,14 +3,11 @@
 
 namespace stf {
     std::ostream& operator<<(std::ostream& os, const STFTransaction& transaction) {
-        format_utils::formatLabel(os, "TXNID");
-        format_utils::formatDec(os, transaction.getTransactionId());
-        os << std::endl;
-        format_utils::formatLabel(os, "CLOCK");
-        os << ClockRegistry::getClockName(transaction.getClockId()) << std::endl;
-        format_utils::formatLabel(os, "DELTA");
-        format_utils::formatDec(os, transaction.getCycleDelta());
-        os << std::endl;
+        TransactionRecord::formatNonProtocolFields(os,
+                                                   transaction.getTransactionId(),
+                                                   transaction.getClockId(),
+                                                   transaction.getCycleDelta(),
+                                                   transaction.getMetadata());
 
         if(const auto& dependencies = transaction.getDependencies(); !dependencies.empty()) {
             format_utils::formatLabel(os, "DEPENDENCIES");
