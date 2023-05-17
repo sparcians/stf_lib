@@ -2639,6 +2639,13 @@ namespace stf {
                     const auto& getData() const {
                         return metadata_;
                     }
+
+                    /**
+                     * Resets the read pointer
+                     */
+                    void rewind(const size_t pos = 0) const {
+                        read_ptr_ = pos;
+                    }
             };
 
         private:
