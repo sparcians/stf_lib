@@ -2483,26 +2483,6 @@ namespace stf {
                     template<typename T>
                     struct type_to_TYPE;
 
-                    template<>
-                    struct type_to_TYPE<uint8_t> {
-                        static constexpr TYPE value = TYPE::UINT8;
-                    };
-
-                    template<>
-                    struct type_to_TYPE<uint16_t> {
-                        static constexpr TYPE value = TYPE::UINT16;
-                    };
-
-                    template<>
-                    struct type_to_TYPE<uint32_t> {
-                        static constexpr TYPE value = TYPE::UINT32;
-                    };
-
-                    template<>
-                    struct type_to_TYPE<uint64_t> {
-                        static constexpr TYPE value = TYPE::UINT64;
-                    };
-
                     TYPE type_ = TYPE::UINT8;
                     SerializableVector<uint8_t, uint16_t> metadata_;
 
@@ -2619,14 +2599,6 @@ namespace stf {
                     }
 
                     /**
-                     * Appends new data
-                     */
-                    template<>
-                    inline void append<uint8_t>(const uint8_t val) {
-                        metadata_.emplace_back(val);
-                    }
-
-                    /**
                      * Appends new data from an array
                      */
                     template<typename T>
@@ -2636,15 +2608,6 @@ namespace stf {
                         for(size_t i = 0; i < len; ++i) {
                             append(val[i]);
                         }
-                    }
-
-                    /**
-                     * Appends new data from an array
-                     */
-                    template<>
-                    inline void append(const uint8_t* val, const size_t len) {
-                        stf_assert(val, "Tried to copy a null pointer into metadata");
-                        metadata_.insert(metadata_.end(), val, val + len);
                     }
 
                     /**
@@ -2658,14 +2621,6 @@ namespace stf {
                     }
 
                     /**
-                     * Appends new data from a vector
-                     */
-                    template<>
-                    inline void append<uint8_t>(const std::vector<uint8_t>& val) {
-                        metadata_.insert(metadata_.end(), val.begin(), val.end());
-                    }
-
-                    /**
                      * Reads data
                      */
                     template<typename T>
@@ -2673,19 +2628,10 @@ namespace stf {
                         checkRead_(sizeof(T));
                         T val = 0;
                         for(size_t i = 0; i < sizeof(val); ++i) {
-                            val |= static_cast<T>(metadata_[read_ptr_ + i]) << (i*8);
+                            val = static_cast<T>(val | (static_cast<T>(metadata_[read_ptr_ + i]) << (i*8)));
                         }
                         read_ptr_ += sizeof(val);
                         return val;
-                    }
-
-                    /**
-                     * Reads data
-                     */
-                    template<>
-                    inline uint8_t read<uint8_t>() const {
-                        checkRead_(1);
-                        return metadata_[read_ptr_++];
                     }
 
                     /**
@@ -2703,17 +2649,6 @@ namespace stf {
                     }
 
                     /**
-                     * Reads data into an array
-                     */
-                    template<>
-                    inline void read(uint8_t* const val, const size_t len) const {
-                        checkRead_(len);
-                        const auto [start_it, end_it] = getRange_(len);
-                        std::copy(start_it, end_it, val);
-                        read_ptr_ += len;
-                    }
-
-                    /**
                      * Reads data into a vector
                      * NOTE: Reads val.size() elements, so the vector must already be sized accordingly
                      */
@@ -2726,19 +2661,6 @@ namespace stf {
                             val[i] = read<T>();
                         }
                         read_ptr_ += num_bytes;
-                    }
-
-                    /**
-                     * Reads data into a vector
-                     * NOTE: Reads val.size() elements, so the vector must already be sized accordingly
-                     */
-                    template<>
-                    inline void read<uint8_t>(std::vector<uint8_t>& val) const {
-                        const size_t len = val.size();
-                        checkRead_(len);
-                        const auto [start_it, end_it] = getRange_(len);
-                        std::copy(start_it, end_it, val.begin());
-                        read_ptr_ += len;
                     }
 
                     /**
@@ -3038,6 +2960,95 @@ namespace stf {
                 return metadata_;
             }
     };
+
+    /**
+     * \private type_to_TYPE uint8_t specialization
+     */
+    template<>
+    struct TransactionRecord::Metadata::type_to_TYPE<uint8_t> {
+        static constexpr TYPE value = TYPE::UINT8;
+    };
+
+    /**
+     * \private type_to_TYPE uint16_t specialization
+     */
+    template<>
+    struct TransactionRecord::Metadata::type_to_TYPE<uint16_t> {
+        static constexpr TYPE value = TYPE::UINT16;
+    };
+
+    /**
+     * \private type_to_TYPE uint32_t specialization
+     */
+    template<>
+    struct TransactionRecord::Metadata::type_to_TYPE<uint32_t> {
+        static constexpr TYPE value = TYPE::UINT32;
+    };
+
+    /**
+     * \private type_to_TYPE uint64_t specialization
+     */
+    template<>
+    struct TransactionRecord::Metadata::type_to_TYPE<uint64_t> {
+        static constexpr TYPE value = TYPE::UINT64;
+    };
+
+    /**
+     * \private Metadata::append uint8_t specialization
+     */
+    template<>
+    inline void TransactionRecord::Metadata::append<uint8_t>(const uint8_t val) {
+        metadata_.emplace_back(val);
+    }
+
+    /**
+     * \private Metadata::append uint8_t array specialization
+     */
+    template<>
+    inline void TransactionRecord::Metadata::append<uint8_t>(const uint8_t* val, const size_t len) {
+        stf_assert(val, "Tried to copy a null pointer into metadata");
+        metadata_.insert(metadata_.end(), val, val + len);
+    }
+
+    /**
+     * \private Metadata::append uint8_t vector specialization
+     */
+    template<>
+    inline void TransactionRecord::Metadata::append<uint8_t>(const std::vector<uint8_t>& val) {
+        metadata_.insert(metadata_.end(), val.begin(), val.end());
+    }
+
+    /**
+     * \private Metadata::read uint8_t specialization
+     */
+    template<>
+    inline uint8_t TransactionRecord::Metadata::read<uint8_t>() const {
+        checkRead_(1);
+        return metadata_[read_ptr_++];
+    }
+
+    /**
+     * \private Metadata::read uint8_t array specialization
+     */
+    template<>
+    inline void TransactionRecord::Metadata::read(uint8_t* const val, const size_t len) const {
+        checkRead_(len);
+        const auto [start_it, end_it] = getRange_(len);
+        std::copy(start_it, end_it, val);
+        read_ptr_ += len;
+    }
+
+    /**
+     * \private Metadata::read uint8_t vector specialization
+     */
+    template<>
+    inline void TransactionRecord::Metadata::read<uint8_t>(std::vector<uint8_t>& val) const {
+        const size_t len = val.size();
+        checkRead_(len);
+        const auto [start_it, end_it] = getRange_(len);
+        std::copy(start_it, end_it, val.begin());
+        read_ptr_ += len;
+    }
 
     REGISTER_RECORD(TransactionRecord)
 

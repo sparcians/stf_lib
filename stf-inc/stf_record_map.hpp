@@ -58,7 +58,7 @@ namespace stf {
                                        std::end(rhs),
                                        std::back_inserter(*this),
                                        [](const auto& ptr) {
-                                           return std::move(ptr->clone());
+                                           return ptr->clone();
                                        }
                         );
                     }
