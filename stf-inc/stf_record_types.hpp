@@ -2570,6 +2570,8 @@ namespace stf {
                                             case TypeInterface::TYPE::UINT64:
                                                 return get_<uint64_t>().constructElement(reader);
                                         }
+
+                                        __builtin_unreachable();
                                     }
                             };
 
