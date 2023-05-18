@@ -2637,6 +2637,21 @@ namespace stf {
                             inline void pack(STFOFstream& writer) const {
                                 type_helper_->pack(writer, data_);
                             }
+
+                            /**
+                             * Gets the value
+                             */
+                            inline uint64_t as() const {
+                                return data_;
+                            }
+
+                            /**
+                             * Gets the value as the specified type
+                             */
+                            template<typename T>
+                            inline T as() const {
+                                return static_cast<T>(data_);
+                            }
                     };
 
                 private:
