@@ -2721,13 +2721,9 @@ namespace stf {
                     inline void format(std::ostream& os, size_t indent = 0) const {
                         static constexpr size_t COLUMN_WIDTH = 32;
 
-                        const bool multi_element = metadata_.size() > 1;
-
-                        if(multi_element) {
-                            os << '[';
-                            // Account for the [ character in the indent
-                            ++indent;
-                        }
+                        os << '[';
+                        // Account for the [ character in the indent
+                        ++indent;
 
                         size_t line_length = 0;
                         for(const auto& element: metadata_) {
@@ -2747,9 +2743,7 @@ namespace stf {
                             line_length += element.size();
                         }
 
-                        if(multi_element) {
-                            os << ']';
-                        }
+                        os << ']';
                     }
 
                     /**
