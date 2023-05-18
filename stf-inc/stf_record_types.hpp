@@ -2457,18 +2457,69 @@ namespace stf {
      */
     class TransactionRecord : public TypeAwareSTFRecord<TransactionRecord, descriptors::internal::Descriptor::STF_TRANSACTION> {
         public:
+            friend class Metadata;
+
             /**
              * \class Metadata
              *
              * Class that can be used to store arbitrary integral metadata in a TransactionRecord
              */
             class Metadata {
+                public:
+                    /**
+                     * \enum TYPE
+                     * Encodes what type this metadata represents
+                     */
+                    enum class TYPE : uint8_t {
+                        UINT8 = 0,
+                        UINT16 = 1,
+                        UINT32 = 2,
+                        UINT64 = 3
+                    };
+
                 private:
                     friend class TransactionRecord;
 
+                    template<typename T>
+                    struct type_to_TYPE;
+
+                    template<>
+                    struct type_to_TYPE<uint8_t> {
+                        static constexpr TYPE value = TYPE::UINT8;
+                    };
+
+                    template<>
+                    struct type_to_TYPE<uint16_t> {
+                        static constexpr TYPE value = TYPE::UINT16;
+                    };
+
+                    template<>
+                    struct type_to_TYPE<uint32_t> {
+                        static constexpr TYPE value = TYPE::UINT32;
+                    };
+
+                    template<>
+                    struct type_to_TYPE<uint64_t> {
+                        static constexpr TYPE value = TYPE::UINT64;
+                    };
+
+                    TYPE type_ = TYPE::UINT8;
                     SerializableVector<uint8_t, uint16_t> metadata_;
 
                     mutable size_t read_ptr_ = 0;
+
+                    static inline size_t sizeof_(const TYPE type) {
+                        switch(type) {
+                            case TYPE::UINT8:
+                                return sizeof(uint8_t);
+                            case TYPE::UINT16:
+                                return sizeof(uint16_t);
+                            case TYPE::UINT32:
+                                return sizeof(uint32_t);
+                            case TYPE::UINT64:
+                                return sizeof(uint64_t);
+                        }
+                    }
 
                     __attribute__((always_inline))
                     inline void checkRead_(const size_t len) const {
@@ -2478,12 +2529,12 @@ namespace stf {
 
                     __attribute__((always_inline))
                     inline void pack_(STFOFstream& writer) const {
-                        writer << metadata_;
+                        TransactionRecord::write_(writer, type_, metadata_);
                     }
 
                     __attribute__((always_inline))
                     inline void unpack_(STFIFstream& reader) {
-                        reader >> metadata_;
+                        TransactionRecord::read_(reader, type_, metadata_);
                         read_ptr_ = 0;
                     }
 
@@ -2499,6 +2550,64 @@ namespace stf {
                     }
 
                 public:
+                    /**
+                     * Returns whether the metadata is empty
+                     */
+                    inline bool empty() const {
+                        return metadata_.empty();
+                    }
+
+                    /**
+                     * Returns the raw size of the metadata (in bytes)
+                     */
+                    inline size_t rawSize() const {
+                        return metadata_.size();
+                    }
+
+                    /**
+                     * Returns the type-decoded number of elements in the metadata
+                     */
+                    inline size_t size() const {
+                        return metadata_.size() / sizeof_(type_);
+                    }
+
+                    /**
+                     * Sets the type to the specified TYPE enum value
+                     */
+                    inline void setType(const TYPE type) {
+                        type_ = type;
+                    }
+
+                    /**
+                     * Sets the type to the specified template type parameter
+                     */
+                    template<typename T>
+                    inline void setType() {
+                        setType(type_to_TYPE<T>::value);
+                    }
+
+                    /**
+                     * Gets the TYPE enum value
+                     */
+                    inline TYPE getType() const {
+                        return type_;
+                    }
+
+                    /**
+                     * Returns whether this metadata object has the specified type
+                     */
+                    inline bool isType(const TYPE type) const {
+                        return type_ == type;
+                    }
+
+                    /**
+                     * Returns whether this metadata object has the specified type
+                     */
+                    template<typename T>
+                    inline bool isType() const {
+                        return isType(type_to_TYPE<T>::value);
+                    }
+
                     /**
                      * Appends new data
                      */
@@ -2533,7 +2642,6 @@ namespace stf {
                      * Appends new data from an array
                      */
                     template<>
-                    __attribute__((always_inline))
                     inline void append(const uint8_t* val, const size_t len) {
                         stf_assert(val, "Tried to copy a null pointer into metadata");
                         metadata_.insert(metadata_.end(), val, val + len);
@@ -2563,9 +2671,9 @@ namespace stf {
                     template<typename T>
                     inline std::enable_if_t<std::is_integral_v<T>, T> read() const {
                         checkRead_(sizeof(T));
-                        T val;
+                        T val = 0;
                         for(size_t i = 0; i < sizeof(val); ++i) {
-                            val |= metadata_[read_ptr_ + i] << (i*8);
+                            val |= static_cast<T>(metadata_[read_ptr_ + i]) << (i*8);
                         }
                         read_ptr_ += sizeof(val);
                         return val;
@@ -2636,15 +2744,87 @@ namespace stf {
                     /**
                      * Gets the raw byte vector
                      */
-                    const auto& getData() const {
+                    inline const auto& getData() const {
                         return metadata_;
                     }
 
                     /**
                      * Resets the read pointer
                      */
-                    void rewind(const size_t pos = 0) const {
+                    inline void rewind(const size_t pos = 0) const {
                         read_ptr_ = pos;
+                    }
+
+                    /**
+                     * Gets whether we've reached the end of the data
+                     */
+                    inline bool allRead() const {
+                        return read_ptr_ == metadata_.size();
+                    }
+
+                    /**
+                     * Formats the metadata to the specified type
+                     */
+                    template<typename T>
+                    inline void formatAs(std::ostream& os, size_t indent = 0) const {
+                        static constexpr size_t COLUMN_WIDTH = 32 / sizeof(T);
+                        static constexpr int DIGITS_PER_ELEMENT = format_utils::numHexDigits<T>();
+
+                        const bool multi_element = metadata_.size() / sizeof(T) > 1;
+
+                        // Backup the current read_ptr_ value since we need to traverse the whole
+                        // vector
+                        const auto old_read_ptr = read_ptr_;
+                        read_ptr_ = 0;
+
+                        if(multi_element) {
+                            os << '[';
+                            // Account for the [ character in the indent
+                            ++indent;
+                        }
+
+                        while(!allRead()) {
+                            if(STF_EXPECT_TRUE(indent && (read_ptr_ != 0))) {
+                                format_utils::formatSpaces(os, indent);
+                            }
+
+                            // Write the first element
+                            format_utils::formatHex(os, read<T>());
+
+                            for(size_t i = 1; !allRead() && (i < COLUMN_WIDTH); ++i) {
+                                os << ',';
+                                format_utils::formatHex(os, read<T>(), DIGITS_PER_ELEMENT + 1, ' ');
+                            }
+
+                            if(multi_element && allRead()) {
+                                os << ']';
+                            }
+
+                            os << std::endl;
+                        }
+
+                        // Restore the read_ptr_ value
+                        read_ptr_ = old_read_ptr;
+                    }
+
+                    /**
+                     * Formats the metadata according to its declared type
+                     */
+                    inline void format(std::ostream& os, const size_t indent = 0) const {
+                        switch(type_) {
+                            case TYPE::UINT8:
+                                formatAs<uint8_t>(os, indent);
+                                break;
+                            case TYPE::UINT16:
+                                formatAs<uint16_t>(os, indent);
+                                break;
+                            case TYPE::UINT32:
+                                formatAs<uint32_t>(os, indent);
+                                break;
+                            case TYPE::UINT64:
+                                formatAs<uint64_t>(os, indent);
+                                break;
+                        }
                     }
             };
 
@@ -2785,23 +2965,9 @@ namespace stf {
                 format_utils::formatLabel(os, "DELTA");
                 format_utils::formatDec(os, cycle_delta);
                 os << std::endl;
-                if(const auto& metadata_raw = metadata.getData(); !metadata_raw.empty()) {
+                if(!metadata.empty()) {
                     format_utils::formatLabel(os, "METADATA");
-                    static constexpr size_t COLUMN_WIDTH = 32;
-                    const size_t metadata_size = metadata_raw.size();
-                    for(size_t i = 0; i < metadata_size; i += COLUMN_WIDTH) {
-                        if(STF_EXPECT_TRUE(i != 0)) {
-                            format_utils::formatSpaces(os, format_utils::LABEL_WIDTH);
-                        }
-                        // Don't overrun the end of the vector
-                        const size_t end_idx = std::min(i + COLUMN_WIDTH, metadata_size);
-                        for(size_t j = i; j < end_idx; ++j) {
-                            // First element in a line doesn't need any extra spaces
-                            const int width = j == i ? 2 : 3;
-                            format_utils::formatHex(os, metadata_raw[j], width, ' ');
-                        }
-                        os << std::endl;
-                    }
+                    metadata.format(os, format_utils::LABEL_WIDTH);
                 }
             }
 
