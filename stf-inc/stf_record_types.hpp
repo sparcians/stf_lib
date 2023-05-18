@@ -6,6 +6,7 @@
 #include <locale>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 #include "boost_wrappers/small_vector.hpp"
 #include "format_utils.hpp"
@@ -2465,71 +2466,209 @@ namespace stf {
              * Class that can be used to store arbitrary integral metadata in a TransactionRecord
              */
             class Metadata {
-                public:
-                    /**
-                     * \enum TYPE
-                     * Encodes what type this metadata represents
-                     */
-                    enum class TYPE : uint8_t {
-                        UINT8 = 0,
-                        UINT16 = 1,
-                        UINT32 = 2,
-                        UINT64 = 3
-                    };
-
                 private:
                     friend class TransactionRecord;
 
-                    template<typename T>
-                    struct type_to_TYPE;
+                public:
+                    /**
+                     * \class MetadataElement
+                     * Represents a single element of metadata
+                     */
+                    class MetadataElement {
+                        private:
+                            class TypeInterface {
+                                protected:
+                                    template<typename T>
+                                    struct type_to_TYPE;
 
-                    TYPE type_ = TYPE::UINT8;
-                    SerializableVector<uint8_t, uint16_t> metadata_;
+                                public:
+                                    /**
+                                     * \enum TYPE
+                                     * Encodes what type this metadata represents
+                                     */
+                                    enum class TYPE : uint8_t {
+                                        UINT8 = 0,
+                                        UINT16 = 1,
+                                        UINT32 = 2,
+                                        UINT64 = 3
+                                    };
 
-                    mutable size_t read_ptr_ = 0;
+                                    virtual inline size_t size() const = 0;
+                                    virtual inline int hexDigits() const = 0;
+                                    virtual inline void pack(STFOFstream& writer,
+                                                      const uint64_t data) const = 0;
+                                    virtual inline void format(std::ostream&, const uint64_t data) const = 0;
+                                    virtual inline bool isType(const TYPE type) const = 0;
 
-                    static inline size_t sizeof_(const TYPE type) {
-                        switch(type) {
-                            case TYPE::UINT8:
-                                return sizeof(uint8_t);
-                            case TYPE::UINT16:
-                                return sizeof(uint16_t);
-                            case TYPE::UINT32:
-                                return sizeof(uint32_t);
-                            case TYPE::UINT64:
-                                return sizeof(uint64_t);
+                                    template<typename T>
+                                    inline bool isType() const {
+                                        return isType(type_to_TYPE<T>::value);
+                                    }
+                            };
+
+                            class TypeManager {
+                                private:
+                                    template<typename T>
+                                    class Type : public TypeInterface {
+                                        private:
+                                            static inline constexpr TYPE type_ = type_to_TYPE<T>::value;
+
+                                        public:
+                                            inline size_t size() const final {
+                                                return sizeof(T);
+                                            }
+
+                                            inline int hexDigits() const final {
+                                                return format_utils::numHexDigits<T>();
+                                            }
+
+                                            inline void pack(STFOFstream& writer,
+                                                             const uint64_t data) const final {
+                                                TransactionRecord::write_(writer,
+                                                                          type_,
+                                                                          static_cast<T>(data));
+                                            }
+
+                                            inline void format(std::ostream& os, const uint64_t data) const final {
+                                                format_utils::formatHex(os, static_cast<T>(data));
+                                            }
+
+                                            inline bool isType(const TYPE type) const final {
+                                                return type == type_;
+                                            }
+
+                                            inline MetadataElement constructElement(STFIFstream& reader) const {
+                                                T temp;
+                                                TransactionRecord::read_(reader, temp);
+                                                return MetadataElement(temp, this);
+                                            }
+                                    };
+
+                                    template<typename T>
+                                    static inline const Type<T>& get_() {
+                                        static Type<T> helper;
+                                        return helper;
+                                    }
+
+                                public:
+                                    template<typename T>
+                                    static inline const TypeInterface* get() {
+                                        return &get_<T>();
+                                    }
+
+                                    static inline MetadataElement constructElement(STFIFstream& reader) {
+                                        TypeInterface::TYPE type;
+                                        TransactionRecord::read_(reader, type);
+
+                                        switch(type) {
+                                            case TypeInterface::TYPE::UINT8:
+                                                return get_<uint8_t>().constructElement(reader);
+                                            case TypeInterface::TYPE::UINT16:
+                                                return get_<uint16_t>().constructElement(reader);
+                                            case TypeInterface::TYPE::UINT32:
+                                                return get_<uint32_t>().constructElement(reader);
+                                            case TypeInterface::TYPE::UINT64:
+                                                return get_<uint64_t>().constructElement(reader);
+                                        }
+                                    }
+                            };
+
+                            const uint64_t data_ = 0;
+                            const TypeInterface* type_helper_;
+
+                            MetadataElement(const uint64_t data,
+                                            const TypeInterface* const new_type_helper) :
+                                data_(data),
+                                type_helper_(new_type_helper)
+                            {
+                            }
+
+                        public:
+                            /**
+                             * Constructs a MetadataElement from a trace
+                             */
+                            explicit MetadataElement(STFIFstream& reader) :
+                                MetadataElement(TypeManager::constructElement(reader))
+                            {
+                            }
+
+                            /**
+                             * Constructs a MetadataElement with the given underlying type
+                             */
+                            template<typename T>
+                            static inline std::enable_if_t<std::is_integral_v<T>, MetadataElement> construct(const T data) {
+                                return MetadataElement(data, TypeManager::get<T>());
+                            }
+
+                            /**
+                             * Returns the size of the underlying type
+                             */
+                            inline size_t size() const {
+                                return type_helper_->size();
+                            }
+
+                            /**
+                             * Returns the number of hex digits used to represent the underlying type
+                             */
+                            inline int numHexDigits() const {
+                                return type_helper_->hexDigits();
+                            }
+
+                            /**
+                             * Returns whether this metadata object has the specified type
+                             */
+                            template<typename T>
+                            inline bool isType() const {
+                                return type_helper_->isType<T>();
+                            }
+
+                            /**
+                             * Formats the metadata according to its declared type
+                             */
+                            inline void format(std::ostream& os) const {
+                                type_helper_->format(os, data_);
+                            }
+
+                            /**
+                             * Writes the metadata out to a trace according to its declared type
+                             */
+                            inline void pack(STFOFstream& writer) const {
+                                type_helper_->pack(writer, data_);
+                            }
+                    };
+
+                private:
+                    using VectorSizeType = uint16_t;
+                    using VectorType = std::vector<MetadataElement>;
+                    VectorType metadata_;
+                    size_t raw_size_ = 0;
+
+                    __attribute__((always_inline))
+                    inline void pack_(STFOFstream& writer) const {
+                        TransactionRecord::write_(writer, static_cast<VectorSizeType>(metadata_.size()));
+                        for(const auto& metadata: metadata_) {
+                            metadata.pack(writer);
                         }
                     }
 
                     __attribute__((always_inline))
-                    inline void checkRead_(const size_t len) const {
-                        stf_assert(read_ptr_ + len <= metadata_.size(),
-                                   "Attempted to read past the end of the metadata stream");
-                    }
-
-                    __attribute__((always_inline))
-                    inline void pack_(STFOFstream& writer) const {
-                        TransactionRecord::write_(writer, type_, metadata_);
-                    }
-
-                    __attribute__((always_inline))
                     inline void unpack_(STFIFstream& reader) {
-                        TransactionRecord::read_(reader, type_, metadata_);
-                        read_ptr_ = 0;
-                    }
-
-                    __attribute__((always_inline))
-                    inline auto getRange_(const size_t len) const {
-                        using difference_type = decltype(metadata_)::const_iterator::difference_type;
-
-                        const auto start_it = std::next(metadata_.begin(),
-                                                        static_cast<difference_type>(read_ptr_));
-                        return std::make_pair(start_it,
-                                              std::next(start_it,
-                                                        static_cast<difference_type>(len)));
+                        VectorSizeType size;
+                        TransactionRecord::read_(reader, size);
+                        metadata_.reserve(size);
+                        for(VectorSizeType i = 0; i < size; ++i) {
+                            metadata_.emplace_back(reader);
+                            raw_size_ += metadata_.back().size();
+                        }
                     }
 
                 public:
+                    /**
+                     * \typedef iterator
+                     * Type used to iterate over metadata entries
+                     */
+                    using iterator = VectorType::const_iterator;
+
                     /**
                      * Returns whether the metadata is empty
                      */
@@ -2541,51 +2680,14 @@ namespace stf {
                      * Returns the raw size of the metadata (in bytes)
                      */
                     inline size_t rawSize() const {
-                        return metadata_.size();
+                        return raw_size_;
                     }
 
                     /**
-                     * Returns the type-decoded number of elements in the metadata
+                     * Returns the of elements in the metadata
                      */
                     inline size_t size() const {
-                        return metadata_.size() / sizeof_(type_);
-                    }
-
-                    /**
-                     * Sets the type to the specified TYPE enum value
-                     */
-                    inline void setType(const TYPE type) {
-                        type_ = type;
-                    }
-
-                    /**
-                     * Sets the type to the specified template type parameter
-                     */
-                    template<typename T>
-                    inline void setType() {
-                        setType(type_to_TYPE<T>::value);
-                    }
-
-                    /**
-                     * Gets the TYPE enum value
-                     */
-                    inline TYPE getType() const {
-                        return type_;
-                    }
-
-                    /**
-                     * Returns whether this metadata object has the specified type
-                     */
-                    inline bool isType(const TYPE type) const {
-                        return type_ == type;
-                    }
-
-                    /**
-                     * Returns whether this metadata object has the specified type
-                     */
-                    template<typename T>
-                    inline bool isType() const {
-                        return isType(type_to_TYPE<T>::value);
+                        return metadata_.size();
                     }
 
                     /**
@@ -2593,111 +2695,16 @@ namespace stf {
                      */
                     template<typename T>
                     inline std::enable_if_t<std::is_integral_v<T>> append(const T val) {
-                        for(size_t i = 0; i < byte_utils::bitSize<T>(); i += 8) {
-                            append(static_cast<uint8_t>((val >> i) & 0xFFU));
-                        }
+                        metadata_.emplace_back(MetadataElement::construct<T>(val));
                     }
 
                     /**
-                     * Appends new data from an array
+                     * Formats the metadata according to its declared type
                      */
-                    template<typename T>
-                    inline std::enable_if_t<std::is_integral_v<T>> append(const T* const val,
-                                                                          const size_t len) {
-                        stf_assert(val, "Tried to copy a null pointer into metadata");
-                        for(size_t i = 0; i < len; ++i) {
-                            append(val[i]);
-                        }
-                    }
+                    inline void format(std::ostream& os, size_t indent = 0) const {
+                        static constexpr size_t COLUMN_WIDTH = 32;
 
-                    /**
-                     * Appends new data from a vector
-                     */
-                    template<typename T>
-                    inline std::enable_if_t<std::is_integral_v<T>> append(const std::vector<T>& val) {
-                        for(const auto& v: val) {
-                            append(v);
-                        }
-                    }
-
-                    /**
-                     * Reads data
-                     */
-                    template<typename T>
-                    inline std::enable_if_t<std::is_integral_v<T>, T> read() const {
-                        checkRead_(sizeof(T));
-                        T val = 0;
-                        for(size_t i = 0; i < sizeof(val); ++i) {
-                            val = static_cast<T>(val | (static_cast<T>(metadata_[read_ptr_ + i]) << (i*8)));
-                        }
-                        read_ptr_ += sizeof(val);
-                        return val;
-                    }
-
-                    /**
-                     * Reads data into an array
-                     */
-                    template<typename T>
-                    inline std::enable_if_t<std::is_integral_v<T>> read(T* const val,
-                                                                        const size_t len) const {
-                        const size_t num_bytes = sizeof(T) * len;
-                        checkRead_(num_bytes);
-                        for(size_t i = 0; i < len; ++i) {
-                            val[i] = read<T>();
-                        }
-                        read_ptr_ += num_bytes;
-                    }
-
-                    /**
-                     * Reads data into a vector
-                     * NOTE: Reads val.size() elements, so the vector must already be sized accordingly
-                     */
-                    template<typename T>
-                    inline std::enable_if_t<std::is_integral_v<T>> read(std::vector<T>& val) const {
-                        const size_t len = val.size();
-                        const size_t num_bytes = sizeof(T) * len;
-                        checkRead_(num_bytes);
-                        for(size_t i = 0; i < len; ++i) {
-                            val[i] = read<T>();
-                        }
-                        read_ptr_ += num_bytes;
-                    }
-
-                    /**
-                     * Gets the raw byte vector
-                     */
-                    inline const auto& getData() const {
-                        return metadata_;
-                    }
-
-                    /**
-                     * Resets the read pointer
-                     */
-                    inline void rewind(const size_t pos = 0) const {
-                        read_ptr_ = pos;
-                    }
-
-                    /**
-                     * Gets whether we've reached the end of the data
-                     */
-                    inline bool allRead() const {
-                        return read_ptr_ == metadata_.size();
-                    }
-
-                    /**
-                     * Formats the metadata to the specified type
-                     */
-                    template<typename T>
-                    inline void formatAs(std::ostream& os, size_t indent = 0) const {
-                        static constexpr size_t COLUMN_WIDTH = 32 / sizeof(T);
-                        static constexpr int DIGITS_PER_ELEMENT = format_utils::numHexDigits<T>();
-
-                        const bool multi_element = metadata_.size() / sizeof(T) > 1;
-
-                        // Backup the current read_ptr_ value since we need to traverse the whole
-                        // vector
-                        const auto old_read_ptr = read_ptr_;
-                        read_ptr_ = 0;
+                        const bool multi_element = metadata_.size() > 1;
 
                         if(multi_element) {
                             os << '[';
@@ -2705,48 +2712,55 @@ namespace stf {
                             ++indent;
                         }
 
-                        while(!allRead()) {
-                            if(STF_EXPECT_TRUE(indent && (read_ptr_ != 0))) {
-                                format_utils::formatSpaces(os, indent);
+                        size_t line_length = 0;
+                        for(const auto& element: metadata_) {
+                            if(line_length + element.size() > COLUMN_WIDTH) {
+                                os << std::endl;
+                                if(indent) {
+                                    format_utils::formatSpaces(os, indent);
+                                }
+                                line_length = 0;
+                            }
+                            else if(line_length > 0) {
+                                os << ", ";
                             }
 
-                            // Write the first element
-                            format_utils::formatHex(os, read<T>());
+                            element.format(os);
 
-                            for(size_t i = 1; !allRead() && (i < COLUMN_WIDTH); ++i) {
-                                os << ',';
-                                format_utils::formatHex(os, read<T>(), DIGITS_PER_ELEMENT + 1, ' ');
-                            }
-
-                            if(multi_element && allRead()) {
-                                os << ']';
-                            }
-
-                            os << std::endl;
+                            line_length += element.size();
                         }
 
-                        // Restore the read_ptr_ value
-                        read_ptr_ = old_read_ptr;
+                        if(multi_element) {
+                            os << ']';
+                        }
                     }
 
                     /**
-                     * Formats the metadata according to its declared type
+                     * Gets an iterator to the beginning of the metadata vector
                      */
-                    inline void format(std::ostream& os, const size_t indent = 0) const {
-                        switch(type_) {
-                            case TYPE::UINT8:
-                                formatAs<uint8_t>(os, indent);
-                                break;
-                            case TYPE::UINT16:
-                                formatAs<uint16_t>(os, indent);
-                                break;
-                            case TYPE::UINT32:
-                                formatAs<uint32_t>(os, indent);
-                                break;
-                            case TYPE::UINT64:
-                                formatAs<uint64_t>(os, indent);
-                                break;
-                        }
+                    inline iterator begin() const {
+                        return metadata_.begin();
+                    }
+
+                    /**
+                     * Gets an iterator to the end of the metadata vector
+                     */
+                    inline iterator end() const {
+                        return metadata_.end();
+                    }
+
+                    /**
+                     * Gets the element at the specified index
+                     */
+                    inline const auto& at(const size_t idx) const {
+                        return metadata_.at(idx);
+                    }
+
+                    /**
+                     * Gets the element at the specified index
+                     */
+                    inline const auto& operator[](const size_t idx) const {
+                        return metadata_[idx];
                     }
             };
 
@@ -2890,6 +2904,7 @@ namespace stf {
                 if(!metadata.empty()) {
                     format_utils::formatLabel(os, "METADATA");
                     metadata.format(os, format_utils::LABEL_WIDTH);
+                    os << std::endl;
                 }
             }
 
@@ -2962,93 +2977,36 @@ namespace stf {
     };
 
     /**
-     * \private type_to_TYPE uint8_t specialization
+     * \private MetadataElement::TypeInterface::type_to_TYPE uint8_t specialization
      */
     template<>
-    struct TransactionRecord::Metadata::type_to_TYPE<uint8_t> {
+    struct TransactionRecord::Metadata::MetadataElement::TypeInterface::type_to_TYPE<uint8_t> {
         static constexpr TYPE value = TYPE::UINT8;
     };
 
     /**
-     * \private type_to_TYPE uint16_t specialization
+     * \private MetadataElement::TypeInterface::type_to_TYPE uint16_t specialization
      */
     template<>
-    struct TransactionRecord::Metadata::type_to_TYPE<uint16_t> {
+    struct TransactionRecord::Metadata::MetadataElement::TypeInterface::type_to_TYPE<uint16_t> {
         static constexpr TYPE value = TYPE::UINT16;
     };
 
     /**
-     * \private type_to_TYPE uint32_t specialization
+     * \private MetadataElement::TypeInterface::type_to_TYPE uint32_t specialization
      */
     template<>
-    struct TransactionRecord::Metadata::type_to_TYPE<uint32_t> {
+    struct TransactionRecord::Metadata::MetadataElement::TypeInterface::type_to_TYPE<uint32_t> {
         static constexpr TYPE value = TYPE::UINT32;
     };
 
     /**
-     * \private type_to_TYPE uint64_t specialization
+     * \private MetadataElement::TypeInterface::type_to_TYPE uint64_t specialization
      */
     template<>
-    struct TransactionRecord::Metadata::type_to_TYPE<uint64_t> {
+    struct TransactionRecord::Metadata::MetadataElement::TypeInterface::type_to_TYPE<uint64_t> {
         static constexpr TYPE value = TYPE::UINT64;
     };
-
-    /**
-     * \private Metadata::append uint8_t specialization
-     */
-    template<>
-    inline void TransactionRecord::Metadata::append<uint8_t>(const uint8_t val) {
-        metadata_.emplace_back(val);
-    }
-
-    /**
-     * \private Metadata::append uint8_t array specialization
-     */
-    template<>
-    inline void TransactionRecord::Metadata::append<uint8_t>(const uint8_t* val, const size_t len) {
-        stf_assert(val, "Tried to copy a null pointer into metadata");
-        metadata_.insert(metadata_.end(), val, val + len);
-    }
-
-    /**
-     * \private Metadata::append uint8_t vector specialization
-     */
-    template<>
-    inline void TransactionRecord::Metadata::append<uint8_t>(const std::vector<uint8_t>& val) {
-        metadata_.insert(metadata_.end(), val.begin(), val.end());
-    }
-
-    /**
-     * \private Metadata::read uint8_t specialization
-     */
-    template<>
-    inline uint8_t TransactionRecord::Metadata::read<uint8_t>() const {
-        checkRead_(1);
-        return metadata_[read_ptr_++];
-    }
-
-    /**
-     * \private Metadata::read uint8_t array specialization
-     */
-    template<>
-    inline void TransactionRecord::Metadata::read(uint8_t* const val, const size_t len) const {
-        checkRead_(len);
-        const auto [start_it, end_it] = getRange_(len);
-        std::copy(start_it, end_it, val);
-        read_ptr_ += len;
-    }
-
-    /**
-     * \private Metadata::read uint8_t vector specialization
-     */
-    template<>
-    inline void TransactionRecord::Metadata::read<uint8_t>(std::vector<uint8_t>& val) const {
-        const size_t len = val.size();
-        checkRead_(len);
-        const auto [start_it, end_it] = getRange_(len);
-        std::copy(start_it, end_it, val.begin());
-        read_ptr_ += len;
-    }
 
     REGISTER_RECORD(TransactionRecord)
 
