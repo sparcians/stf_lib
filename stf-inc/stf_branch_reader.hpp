@@ -85,10 +85,7 @@ namespace stf {
             __attribute__((hot, always_inline))
             inline void resetOperandMaps_() {
                 src_operands_.clear();
-                src_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
-
                 dest_operands_.clear();
-                dest_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
             }
 
             template<typename InstRecordType>
@@ -112,6 +109,17 @@ namespace stf {
                     delegates::STFBranchDelegate::reset_(branch);
                     resetOperandMaps_();
                     return false;
+                }
+
+                // X0 records may not exist in the trace, so fix up the operand maps if necessary
+                if(STF_EXPECT_FALSE(((branch.getRS1() == Registers::STF_REG::STF_REG_X0) ||
+                                     (branch.getRS2() == Registers::STF_REG::STF_REG_X0)) &&
+                                    !src_operands_.hasOperand(Registers::STF_REG::STF_REG_X0))) {
+                    src_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
+                }
+                if(STF_EXPECT_FALSE((branch.getRD() == Registers::STF_REG::STF_REG_X0) &&
+                                    !dest_operands_.hasOperand(Registers::STF_REG::STF_REG_X0))) {
+                    dest_operands_.addOperand(Registers::STF_REG::STF_REG_X0, 0);
                 }
 
                 delegates::STFBranchDelegate::setOperandValues_(branch, src_operands_, dest_operands_);
