@@ -2672,6 +2672,7 @@ namespace stf {
                     inline void unpack_(STFIFstream& reader) {
                         VectorSizeType size;
                         TransactionRecord::read_(reader, size);
+                        metadata_.clear();
                         metadata_.reserve(size);
                         for(VectorSizeType i = 0; i < size; ++i) {
                             metadata_.emplace_back(reader);
