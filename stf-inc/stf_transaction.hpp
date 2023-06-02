@@ -160,6 +160,8 @@ namespace stf {
 
             __attribute__((always_inline))
             inline void reset_() {
+                STFItem::reset_();
+                orig_records_.clear();
                 transaction_id_ = 0;
                 cycle_delta_ = 0;
                 clock_id_ = INVALID_CLOCK_ID;
