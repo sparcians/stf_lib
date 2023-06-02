@@ -230,6 +230,21 @@ namespace stf {
             }
 
             /**
+             * Formats the given value in hex to the specified width, padding with the specified character
+             * \param os ostream to write result to
+             * \param val value to format
+             * \param width width to format to
+             * \param pad_char padding character
+             */
+            template<typename OStream, typename T>
+            static inline std::enable_if_t<std::is_integral_v<T>>
+            formatHexLeft(OStream&& os, const T val, const int width = numHexDigits<T>(), const char pad_char = ' ') {
+                FlagSaver flags(os);
+                os << std::hex;
+                formatLeft_(os, val, width, pad_char);
+            }
+
+            /**
              * Formats the given uint8_t in hex to the specified width, padding with the specified character
              * \param os ostream to write result to
              * \param val value to format

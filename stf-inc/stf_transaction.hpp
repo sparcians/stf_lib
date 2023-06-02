@@ -148,6 +148,7 @@ namespace stf {
             uint64_t cycle_delta_ = 0;
             ClockId clock_id_ = INVALID_CLOCK_ID;
             Protocol protocol_;
+            const TransactionRecord::Metadata* metadata_ = nullptr;
 
             using DependencyVector = boost::container::small_vector<Dependency, 1>;
             DependencyVector dependencies_;
@@ -159,10 +160,13 @@ namespace stf {
 
             __attribute__((always_inline))
             inline void reset_() {
+                STFItem::reset_();
+                orig_records_.clear();
                 transaction_id_ = 0;
                 cycle_delta_ = 0;
                 clock_id_ = INVALID_CLOCK_ID;
                 protocol_.reset(nullptr);
+                metadata_ = nullptr;
                 dependencies_.clear();
             }
 
@@ -173,6 +177,7 @@ namespace stf {
                 cycle_delta_ = transaction_info.getCycleDelta();
                 clock_id_ = transaction_info.getClockId();
                 protocol_.reset(transaction_info);
+                metadata_ = &transaction_info.getMetadata();
             }
 
             __attribute__((always_inline))
@@ -228,6 +233,13 @@ namespace stf {
              */
             inline const auto& getComments() const {
                 return orig_records_.at(descriptors::internal::Descriptor::STF_COMMENT);
+            }
+
+            /**
+             * Gets transaction metadata
+             */
+            inline const auto& getMetadata() const {
+                return *metadata_;
             }
 
             /**
