@@ -2674,6 +2674,7 @@ namespace stf {
                         TransactionRecord::read_(reader, size);
                         metadata_.clear();
                         metadata_.reserve(size);
+                        raw_size_ = 0;
                         for(VectorSizeType i = 0; i < size; ++i) {
                             metadata_.emplace_back(reader);
                             raw_size_ += metadata_.back().size();
