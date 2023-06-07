@@ -7,6 +7,8 @@ namespace stf {
         static constexpr int BRANCH_TYPE_WIDTH = 22;
         static constexpr int FIELD_PADDING = 4;
 
+        format_utils::formatDecLeft(os, branch.index(), format_utils::LABEL_WIDTH / 2);
+        format_utils::formatDecLeft(os, branch.instIndex(), format_utils::LABEL_WIDTH / 2);
         format_utils::formatVA(os, branch.getPC());
         format_utils::formatSpaces(os, FIELD_PADDING);
         format_utils::formatOpcode(os, branch.getOpcode());
