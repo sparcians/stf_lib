@@ -1,7 +1,6 @@
 project(stfpy)
 
-find_package(PythonInterp 3.7 REQUIRED)
-find_package(PythonLibs 3.7 REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development)
 
 include_directories(${STF_BASE}/stf-inc)
 
@@ -48,14 +47,14 @@ add_custom_command(
                                   CPPFLAGS="${compile_opts}"
                                   LDFLAGS="${link_opts}"
                                   STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
-                                  ${PYTHON_EXECUTABLE} setup.py build_ext -f
-                                                                          ${CYTHON_PARALLEL_FLAG}
-                                                                          --include-dirs "${include_dirs}"
-                                                                          --libraries "${stf_libraries}"
-                                                                          --library-dirs "${extra_lib_dirs}"
+                                  ${Python3_EXECUTABLE} setup.py build_ext -f
+                                                                           ${CYTHON_PARALLEL_FLAG}
+                                                                           --include-dirs "${include_dirs}"
+                                                                           --libraries "${stf_libraries}"
+                                                                           --library-dirs "${extra_lib_dirs}"
   COMMAND ${CMAKE_COMMAND} -E env STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
-                                  ${PYTHON_EXECUTABLE} setup.py bdist_wheel --bdist-dir "${CMAKE_CURRENT_BINARY_DIR}/bdist_wheel"
-                                                                            --dist-dir "${CMAKE_CURRENT_BINARY_DIR}"
+                                  ${Python3_EXECUTABLE} setup.py bdist_wheel --bdist-dir "${CMAKE_CURRENT_BINARY_DIR}/bdist_wheel"
+                                                                             --dist-dir "${CMAKE_CURRENT_BINARY_DIR}"
   COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/stfpy.stamp
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS
