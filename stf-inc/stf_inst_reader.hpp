@@ -105,6 +105,8 @@ namespace stf {
 
                 pending_user_syscall_ = false;
 
+                const bool skipping_already_enabled = skippingEnabled_(); // Check if we're already skipping instructions
+
                 while(true) {
                     static_assert(enums::to_int(INST_MEM_ACCESS::READ) == 1,
                                   "Assumed INST_MEM_ACCESS::READ value has changed");
@@ -186,12 +188,13 @@ namespace stf {
                                 {
                                     const auto& event = rec->template as<EventRecord>();
                                     const bool is_syscall = event.isSyscall();
+                                    const bool is_fault = event.isFault();
                                     bool is_mode_change = false;
 
                                     delegates::STFInstDelegate::setFlag_(inst,
                                                                          math_utils::conditionalValue(
                                                                             is_syscall, STFInst::INST_IS_SYSCALL,
-                                                                            event.isFault(), STFInst::INST_IS_FAULT,
+                                                                            is_fault, STFInst::INST_IS_FAULT,
                                                                             event.isInterrupt(), STFInst::INST_IS_INTERRUPT,
                                                                             !is_syscall && (is_mode_change = event.isModeChange()), MODE_CHANGE_FLAGS[event.getData().front()]
                                     ));
@@ -199,8 +202,8 @@ namespace stf {
                                     checkSkipping_(is_mode_change, inst.isChangeToUserMode());
 
                                     if(STF_EXPECT_FALSE(onlyUserMode_() &&
-                                                        is_syscall &&
-                                                        (event.getEvent() == EventRecord::TYPE::USER_ECALL))) {
+                                                        ((is_syscall && (event.getEvent() == EventRecord::TYPE::USER_ECALL)) ||
+                                                         (is_fault && !skipping_already_enabled && (event.getEvent() == EventRecord::TYPE::ILLEGAL_INST))))) {
                                         pending_user_syscall_ = true;
                                     }
 

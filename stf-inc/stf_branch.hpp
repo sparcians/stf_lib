@@ -102,6 +102,8 @@ namespace stf {
         private:
             friend class delegates::STFBranchDelegate;
 
+            uint64_t inst_index_ = 0;
+            uint64_t unskipped_inst_index_ = 0;
             uint64_t pc_ = 0;
             uint64_t target_ = 0;
             uint32_t opcode_ = 0;
@@ -259,6 +261,7 @@ namespace stf {
              * Sets operand values
              * \param operand_map std::unordered_map mapping register numbers to values
              */
+            __attribute__((always_inline))
             inline void setOperandValues_(const OperandMap& src_operand_map, const OperandMap& dest_operand_map) {
                 if(rs1_ != Registers::STF_REG::STF_REG_INVALID) {
                     rs1_value_ = src_operand_map.getOperand(rs1_);
@@ -271,6 +274,24 @@ namespace stf {
                 if(rd_ != Registers::STF_REG::STF_REG_INVALID) {
                     rd_value_ = dest_operand_map.getOperand(rd_);
                 }
+            }
+
+            /**
+             * Sets instruction index
+             * \param index Index value to set
+             * \param unskipped_index Actual index within the trace (i.e., the index the item would
+             * have if there was no skipping)
+             * \param inst_index Instruction index to set
+             * \param unskipped_inst_index Instruction index without skipping enabled
+             */
+            __attribute__((always_inline))
+            inline void setIndex_(const uint64_t index,
+                                  const uint64_t unskipped_index,
+                                  const uint64_t inst_index,
+                                  const uint64_t unskipped_inst_index) {
+                STFSkippableItem::setIndex_(index, unskipped_index);
+                inst_index_ = inst_index;
+                unskipped_inst_index_ = unskipped_inst_index;
             }
 
         public:
@@ -436,6 +457,19 @@ namespace stf {
                 return rd_value_;
             }
 
+            /**
+             * Gets the instruction index of this branch
+             */
+            inline uint64_t instIndex() const {
+                return inst_index_;
+            }
+
+            /**
+             * Gets the instruction index of this branch
+             */
+            inline uint64_t unskippedInstIndex() const {
+                return unskipped_inst_index_;
+            }
     };
 
     /**
@@ -548,6 +582,24 @@ namespace stf {
                                                      const STFBranch::OperandMap& src_operand_map,
                                                      const STFBranch::OperandMap& dest_operand_map) {
                     branch.setOperandValues_(src_operand_map, dest_operand_map);
+                }
+
+                /**
+                 * Sets the index
+                 * \param branch Branch to modify
+                 * \param index Index value to set
+                 * \param unskipped_index Actual index within the trace (i.e., the index the item would
+                 * have if there was no skipping)
+                 * \param inst_index Instruction index to set
+                 * \param unskipped_inst_index Instruction index without skipping enabled
+                 */
+                __attribute__((always_inline))
+                static inline void setIndex_(STFBranch& branch,
+                                             const uint64_t index,
+                                             const uint64_t unskipped_index,
+                                             const uint64_t inst_index,
+                                             const uint64_t unskipped_inst_index) {
+                    branch.setIndex_(index, unskipped_index, inst_index, unskipped_inst_index);
                 }
 
                 friend class stf::STFBranchReader;

@@ -55,6 +55,7 @@ namespace stf {
             using ParentReader::skippingEnabled_;
 
             uint64_t num_branches_read_ = 0;
+            size_t num_skipped_insts_ = 0;
             STFBranch* last_branch_ = nullptr;
             STFRecord::UniqueHandle current_record_;
             STFBranch::OperandMap src_operands_;
@@ -88,10 +89,27 @@ namespace stf {
                 dest_operands_.clear();
             }
 
+            __attribute__((always_inline))
+            inline void countSkippedInst_(const bool skip_item) {
+                num_skipped_insts_ += skip_item;
+            }
+
+            __attribute__((always_inline))
+            inline void initItemIndex_(STFBranch& item) const {
+                const auto unskipped_index = rawNumItemsRead_();
+                const auto num_insts = STFReader::numInstsRead();
+                delegates::STFBranchDelegate::setIndex_(item,
+                                                        unskipped_index - numItemsSkipped_(),
+                                                        unskipped_index,
+                                                        num_insts - num_skipped_insts_,
+                                                        num_insts);
+            }
+
             template<typename InstRecordType>
             __attribute__((hot, always_inline))
             inline void finalizeNotABranch_(STFBranch& branch, const STFRecord* const rec) {
                 updateLastBranch_(rec->as<InstRecordType>());
+                countSkippedInst_(skippingEnabled_());
                 updateSkipping_();
                 delegates::STFBranchDelegate::reset_(branch);
                 resetOperandMaps_();
@@ -103,6 +121,9 @@ namespace stf {
                 const auto& inst_rec = rec->as<InstRecordType>();
 
                 updateLastBranch_(inst_rec);
+
+                const bool skip_item = skippingEnabled_();
+                countSkippedInst_(skip_item);
 
                 if(STF_EXPECT_TRUE(!STFBranchDecoder::decode(getInitialIEM(), inst_rec, branch))) {
                     stf_assert(!branch.isTaken(), "Branch was marked taken but also didn't decode as a branch");
@@ -125,7 +146,7 @@ namespace stf {
                 delegates::STFBranchDelegate::setOperandValues_(branch, src_operands_, dest_operands_);
                 ++num_branches_read_;
                 initItemIndex_(branch);
-                delegates::STFBranchDelegate::setSkipped_(branch, skippingEnabled_());
+                delegates::STFBranchDelegate::setSkipped_(branch, skip_item);
                 countSkipped_(branch.skipped());
 
                 if(branch.isTaken()) {
