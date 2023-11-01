@@ -11,6 +11,7 @@
 #include "stf_fstream.hpp"
 #include "stf_factory_decl.hpp"
 #include "stf_packed_container.hpp"
+#include "stf_protocol_fields.hpp"
 #include "stf_vector_view.hpp"
 #include "type_utils.hpp"
 
@@ -237,7 +238,8 @@ namespace stf {
              */
             template<typename T>
             inline std::enable_if_t<std::conjunction_v<std::negation<type_utils::is_arithmetic_or_enum<T>>,
-                                                                std::is_trivially_copyable<T>>, STFIFstream&>
+                                                       std::is_trivially_copyable<T>>,
+                                    STFIFstream&>
             operator>>(T& data) {
                 readIntoPtr_(&data);
                 return *this;
@@ -314,9 +316,19 @@ namespace stf {
              * Use SerializableString to handle this automatically.
              * \param data String is read into this variable
              */
+            // cppcheck-suppress constParameterReference
             inline STFIFstream& operator>>(std::string& data) {
                 readIntoPtr_(data.data(), data.size());
                 return *this;
+            }
+
+            /**
+             * Reads a ProtocolField from an STFIFstream
+             * \param data ProtocolField is read into this variable
+             */
+            template<typename FieldType, typename DataType, ProtocolFieldFormatter<DataType> Formatter>
+            inline STFIFstream& operator>>(ProtocolField<FieldType, DataType, Formatter>& data) {
+                return *this >> data.getData_();
             }
 
         public:
@@ -343,6 +355,12 @@ namespace stf {
 
             template<typename T, typename SerializedSizeT>
             friend class SerializableContainer;
+
+            template<typename T, typename SerializedSizeT>
+            friend class SerializablePackedBitVector;
+
+            template<typename FieldType, typename DataType, ProtocolFieldFormatter<DataType> Formatter>
+            friend class ProtocolField;
 
             /**
              * Reads an STFObject

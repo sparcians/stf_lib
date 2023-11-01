@@ -151,6 +151,7 @@ namespace stf {
              * Resets branch info to initial state (used by STFBranchReader)
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void reset_() {
                 STFSkippableItem::reset_();
                 pc_ = 0;

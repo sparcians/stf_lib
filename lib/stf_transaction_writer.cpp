@@ -7,6 +7,7 @@ namespace stf {
         protocol_id_ = STFRecord::make<ProtocolIdRecord>(protocol_id);
     }
 
+    // cppcheck-suppress unusedFunction
     void STFTransactionWriter::addClock(const ClockId clock_id, const std::string_view name) {
         ClockRegistry::registerClock(clock_id, name);
         clock_ids_.emplace_back(clock_id, name);
@@ -61,7 +62,6 @@ namespace stf {
         }
     }
 
-    // cppcheck-suppress unusedFunction
     void STFTransactionWriter::finalizeHeader() {
         if(header_finalized_) {
             return;

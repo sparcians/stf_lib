@@ -93,6 +93,7 @@ namespace stf {
              * Packs the record into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 TypeAwareSTFRecord<ClassT, desc>::write_(writer, data_);
             }
@@ -236,6 +237,7 @@ namespace stf {
              * Packs an InstPCTargetRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 writer.trackPC(*static_cast<const T*>(this));
                 GenericAddressRecord<T, desc>::pack_impl(writer);
@@ -246,6 +248,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 GenericAddressRecord<T, desc>::unpack_impl(reader);
                 reader.trackPC(*static_cast<T*>(this));
@@ -292,6 +295,7 @@ namespace stf {
              * Packs a GenericOpcodeRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 writer.trackPC(*static_cast<const ClassT*>(this));
                 GenericSingleDataRecord<ClassT, OpcodeT, desc>::pack_impl(writer);
@@ -303,6 +307,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 GenericSingleDataRecord<ClassT, OpcodeT, desc>::unpack_impl(reader);
                 reader.trackPC(*static_cast<ClassT*>(this));

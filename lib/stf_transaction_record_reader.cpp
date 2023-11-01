@@ -46,7 +46,7 @@ namespace stf {
                     case descriptors::internal::Descriptor::STF_CLOCK_ID:
                         {
                             const auto& clock_id_rec = rec->as<ClockIdRecord>();
-                            ClockRegistry::registerClock(clock_id_rec.getId(), clock_id_rec.getName());
+                            ClockRegistry::registerClock(clock_id_rec.getClockId(), clock_id_rec.getName());
                         }
                         break;
                     case descriptors::internal::Descriptor::STF_END_HEADER:

@@ -16,6 +16,9 @@
 #include <string>
 #include <string_view>
 
+#include <boost/preprocessor/facilities/overload.hpp>
+#include <boost/preprocessor/stringize.hpp>
+
 #include "type_utils.hpp"
 
 namespace stf
@@ -208,29 +211,29 @@ namespace stf
  * \def ADD_FILE_INFORMATION
  * Convenience macro to add file information to an exception
  */
-#define ADD_FILE_INFORMATION(ex, file, line)                \
+#define ADD_FILE_INFORMATION(ex, file, line) \
     ex << ": in file: '" << file << "', on line: " << std::dec << line;
 
 /**
  * \def STF_THROW_EXCEPTION
  * For internal use only
  */
-#define STF_THROW_EXCEPTION(reason, file, line)              \
-    stf::STFException ex(reason);                            \
-    ADD_FILE_INFORMATION(ex, file, line)                     \
+#define STF_THROW_EXCEPTION(reason, file, line) \
+    stf::STFException ex(reason);               \
+    ADD_FILE_INFORMATION(ex, file, line)        \
     throw ex;
 
 /**
  * \def stf_throw_impl
  * For internal use only
  */
-#define stf_throw_impl(prefix, message) \
-    { \
-        stf::STFException::stringstream msg(prefix); \
-        msg << ": " << message; \
-        stf::STFException ex(msg.str()); \
-        ADD_FILE_INFORMATION(ex, __FILE__, __LINE__); \
-        throw ex; \
+#define stf_throw_impl(prefix, message)                 \
+    {                                                   \
+        stf::STFException::stringstream msg(prefix);    \
+        msg << ": " << message;                         \
+        stf::STFException ex(msg.str());                \
+        ADD_FILE_INFORMATION(ex, __FILE__, __LINE__);   \
+        throw ex;                                       \
     }
 
 /**
@@ -238,40 +241,20 @@ namespace stf
  * For internal use only
  */
 #define stf_assert1(e) \
-    if(__builtin_expect(!(e), 0)) { STF_THROW_EXCEPTION(#e, __FILE__, __LINE__) }
+    if(__builtin_expect(!(e), 0)) { STF_THROW_EXCEPTION(BOOST_PP_STRINGIZE(e), __FILE__, __LINE__) }
 
 /**
  * \def stf_assert2
  * For internal use only
  */
-#define stf_assert2(e, insertions)                                                 \
-    if(__builtin_expect(!(e), 0)) { stf_throw_impl(#e, insertions) }
+#define stf_assert2(e, insertions) \
+    if(__builtin_expect(!(e), 0)) { stf_throw_impl(BOOST_PP_STRINGIZE(e), insertions) }
 
-/**
- * \def STF_VA_NARGS_IMPL
- * For internal use only
- */
-#define STF_VA_NARGS_IMPL(_1, _2, _3, _4, _5, N, ...) N
-/**
- * \def STF_VA_NARGS
- * For internal use only
- */
-#define STF_VA_NARGS(...) STF_VA_NARGS_IMPL(__VA_ARGS__, 5, 4, 3, 2, 1, 0)
-/**
- * \def stf_assert_impl2
- * For internal use only
- */
-#define stf_assert_impl2(count, ...) stf_assert##count(__VA_ARGS__)
-/**
- * \def stf_assert_impl
- * For internal use only
- */
-#define stf_assert_impl(count, ...)  stf_assert_impl2(count, __VA_ARGS__)
 /**
  * \def stf_assert
  * Throws an stf::STFException if the provided condition is false
  */
-#define stf_assert(...) stf_assert_impl(STF_VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+#define stf_assert(...) BOOST_PP_OVERLOAD(stf_assert, __VA_ARGS__)(__VA_ARGS__)
 
 /**
  * \def stf_throw
@@ -283,13 +266,13 @@ namespace stf
  * \def invalid_descriptor_throw
  * Throws an stf::InvalidDescriptorException with the provided message (supports << operator on message)
  */
-#define invalid_descriptor_throw(message) \
-    { \
-        std::stringstream msg; \
-        msg << message; \
+#define invalid_descriptor_throw(message)                                       \
+    {                                                                           \
+        std::stringstream msg;                                                  \
+        msg << message;                                                         \
         stf::InvalidDescriptorException ex(std::string("abort: ") + msg.str()); \
-        ADD_FILE_INFORMATION(ex, __FILE__, __LINE__); \
-        throw ex; \
+        ADD_FILE_INFORMATION(ex, __FILE__, __LINE__);                           \
+        throw ex;                                                               \
     }
 
 #endif //__STF_EXCEPTION_HPP__

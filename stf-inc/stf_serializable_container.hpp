@@ -184,7 +184,7 @@ namespace stf {
              * Move-constructs a SerializableVector from its underlying container type
              */
             explicit SerializableVector(std::vector<T>&& rhs) :
-                SerializableContainer<std::vector<T>, SerializedSizeT>(rhs)
+                SerializableContainer<std::vector<T>, SerializedSizeT>(std::forward<std::vector<T>>(rhs))
             {
             }
 
@@ -210,6 +210,91 @@ namespace stf {
                 os << ']';
 
                 return os;
+            }
+    };
+
+    template<typename T, typename SerializedSizeT>
+    class SerializablePackedBitVector : public std::vector<T> {
+        private:
+            inline std::vector<uint8_t> allocatePackedMask_() const {
+                return std::vector<uint8_t>((this->size() + 7) / 8);
+            }
+
+        public:
+            SerializablePackedBitVector() = default;
+
+            /**
+             * Copy-constructs a SerializableVector from its underlying type
+             */
+            explicit SerializablePackedBitVector(const std::vector<T>& rhs) :
+                std::vector<T>(rhs)
+            {
+            }
+
+            /**
+             * Move-constructs a SerializableVector from its underlying container type
+             */
+            explicit SerializablePackedBitVector(std::vector<T>&& rhs) :
+                std::vector<T>(std::forward<std::vector<T>>(rhs))
+            {
+            }
+
+            using std::vector<T>::operator=;
+
+            inline void unpack(STFIFstream& reader) {
+                SerializedSizeT new_size;
+                reader >> new_size;
+                this->resize(new_size);
+                auto packed_data = allocatePackedMask_();
+
+                reader >> packed_data;
+
+                // Unpack the mask bits so that each element of the vector contains 1 mask bit
+                for(size_t i = 0; i < new_size; ++i) {
+                    (*this)[i] = (packed_data[i / 8] >> (i & 7)) & 1;
+                }
+            }
+
+            /**
+             * Packs a tilelink::MaskedChannel object to an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            inline void pack(STFOFstream& writer) const {
+                auto packed_data = allocatePackedMask_();
+
+                // Every 8 elements from the vector are packed into a single uint8_t
+                for(size_t i = 0; i < this->size(); ++i) {
+                    // Ideally, we would do it like this:
+                    // packed_data[i / 8] |= static_cast<uint8_t>((mask_[i] & 1) << (i & 7));
+                    //
+                    // However, some GCC versions can be extra picky about compound assignment
+                    // operators, so instead:
+                    auto& dest = packed_data[i / 8];
+                    dest = static_cast<uint8_t>(dest | (((*this)[i] & 1) << (i & 7)));
+                }
+
+                writer << static_cast<SerializedSizeT>(this->size());
+                writer << packed_data;
+            }
+
+            /**
+             * Writes the container to an STFOFstream
+             * \param writer STFOFstream to use
+             * \param data SerializableContainer to use
+             */
+            friend STFOFstream& operator<<(STFOFstream& writer, const SerializablePackedBitVector& data) {
+                data.pack(writer);
+                return writer;
+            }
+
+            /**
+             * Reads the container from an STFIFstream
+             * \param reader STFIFstream to use
+             * \param data SerializableContainer to use
+             */
+            friend STFIFstream& operator>>(STFIFstream& reader, SerializablePackedBitVector& data) {
+                data.unpack(reader);
+                return reader;
             }
     };
 

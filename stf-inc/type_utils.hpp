@@ -56,6 +56,19 @@ namespace stf {
             }
             return new_arr;
         }
+
+        template<typename T>
+        class optimal_const_ref {
+            private:
+                using const_type = std::add_const_t<T>;
+            public:
+                using type = std::conditional_t<std::is_fundamental_v<const_type>,
+                                                std::remove_reference_t<const_type>,
+                                                std::add_lvalue_reference_t<const_type>>;
+        };
+
+        template<typename T>
+        using optimal_const_ref_t = typename optimal_const_ref<T>::type;
     } // end namespace type_utils
 } // end namespace stf
 

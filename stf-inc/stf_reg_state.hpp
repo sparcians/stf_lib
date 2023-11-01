@@ -6,8 +6,8 @@
  * 1. Parse the register name;
  */
 
-#ifndef __STF_COMMON_HELPER_HPP__
-#define __STF_COMMON_HELPER_HPP__
+#ifndef __STF_REG_STATE_HPP__
+#define __STF_REG_STATE_HPP__
 
 #include <cstdint>
 #include <stdexcept>

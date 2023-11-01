@@ -20,55 +20,48 @@ namespace stf {
              * The descriptor for each STF record as it is encoded in the STF format
              *
              */
-            enum class Descriptor : uint8_t {
-                __RESERVED_START = 0,
-                STF_RESERVED                    = __RESERVED_START,            /**< Reserved for error detection */
-                STF_IDENTIFIER                  = 1,            /**< Indicates start of an STF file */
-                STF_VERSION                     = 2,            /**< Trace format version */
-                STF_COMMENT                     = 3,            /**< Comment */
-                STF_ISA                         = 4,            /**< ISA family */
-                STF_INST_IEM                    = 5,            /**< Instruction encoding mode */
-                STF_TRACE_INFO                  = 6,            /**< Trace generator */
-                STF_TRACE_INFO_FEATURE          = 7,            /**< Trace features */
-                STF_PROCESS_ID_EXT              = 8,            /**< Process ID EXTENSION */
-                STF_FORCE_PC                    = 9,            /**< Initial PC and trace stitching */
-                STF_VLEN_CONFIG                 = 10,           /**< Sets the vector vlen parameter */
-                STF_PROTOCOL_ID                 = 11,           /**< Sets the protocol encoded in a transaction trace */
-                STF_CLOCK_ID                    = 12,           /**< Adds a clock domain ID to a transaction trace */
+            STF_ENUM(STF_ENUM_CONFIG(OVERRIDE_START),
+                Descriptor,
+                uint8_t,
+                STF_RESERVED,
+                STF_ENUM_VAL(STF_IDENTIFIER,              1),    /**< Indicates start of an STF file */
+                STF_ENUM_VAL(STF_VERSION,                 2),    /**< Trace format version */
+                STF_ENUM_VAL(STF_COMMENT,                 3),    /**< Comment */
+                STF_ENUM_VAL(STF_ISA,                     4),    /**< ISA family */
+                STF_ENUM_VAL(STF_INST_IEM,                5),    /**< Instruction encoding mode */
+                STF_ENUM_VAL(STF_TRACE_INFO,              6),    /**< Trace generator */
+                STF_ENUM_VAL(STF_TRACE_INFO_FEATURE,      7),    /**< Trace features */
+                STF_ENUM_VAL(STF_PROCESS_ID_EXT,          8),    /**< Process ID EXTENSION */
+                STF_ENUM_VAL(STF_FORCE_PC,                9),    /**< Initial PC and trace stitching */
+                STF_ENUM_VAL(STF_VLEN_CONFIG,            10),    /**< Sets the vector vlen parameter */
+                STF_ENUM_VAL(STF_PROTOCOL_ID,            11),    /**< Sets the protocol encoded in a transaction trace */
+                STF_ENUM_VAL(STF_CLOCK_ID,               12),    /**< Adds a clock domain ID to a transaction trace */
 
-                STF_END_HEADER                  = 19,           /**< End of header record */
+                STF_ENUM_VAL(STF_END_HEADER,             19),    /**< End of header record */
 
-                STF_INST_PC_TARGET              = 31,           /**< Inst generated PC target address */
+                STF_ENUM_VAL(STF_INST_PC_TARGET,         31),    /**< Inst generated PC target address */
 
-                STF_INST_REG                    = 40,           /**< Inst operand register number and content */
-                STF_INST_READY_REG              = 41,           /**< Mark operand as ready */
+                STF_ENUM_VAL(STF_INST_REG,               40),    /**< Inst operand register number and content */
+                STF_ENUM_VAL(STF_INST_READY_REG,         41),    /**< Mark operand as ready */
 
-                STF_PAGE_TABLE_WALK             = 50,           /**< Page table walk */
+                STF_ENUM_VAL(STF_PAGE_TABLE_WALK,        50),    /**< Page table walk */
 
-                STF_INST_MEM_ACCESS             = 60,           /**< Inst generated memory access */
-                STF_INST_MEM_CONTENT            = 61,           /**< Inst load/store data */
-                STF_BUS_MASTER_ACCESS           = 62,           /**< Memory access attributes (size, source, attr) */
-                STF_BUS_MASTER_CONTENT          = 63,           /**< Bus master read/write data */
+                STF_ENUM_VAL(STF_INST_MEM_ACCESS,        60),    /**< Inst generated memory access */
+                STF_ENUM_VAL(STF_INST_MEM_CONTENT,       61),    /**< Inst load/store data */
+                STF_ENUM_VAL(STF_BUS_MASTER_ACCESS,      62),    /**< Memory access attributes (size, source, attr) */
+                STF_ENUM_VAL(STF_BUS_MASTER_CONTENT,     63),    /**< Bus master read/write data */
 
-                STF_EVENT                       = 100,          /**< Event */
-                STF_EVENT_PC_TARGET             = 101,          /**< Event generated PC target address */
+                STF_ENUM_VAL(STF_EVENT,                  100),   /**< Event */
+                STF_ENUM_VAL(STF_EVENT_PC_TARGET,        101),   /**< Event generated PC target address */
 
-                STF_INST_MICROOP                = 230,          /**< Micro Op */
+                STF_ENUM_VAL(STF_INST_MICROOP,           230),   /**< Micro Op */
 
-                STF_INST_OPCODE32               = 240,          /**< 4 byte instruction */
-                STF_INST_OPCODE16               = 241,          /**< 2 byte instruction */
+                STF_ENUM_VAL(STF_INST_OPCODE32,          240),   /**< 4 byte instruction */
+                STF_ENUM_VAL(STF_INST_OPCODE16,          241),   /**< 2 byte instruction */
 
-                STF_TRANSACTION                 = 250,
-                STF_TRANSACTION_DEPENDENCY      = 251,
-
-                __RESERVED_END                                /**< Reserved for error detection, end of descriptor  */
-            };
-
-            /**
-             * Writes a string representation of a Descriptor enum to an ostream
-             */
-            std::ostream& operator<<(std::ostream& os, Descriptor desc);
-
+                STF_ENUM_VAL(STF_TRANSACTION,            250),
+                STF_ENUM_VAL(STF_TRANSACTION_DEPENDENCY, 251)
+            );
         } // end namespace encoded
 
         namespace internal {
@@ -78,45 +71,40 @@ namespace stf {
              * The descriptor for each STF record - this is the *internal* library encoding
              *
              */
-            enum class Descriptor : enums::int_t<encoded::Descriptor> {
-                __RESERVED_START,
-                STF_RESERVED = __RESERVED_START,
-                STF_INST_REG,
-                STF_INST_OPCODE16,
-                STF_INST_OPCODE32,
-                STF_INST_MEM_ACCESS,
-                STF_INST_MEM_CONTENT,
-                STF_INST_PC_TARGET,
-                STF_EVENT,
-                STF_EVENT_PC_TARGET,
-                STF_PAGE_TABLE_WALK,
-                STF_BUS_MASTER_ACCESS,
-                STF_BUS_MASTER_CONTENT,
-                STF_COMMENT,
-                STF_FORCE_PC,
-                STF_INST_READY_REG,
-                STF_PROCESS_ID_EXT,
-                STF_INST_MICROOP,
+            STF_ENUM(
+                STF_ENUM_CONFIG(AUTO_PRINT, ALLOW_UNKNOWN, OVERRIDE_START),
+                Descriptor,
+                enums::int_t<encoded::Descriptor>,
+                STF_RESERVED,
+                STF_ENUM_STR(STF_INST_REG, "INST_REG"),
+                STF_ENUM_STR(STF_INST_OPCODE16, "INST_OPCODE16"),
+                STF_ENUM_STR(STF_INST_OPCODE32, "INST_OPCODE32"),
+                STF_ENUM_STR(STF_INST_MEM_ACCESS, "INST_MEM_ACCESS"),
+                STF_ENUM_STR(STF_INST_MEM_CONTENT, "INST_MEM_CONTENT"),
+                STF_ENUM_STR(STF_INST_PC_TARGET, "INST_PC_TARGET"),
+                STF_ENUM_STR(STF_EVENT, "EVENT"),
+                STF_ENUM_STR(STF_EVENT_PC_TARGET, "EVENT_PC_TARGET"),
+                STF_ENUM_STR(STF_PAGE_TABLE_WALK, "PAGE_TABLE_WALK"),
+                STF_ENUM_STR(STF_BUS_MASTER_ACCESS, "BUS_MASTER_ACCESS"),
+                STF_ENUM_STR(STF_BUS_MASTER_CONTENT, "BUS_MASTER_CONTENT"),
+                STF_ENUM_STR(STF_COMMENT, "COMMENT"),
+                STF_ENUM_STR(STF_FORCE_PC, "FORCE_PC"),
+                STF_ENUM_STR(STF_INST_READY_REG, "INST_READY_REG"),
+                STF_ENUM_STR(STF_PROCESS_ID_EXT, "PROCESS_ID_EXT"),
+                STF_ENUM_STR(STF_INST_MICROOP, "INST_MICROOP"),
                 STF_IDENTIFIER,
-                STF_ISA,
-                STF_INST_IEM,
-                STF_TRACE_INFO,
-                STF_TRACE_INFO_FEATURE,
-                STF_VERSION,
-                STF_VLEN_CONFIG,
-                STF_PROTOCOL_ID,
-                STF_CLOCK_ID,
-                STF_END_HEADER,
-                STF_TRANSACTION,
-                STF_TRANSACTION_DEPENDENCY,
-                __RESERVED_END // MUST ALWAYS BE AT THE END
-            };
-
-            /**
-             * Writes a string representation of a Descriptor enum to an ostream
-             */
-            std::ostream& operator<<(std::ostream& os, Descriptor desc);
-
+                STF_ENUM_STR(STF_ISA, "ISA"),
+                STF_ENUM_STR(STF_INST_IEM, "INST_IEM"),
+                STF_ENUM_STR(STF_TRACE_INFO, "TRACE_INFO"),
+                STF_ENUM_STR(STF_TRACE_INFO_FEATURE, "TRACE_INFO_FEATURE"),
+                STF_ENUM_STR(STF_VERSION, "VERSION"),
+                STF_ENUM_STR(STF_VLEN_CONFIG, "VLEN_CONFIG"),
+                STF_ENUM_STR(STF_PROTOCOL_ID, "PROTOCOL_ID"),
+                STF_ENUM_STR(STF_CLOCK_ID, "CLOCK_ID"),
+                STF_ENUM_STR(STF_END_HEADER, "END_HEADER"),
+                STF_ENUM_STR(STF_TRANSACTION, "TRANSACTION"),
+                STF_ENUM_STR(STF_TRANSACTION_DEPENDENCY, "TRANSACTION_DEPENDENCY")
+            );
         } // end namespace internal
 
         namespace iterators::__sequences {
@@ -145,11 +133,20 @@ namespace stf {
 
                     using ArrayType = enums::EnumArray<ToDescriptor, FromDescriptor>; /**< Array that maps FromDescriptor values to ToDescriptor values */
 
+                    #define _INIT_DESC_ARRAY_ENTRY(r, data, elem) \
+                        case FromDescriptor::elem: newarr[i] = ToDescriptor::elem; continue;
+
                     /**
                      * \def INIT_DESC_ARRAY
-                     * Convenience macro that adds the specified Descriptor value to the array
+                     * Convenience macro that auto-initializes the array with the specified Descriptor values
                      */
-                    #define INIT_DESC_ARRAY(x) case FromDescriptor::x: newarr[i] = ToDescriptor::x; continue;
+                    #define INIT_DESC_ARRAY(...) \
+                        BOOST_PP_SEQ_FOR_EACH( \
+                            _INIT_DESC_ARRAY_ENTRY, \
+                            _, \
+                            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__) \
+                        )
+
                     /**
                      * Initializes the mapping array at compile time
                      */
@@ -160,36 +157,38 @@ namespace stf {
                             // Using a switch statement here ensures that we get a compile error
                             // if we add a new Descriptor and forget to update this function
                             switch(FromDescriptor(i)) {
-                                INIT_DESC_ARRAY(STF_RESERVED)
-                                INIT_DESC_ARRAY(STF_IDENTIFIER)
-                                INIT_DESC_ARRAY(STF_VERSION)
-                                INIT_DESC_ARRAY(STF_COMMENT)
-                                INIT_DESC_ARRAY(STF_ISA)
-                                INIT_DESC_ARRAY(STF_INST_IEM)
-                                INIT_DESC_ARRAY(STF_TRACE_INFO)
-                                INIT_DESC_ARRAY(STF_TRACE_INFO_FEATURE)
-                                INIT_DESC_ARRAY(STF_PROCESS_ID_EXT)
-                                INIT_DESC_ARRAY(STF_FORCE_PC)
-                                INIT_DESC_ARRAY(STF_VLEN_CONFIG)
-                                INIT_DESC_ARRAY(STF_PROTOCOL_ID)
-                                INIT_DESC_ARRAY(STF_CLOCK_ID)
-                                INIT_DESC_ARRAY(STF_END_HEADER)
-                                INIT_DESC_ARRAY(STF_INST_PC_TARGET)
-                                INIT_DESC_ARRAY(STF_INST_REG)
-                                INIT_DESC_ARRAY(STF_INST_READY_REG)
-                                INIT_DESC_ARRAY(STF_PAGE_TABLE_WALK)
-                                INIT_DESC_ARRAY(STF_INST_MEM_ACCESS)
-                                INIT_DESC_ARRAY(STF_INST_MEM_CONTENT)
-                                INIT_DESC_ARRAY(STF_BUS_MASTER_ACCESS)
-                                INIT_DESC_ARRAY(STF_BUS_MASTER_CONTENT)
-                                INIT_DESC_ARRAY(STF_EVENT)
-                                INIT_DESC_ARRAY(STF_EVENT_PC_TARGET)
-                                INIT_DESC_ARRAY(STF_INST_MICROOP)
-                                INIT_DESC_ARRAY(STF_INST_OPCODE32)
-                                INIT_DESC_ARRAY(STF_INST_OPCODE16)
-                                INIT_DESC_ARRAY(STF_TRANSACTION)
-                                INIT_DESC_ARRAY(STF_TRANSACTION_DEPENDENCY)
-                                INIT_DESC_ARRAY(__RESERVED_END)
+                                INIT_DESC_ARRAY(
+                                    STF_RESERVED,
+                                    STF_IDENTIFIER,
+                                    STF_VERSION,
+                                    STF_COMMENT,
+                                    STF_ISA,
+                                    STF_INST_IEM,
+                                    STF_TRACE_INFO,
+                                    STF_TRACE_INFO_FEATURE,
+                                    STF_PROCESS_ID_EXT,
+                                    STF_FORCE_PC,
+                                    STF_VLEN_CONFIG,
+                                    STF_PROTOCOL_ID,
+                                    STF_CLOCK_ID,
+                                    STF_END_HEADER,
+                                    STF_INST_PC_TARGET,
+                                    STF_INST_REG,
+                                    STF_INST_READY_REG,
+                                    STF_PAGE_TABLE_WALK,
+                                    STF_INST_MEM_ACCESS,
+                                    STF_INST_MEM_CONTENT,
+                                    STF_BUS_MASTER_ACCESS,
+                                    STF_BUS_MASTER_CONTENT,
+                                    STF_EVENT,
+                                    STF_EVENT_PC_TARGET,
+                                    STF_INST_MICROOP,
+                                    STF_INST_OPCODE32,
+                                    STF_INST_OPCODE16,
+                                    STF_TRANSACTION,
+                                    STF_TRANSACTION_DEPENDENCY,
+                                    __RESERVED_END
+                                )
                             };
 
                             // Use NUM_DESCRIPTORS_ as the default value for Descriptor enums with gaps
@@ -307,6 +306,7 @@ namespace stf {
                     using reverse_sequence_t = __sequences::SortedInternalSequenceReverseMapping;
 
                     static constexpr sequence_t sorted_sequence_ = __sequences::initSortedInternalSequence(); /**< Holds pre-sorted internal::Descriptor values */
+                    // cppcheck-suppress unusedStructMember
                     static constexpr reverse_sequence_t sorted_sequence_reverse_mapping_ =
                         __sequences::initSortedInternalSequenceReverseMapping(); /**< Maps internal::Descriptor values to their position in sorted_sequence_ */
 
@@ -461,6 +461,12 @@ namespace stf {
             static constexpr sorted_internal_iterator SORTED_INTERNAL_ITERATOR_END = sorted_internal_iterator(true);
 
         } // end namespace iterators
+
+        namespace encoded {
+            inline std::ostream& operator<<(std::ostream& os, const Descriptor desc) {
+                return os << conversion::toInternal(desc);
+            }
+        } // end namespace encoded
     } // end namespace descriptors
 
     /**

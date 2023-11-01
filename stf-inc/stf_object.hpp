@@ -63,6 +63,26 @@ namespace stf {
             }
 
             /**
+             * Writes an arbitrary tuple to an STFOFstream, using provided index sequence
+             * \param writer STFOFstream to use
+             * \param data Data to write
+             */
+            template<typename... Ts, size_t... Is>
+            static inline void write_(STFOFstream& writer, const std::tuple<Ts...>& data, std::index_sequence<Is...>) {
+                write_(writer, std::get<Is>(data)...);
+            }
+
+            /**
+             * Writes an arbitrary tuple to an STFOFstream
+             * \param writer STFOFstream to use
+             * \param data Data to write
+             */
+            template<typename... Ts>
+            static inline void write_(STFOFstream& writer, const std::tuple<Ts...>& data) {
+                write_(writer, data, std::make_index_sequence<std::tuple_size_v<std::tuple<Ts...>>>());
+            }
+
+            /**
              * Writes a ConstVectorView to an STFOFstream
              * \param writer STFOFstream to use
              * \param data Data to write
@@ -133,6 +153,26 @@ namespace stf {
                 (reader >> ... >> data);
 
                 return (0 + ... + sizeof(Ts));
+            }
+
+            /**
+             * Reads an arbitrary tuple from an STFIFstream, using provided index sequence
+             * \param reader STFIFstream to use
+             * \param data Data to read
+             */
+            template<typename... Ts, size_t... Is>
+            static inline size_t read_(STFIFstream& reader, std::tuple<Ts...>& data, std::index_sequence<Is...>) {
+                return read_(reader, std::get<Is>(data)...);
+            }
+
+            /**
+             * Reads an arbitrary tuple from an STFIFstream
+             * \param reader STFIFstream to use
+             * \param data Data to read
+             */
+            template<typename... Ts>
+            static inline size_t read_(STFIFstream& reader, std::tuple<Ts...>& data) {
+                return read_(reader, data, std::make_index_sequence<std::tuple_size_v<std::tuple<Ts...>>>());
             }
 
             /**
@@ -367,6 +407,7 @@ namespace stf {
             /**
              * Helper function that can clone any STFObject
              */
+            // cppcheck-suppress duplInheritedMember
             inline typename PoolType::ConstBaseObjectPointer clone() const final {
                 return BaseType::pool_type::template construct<Type>(*static_cast<const Type*>(this));
             }
@@ -376,6 +417,7 @@ namespace stf {
              * \param args Arguments to pass to record constructor
              */
             template<typename ... Args>
+            // cppcheck-suppress duplInheritedMember
             static inline auto make(Args&&... args) {
                 return STFObject<BaseType, IdType>::template make<Type>(std::forward<Args>(args)...);
             }

@@ -1027,46 +1027,4 @@ namespace stf {
         Registers::format(os, regno);
         return os;
     }
-
-    std::ostream& operator<<(std::ostream& os, const Registers::STF_REG_TYPE type) {
-        switch(type) {
-            case Registers::STF_REG_TYPE::RESERVED:
-                os << "RESERVED";
-                return os;
-            case Registers::STF_REG_TYPE::INTEGER:
-                os << "INTEGER";
-                return os;
-            case Registers::STF_REG_TYPE::FLOATING_POINT:
-                os << "FLOATING_POINT";
-                return os;
-            case Registers::STF_REG_TYPE::VECTOR:
-                os << "VECTOR";
-                return os;
-            case Registers::STF_REG_TYPE::CSR:
-                os << "CSR";
-                return os;
-        };
-
-        os << "UNKNOWN_" << enums::to_printable_int(type);
-        return os;
-    }
-
-    std::ostream& operator<<(std::ostream& os, const Registers::STF_REG_OPERAND_TYPE type) {
-        switch(type) {
-            case Registers::STF_REG_OPERAND_TYPE::REG_RESERVED:
-                os << "RESERVED";
-                return os;
-            case Registers::STF_REG_OPERAND_TYPE::REG_DEST:
-                os << "DEST";
-                return os;
-            case Registers::STF_REG_OPERAND_TYPE::REG_SOURCE:
-                os << "SOURCE";
-                return os;
-            case Registers::STF_REG_OPERAND_TYPE::REG_STATE:
-                os << "STATE";
-                return os;
-        };
-
-        stf_throw("Unknown STF_REG_OPERAND_TYPE value: " << enums::to_printable_int(type));
-    }
 } // end namespace stf

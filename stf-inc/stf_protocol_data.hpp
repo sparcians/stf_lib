@@ -42,7 +42,8 @@ namespace stf {
                  * we don't need to write it for each ProtocolData record.
                  * \param writer Writer to use
                  */
-                static inline void writeTraceId(STFOFstream& writer) { // cppcheck-suppress constParameter
+                // cppcheck-suppress [duplInheritedMember,constParameterReference]
+                static inline void writeTraceId(STFOFstream& writer) {
                     // We don't need to write the protocol ID since it's captured in
                     // a ProtocolIdRecord in the header.
                     // Just make sure that the protocol we're writing matches the header record.
