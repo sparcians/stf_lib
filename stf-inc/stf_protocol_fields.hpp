@@ -6,6 +6,7 @@
 
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+#include <boost/preprocessor/seq/push_back.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/variadic/to_seq.hpp>
@@ -43,7 +44,10 @@
             BOOST_PP_SEQ_FOR_EACH(                                      \
                 _FIELD_CONSTRUCTOR,                                     \
                 (parent_class_tuple, field_name),                       \
-                BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                   \
+                BOOST_PP_SEQ_PUSH_BACK(                                 \
+                    BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__),              \
+                    type_utils::none_t                                  \
+                )                                                       \
             )                                                           \
             static inline const char* getName() {                       \
                 return BOOST_PP_STRINGIZE(field_name);                  \
@@ -122,8 +126,7 @@
             type,                                       \
             BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)      \
         ),                                              \
-        STF_PACK_TEMPLATE(std::vector, type),           \
-        type_utils::none_t                              \
+        STF_PACK_TEMPLATE(std::vector, type)            \
     )
 
 // Declares a subclass of ProtocolVectorField with a custom format function
@@ -160,8 +163,7 @@
             type,                                       \
             BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)      \
         ),                                              \
-        STF_PACK_TEMPLATE(std::vector, type),           \
-        type_utils::none_t                              \
+        STF_PACK_TEMPLATE(std::vector, type)            \
     )
 
 // Declares a subclass of ProtocolPackedBitVectorField with a custom format function
@@ -336,6 +338,16 @@ namespace stf {
             {
             }
 
+            explicit ProtocolField(const type_utils::none_t&) :
+                ProtocolField()
+            {
+            }
+
+            explicit ProtocolField(type_utils::none_t&&) :
+                ProtocolField()
+            {
+            }
+
             /**
              * Writes the field to an STFOFstream
              */
@@ -418,7 +430,12 @@ namespace stf {
             }
 
             explicit ProtocolVectorField(const type_utils::none_t&) :
-                ParentType(VectorType())
+                ParentType(type_utils::none)
+            {
+            }
+
+            explicit ProtocolVectorField(type_utils::none_t&&) :
+                ParentType(type_utils::none)
             {
             }
     };
