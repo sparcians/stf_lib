@@ -122,7 +122,8 @@
             type,                                       \
             BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)      \
         ),                                              \
-        STF_PACK_TEMPLATE(std::vector, type)            \
+        STF_PACK_TEMPLATE(std::vector, type),           \
+        type_utils::none_t                              \
     )
 
 // Declares a subclass of ProtocolVectorField with a custom format function
@@ -159,7 +160,8 @@
             type,                                       \
             BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)      \
         ),                                              \
-        STF_PACK_TEMPLATE(std::vector, type)            \
+        STF_PACK_TEMPLATE(std::vector, type),           \
+        type_utils::none_t                              \
     )
 
 // Declares a subclass of ProtocolPackedBitVectorField with a custom format function
@@ -412,6 +414,11 @@ namespace stf {
 
             explicit ProtocolVectorField(std::vector<DataType>&& data) :
                 ParentType(VectorType(std::forward<std::vector<DataType>>(data)))
+            {
+            }
+
+            explicit ProtocolVectorField(const type_utils::none_t&) :
+                ParentType(VectorType())
             {
             }
     };

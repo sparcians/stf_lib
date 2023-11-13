@@ -5,6 +5,8 @@
 #include <memory>
 #include <type_traits>
 
+#include <boost/none.hpp>
+
 namespace stf {
     namespace type_utils {
         template <typename T, typename... Ts>
@@ -69,6 +71,9 @@ namespace stf {
 
         template<typename T>
         using optimal_const_ref_t = typename optimal_const_ref<T>::type;
+
+        using none_t = boost::none_t;
+        static inline constexpr auto none = boost::none;
     } // end namespace type_utils
 } // end namespace stf
 
