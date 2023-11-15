@@ -213,12 +213,6 @@
     BOOST_PP_OVERLOAD(_ARRAY_FIELD_, __VA_ARGS__)(field_name, __VA_ARGS__)
 
 /**
- * \def ADD_ARRAY_FIELD
- * Used to specify the size of an array field when adding it to a protocol class
- */
-#define ADD_ARRAY_FIELD(class, size) STF_PACK_TEMPLATE(class, size)
-
-/**
  * \def VECTOR_FIELD
  * Defines a vector field with the given name, underlying type, size type, and optional format function
  * Allowed forms:

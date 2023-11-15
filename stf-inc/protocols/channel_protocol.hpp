@@ -6,6 +6,18 @@
 #include "stf_object.hpp"
 #include "stf_protocol_fields.hpp"
 
+// Defines field modifier flags
+// Flags can't be combined at the moment, but an STF_ENUM_CONFIG-like mechanism could be used if
+// needed in the future
+
+// Indicates this field is a template specialization tuple
+#define _FIELD_MOD_TEMPLATE_PACK 1
+// Indicates this field has a name override
+#define _FIELD_MOD_OVERRIDE_NAME 2
+
+// Creates a modified field tuple
+#define _FIELD_MOD(mod_type, mod_data) (mod_type, mod_data)
+
 /**
  * \def CHANNEL_IDS
  * Helper macro that generates an STF_ENUM of channel IDs along with the necessary typedefs to use with
@@ -16,9 +28,55 @@
     using ChannelProtocol = protocols::proto::ChannelProtocol<ChannelID>;   \
     using Channel = ChannelProtocol::Channel
 
-// Qualifies a field channel class with the given namespace
+// Gets the global name from a _FIELD_MOD_TEMPLATE_PACK tuple (just unpacks the tuple into a fully
+// specialized template name)
+#define __GET_GLOBAL_FIELD_NAME_1(field) STF_UNPACK_TEMPLATE(field)
+
+// Gets the global name from a _FIELD_MOD_OVERRIDE_NAME tuple
+#define __GET_GLOBAL_FIELD_NAME_2(field) BOOST_PP_TUPLE_ELEM(0, field)
+
+// Dispatches to the appropriate global name handler based on the modifier flag
+#define __GET_GLOBAL_FIELD_NAME(field) \
+    BOOST_PP_CAT( \
+        __GET_GLOBAL_FIELD_NAME_, \
+        BOOST_PP_TUPLE_ELEM(0, field) \
+    )(BOOST_PP_TUPLE_ELEM(1, field))
+
+// Gets the "global" field name - the actual (fully specialized if necessary) name of the C++ class
+// If the field isn't modified, it just returns the field name
+#define _GET_GLOBAL_FIELD_NAME(field) \
+    BOOST_PP_IIF( \
+        STF_IS_TUPLE(field), \
+        __GET_GLOBAL_FIELD_NAME(field), \
+        field \
+    )
+
+// Gets the local name from a _FIELD_MOD_TEMPLATE_PACK tuple (just gets the class name from the tuple)
+#define __GET_LOCAL_FIELD_NAME_1(field) STF_UNPACK_TEMPLATE_CLASS(field)
+
+// Gets the local name from a _FIELD_MOD_OVERRIDE_NAME tuple
+#define __GET_LOCAL_FIELD_NAME_2(field) BOOST_PP_TUPLE_ELEM(1, field)
+
+// Dispatches to the appropriate local name handler based on the modifier flag
+#define __GET_LOCAL_FIELD_NAME(field) \
+    BOOST_PP_CAT( \
+        __GET_LOCAL_FIELD_NAME_, \
+        BOOST_PP_TUPLE_ELEM(0, field) \
+    )(BOOST_PP_TUPLE_ELEM(1, field))
+
+// Gets the "local" field name - i.e., the name used to generate the getter method
+// If the field isn't modified, it just returns the field name
+#define _GET_LOCAL_FIELD_NAME(field) \
+    BOOST_PP_IIF( \
+        STF_IS_TUPLE(field), \
+        __GET_LOCAL_FIELD_NAME(field), \
+        field \
+    )
+
+// Qualifies a field class with the given namespace
 // Used in the BOOST_PP_SEQ_TRANSFORM invocation in _FIELD_CHANNEL
-#define _NS_FIELD(r, ns, channel) ns::STF_UNPACK_TEMPLATE(channel)
+#define _NS_FIELD(r, ns, field) \
+    ns::_GET_GLOBAL_FIELD_NAME(field)
 
 // Generates a fully specialized FieldChannel template
 // __VA_ARGS__ are the fields included in the channel
@@ -38,10 +96,11 @@
 // Generates a getter method for a field in a FieldChannel subclass
 // Used by the BOOST_PP_SEQ_FOR_EACH invocation in FIELD_CHANNEL
 // Example: for a field named MyField it will generate a method named getMyField
-#define _FIELD_GETTER(r, field_ns, channel) \
-    inline typename field_ns::STF_UNPACK_TEMPLATE(channel)::ReferenceType   \
-    BOOST_PP_CAT(get, STF_UNPACK_TEMPLATE_CLASS(channel))() const {         \
-        return get<field_ns::STF_UNPACK_TEMPLATE(channel)>();               \
+// Fields with overridden names (using the OVERRIDE_FIELD_NAME macro) will use the overridden name instead
+#define _FIELD_GETTER(r, field_ns, field) \
+    inline typename _NS_FIELD(_, field_ns, field)::ReferenceType   \
+    BOOST_PP_CAT(get, _GET_LOCAL_FIELD_NAME(field))() const {         \
+        return get<_NS_FIELD(_, field_ns, field)>();               \
     }
 
 /**
@@ -67,6 +126,33 @@
                 BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                                           \
             )                                                                                   \
     }
+
+/**
+ * \def FIELD_SPECIALIZATION
+ * If a field is a templatized class, it needs to be wrapped along with its template arguments using
+ * this macro when adding it to a channel. The __VA_ARGS__ are the template arguments that will be used
+ * to specialize the class.
+ */
+#define FIELD_SPECIALIZATION(field_name, ...) \
+    _FIELD_MOD(_FIELD_MOD_TEMPLATE_PACK, STF_PACK_TEMPLATE(field_name, __VA_ARGS__))
+
+/**
+ * \def OVERRIDE_FIELD_NAME
+ * Wrapping a field with this macro changes the getter method to get{local_name}. Useful for cases where
+ * a field could have multiple discrete sizes and a vector field would be inefficient.
+ * Example:
+ * FIELD(MyField, uint8_t)
+ * FIELD(MyOtherField, uint16_t)
+ * ...
+ * // getter method will be MyChannel::getMyField
+ * FIELD_CHANNEL(MyChannel, MY_CHANNEL_ID, MyField)
+ * // getter method will be MyOtherChannel::getMyOtherField
+ * FIELD_CHANNEL(MyOtherChannel, MY_OTHER_CHANNEL_ID, MyOtherField)
+ * // getter method will be MyOverrideChannel::getMyField
+ * FIELD_CHANNEL(MyOverrideChannel, MY_OVERRIDE_CHANNEL_ID, OVERRIDE_FIELD_NAME(MyOtherField, MyField))
+ */
+#define OVERRIDE_FIELD_NAME(global_name, local_name) \
+    _FIELD_MOD(_FIELD_MOD_OVERRIDE_NAME, (global_name, local_name))
 
 /**
  * \def REGISTER_CHANNEL
