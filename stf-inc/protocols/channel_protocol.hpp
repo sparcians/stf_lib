@@ -36,19 +36,19 @@
 #define __GET_GLOBAL_FIELD_NAME_2(field) BOOST_PP_TUPLE_ELEM(0, field)
 
 // Dispatches to the appropriate global name handler based on the modifier flag
-#define __GET_GLOBAL_FIELD_NAME(field) \
-    BOOST_PP_CAT( \
-        __GET_GLOBAL_FIELD_NAME_, \
-        BOOST_PP_TUPLE_ELEM(0, field) \
+#define __GET_GLOBAL_FIELD_NAME(field)  \
+    BOOST_PP_CAT(                       \
+        __GET_GLOBAL_FIELD_NAME_,       \
+        BOOST_PP_TUPLE_ELEM(0, field)   \
     )(BOOST_PP_TUPLE_ELEM(1, field))
 
 // Gets the "global" field name - the actual (fully specialized if necessary) name of the C++ class
 // If the field isn't modified, it just returns the field name
-#define _GET_GLOBAL_FIELD_NAME(field) \
-    BOOST_PP_IIF( \
-        STF_IS_TUPLE(field), \
+#define _GET_GLOBAL_FIELD_NAME(field)   \
+    BOOST_PP_IIF(                       \
+        STF_IS_TUPLE(field),            \
         __GET_GLOBAL_FIELD_NAME(field), \
-        field \
+        field                           \
     )
 
 // Gets the local name from a _FIELD_MOD_TEMPLATE_PACK tuple (just gets the class name from the tuple)
@@ -58,19 +58,19 @@
 #define __GET_LOCAL_FIELD_NAME_2(field) BOOST_PP_TUPLE_ELEM(1, field)
 
 // Dispatches to the appropriate local name handler based on the modifier flag
-#define __GET_LOCAL_FIELD_NAME(field) \
-    BOOST_PP_CAT( \
-        __GET_LOCAL_FIELD_NAME_, \
-        BOOST_PP_TUPLE_ELEM(0, field) \
+#define __GET_LOCAL_FIELD_NAME(field)   \
+    BOOST_PP_CAT(                       \
+        __GET_LOCAL_FIELD_NAME_,        \
+        BOOST_PP_TUPLE_ELEM(0, field)   \
     )(BOOST_PP_TUPLE_ELEM(1, field))
 
 // Gets the "local" field name - i.e., the name used to generate the getter method
 // If the field isn't modified, it just returns the field name
-#define _GET_LOCAL_FIELD_NAME(field) \
-    BOOST_PP_IIF( \
-        STF_IS_TUPLE(field), \
-        __GET_LOCAL_FIELD_NAME(field), \
-        field \
+#define _GET_LOCAL_FIELD_NAME(field)    \
+    BOOST_PP_IIF(                       \
+        STF_IS_TUPLE(field),            \
+        __GET_LOCAL_FIELD_NAME(field),  \
+        field                           \
     )
 
 // Qualifies a field class with the given namespace
@@ -97,10 +97,10 @@
 // Used by the BOOST_PP_SEQ_FOR_EACH invocation in FIELD_CHANNEL
 // Example: for a field named MyField it will generate a method named getMyField
 // Fields with overridden names (using the OVERRIDE_FIELD_NAME macro) will use the overridden name instead
-#define _FIELD_GETTER(r, field_ns, field) \
-    inline typename _NS_FIELD(_, field_ns, field)::ReferenceType   \
-    BOOST_PP_CAT(get, _GET_LOCAL_FIELD_NAME(field))() const {         \
-        return get<_NS_FIELD(_, field_ns, field)>();               \
+#define _FIELD_GETTER(r, field_ns, field)                           \
+    inline typename _NS_FIELD(_, field_ns, field)::ReferenceType    \
+    BOOST_PP_CAT(get, _GET_LOCAL_FIELD_NAME(field))() const {       \
+        return get<_NS_FIELD(_, field_ns, field)>();                \
     }
 
 /**
