@@ -19,14 +19,15 @@ class BuildCommand(distutils.command.build.build):
         distutils.command.build.build.initialize_options(self)
         self.build_base = get_build_dir(self.build_base)
 
-setup(
-    name = "stfpy",
-    packages = find_packages(),
-    cmdclass = {'build': BuildCommand, 'egg_info': EggCommand},
-    ext_modules = cythonize(Extension('*',
-                                      sources=["stfpy/*.pyx"],
-                                      language='c++',
-                                      extra_link_args=os.environ.get('LDFLAGS', '').split(' ')), # Ensure our link flags come last
-                            nthreads = 4,
-                            language_level = "3")
-)
+if __name__ == '__main__':
+    setup(
+        name = "stfpy",
+        packages = find_packages(),
+        cmdclass = {'build': BuildCommand, 'egg_info': EggCommand},
+        ext_modules = cythonize(Extension('*',
+                                          sources=["stfpy/*.pyx"],
+                                          language='c++',
+                                          extra_link_args=os.environ.get('LDFLAGS', '').split(' ')), # Ensure our link flags come last
+                                nthreads = 4,
+                                language_level = "3")
+    )
