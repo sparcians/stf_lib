@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include <boost/none.hpp>
+#include <boost/version.hpp>
 
 namespace stf {
     namespace type_utils {
@@ -83,7 +84,11 @@ namespace stf {
         using optimal_return_ref_t = typename optimal_return_ref<T>::type;
 
         using none_t = boost::none_t;
+#if BOOST_VERSION >= 107500
         static inline constexpr auto none = boost::none;
+#else
+        static inline const auto none = boost::none;
+#endif
     } // end namespace type_utils
 } // end namespace stf
 
