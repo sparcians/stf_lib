@@ -43,7 +43,7 @@ add_custom_command(
                                   --unset=CXXFLAGS
                                   CC="${CMAKE_C_COMPILER}"
                                   CXX="${CMAKE_CXX_COMPILER}"
-                                  LD="${CMAKE_CXX_LINK_EXECUTABLE}"
+                                  LD="${CMAKE_CXX_COMPILER}"
                                   CPPFLAGS="${compile_opts}"
                                   LDFLAGS="${link_opts}"
                                   STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
