@@ -4,10 +4,15 @@ function(setup_stf_linker set_compiler_options)
   else()
     set(STF_LINK_FLAGS -Wno-stringop-overflow)
     set(STF_COMPILE_FLAGS )
-    execute_process(COMMAND ld -v
+    if(DEFINED ENV{LD})
+      set(LD $ENV{LD})
+    else()
+      set(LD ld)
+    endif()
+    execute_process(COMMAND ${LD} -v
                     OUTPUT_VARIABLE LD_VERSION)
     string(STRIP ${LD_VERSION} LD_VERSION)
-    string(REGEX MATCH "[0-9.]+$" LD_VERSION ${LD_VERSION})
+    string(REGEX MATCH "[^ \t\r\n]+$" LD_VERSION ${LD_VERSION})
     message("-- ld version is ${LD_VERSION}")
 
     # Don't need to change default linker on OS X
