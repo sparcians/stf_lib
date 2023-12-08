@@ -25,7 +25,7 @@ namespace stf {
      */
     class ClockRegistry {
         private:
-            ClockId default_clock_;
+            ClockId default_clock_ = 0;
 
             using MapType = boost::container::flat_map<ClockId, std::string>;
             MapType clocks_;

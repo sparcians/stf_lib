@@ -43,6 +43,7 @@ namespace stf {
             case Registers::STF_REG_OPERAND_TYPE::REG_STATE:
                 return STATE_LABEL_;
             case Registers::STF_REG_OPERAND_TYPE::REG_RESERVED:
+            case Registers::STF_REG_OPERAND_TYPE::__RESERVED_END:
                 break;
         }
         stf_throw("InstRegRecord did not have a valid operand type");
@@ -94,12 +95,10 @@ namespace stf {
                     if (format_utils::showPhys()) {
                         format_utils::formatSpaces(os, format_utils::PA_WIDTH + 1);
                     }
-                    if(STF_EXPECT_FALSE(first_line)) {
-                        first_line = false;
-                    }
-                    else {
+                    if(STF_EXPECT_TRUE(!first_line)) {
                         format_utils::formatSpaces(os, format_utils::OPERAND_LABEL_WIDTH + format_utils::EVENT_WIDTH);
                     }
+                    first_line = false;
                     format_utils::formatHex(os, d, format_utils::EVENT_DATA_WIDTH);
                 }
             }

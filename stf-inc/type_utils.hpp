@@ -5,6 +5,9 @@
 #include <memory>
 #include <type_traits>
 
+#include <boost/none.hpp>
+#include <boost/version.hpp>
+
 namespace stf {
     namespace type_utils {
         template <typename T, typename... Ts>
@@ -56,6 +59,36 @@ namespace stf {
             }
             return new_arr;
         }
+
+        template<typename T>
+        class optimal_const_ref {
+            private:
+                using const_type = std::add_const_t<T>;
+            public:
+                using type = std::conditional_t<std::is_fundamental_v<const_type>,
+                                                std::remove_reference_t<const_type>,
+                                                std::add_lvalue_reference_t<const_type>>;
+        };
+
+        template<typename T>
+        using optimal_const_ref_t = typename optimal_const_ref<T>::type;
+
+        template<typename T>
+        struct optimal_return_ref {
+            using type = std::conditional_t<std::is_fundamental_v<T>,
+                                            T,
+                                            optimal_const_ref_t<T>>;
+        };
+
+        template<typename T>
+        using optimal_return_ref_t = typename optimal_return_ref<T>::type;
+
+        using none_t = boost::none_t;
+#if BOOST_VERSION >= 107500
+        static inline constexpr auto none = boost::none;
+#else
+        static inline const auto none = boost::none;
+#endif
     } // end namespace type_utils
 } // end namespace stf
 

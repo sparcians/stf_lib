@@ -159,6 +159,7 @@ namespace stf {
             }
 
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void reset_() {
                 STFItem::reset_();
                 orig_records_.clear();

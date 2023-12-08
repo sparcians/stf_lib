@@ -33,7 +33,7 @@ namespace stf {
                         machine_length_mask = RegMapInfo::MASK64;
                         break;
                     case INST_IEM::STF_INST_IEM_INVALID:
-                    case INST_IEM::STF_INST_IEM_RESERVED:
+                    case INST_IEM::__RESERVED_END:
                         stf_throw("Invalid IEM specified");
                 }
                 // FIXME: Properly handle FP length that doesn't match machine length
@@ -496,6 +496,7 @@ namespace stf {
             case ISA::X86:
                 stf_throw("ISA " << isa << " not yet supported");
             case ISA::RESERVED:
+            case ISA::__RESERVED_END:
                 stf_throw("Invalid ISA specified");
         };
     }

@@ -2,6 +2,7 @@
 #include "stf_record.hpp"
 
 namespace stf {
+    // cppcheck-suppress unusedFunction
     void STFIFstream::seek(size_t num_marker_records) {
         const size_t end_marker_num = num_marker_records_ + num_marker_records;
         STFRecord::UniqueHandle rec;

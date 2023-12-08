@@ -29,7 +29,7 @@ namespace stf {
              * \param size Size of a single element in data
              * \param num Number of elements in data
              */
-            virtual inline size_t fwrite_(const void* data, size_t size, size_t num) {
+            virtual inline size_t fwrite_(const void* data, const size_t size, const size_t num) {
                 const auto res = fwrite(data, size, num, stream_);
                 fflush(stream_);
                 return res;
@@ -41,7 +41,7 @@ namespace stf {
              * \param size Number of elements in data
              */
             template<typename T>
-            inline void writeFromPtr_(T* data, size_t size)
+            inline void writeFromPtr_(const T* data, const size_t size)
             {
                 stf_assert(stream_, "Tried to write to an unopened STFOFstream");
                 size_t num_written = fwrite_(data, sizeof(T), size);
@@ -133,10 +133,10 @@ namespace stf {
             }
 
             /**
-             * Reads a VectorView from an STFIFstream
-             * \attention The vector must already be sized to fit the incoming data!
+             * Writes a VectorView to an STFOFstream
+             * \attention The vector size must be written first!
              * Use SerializableVector to handle this automatically.
-             * \param data Vector is read into this variable
+             * \param data Data to write
              */
             template<typename T>
             inline STFOFstream& operator<<(const ConstVectorView<T>& data) {
@@ -188,6 +188,9 @@ namespace stf {
 
             template<typename T, typename SerializedSizeT>
             friend class SerializableContainer;
+
+            template<typename T, typename SerializedSizeT>
+            friend class SerializablePackedBitVector;
     };
 } // end namespace stf
 

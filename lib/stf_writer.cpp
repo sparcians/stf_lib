@@ -3,14 +3,17 @@
 #include "stf_writer.hpp"
 
 namespace stf {
+    // cppcheck-suppress unusedFunction
     void STFWriter::setISA(ISA isa) {
         isa_ = STFRecord::make<ISARecord>(isa);
     }
 
+    // cppcheck-suppress unusedFunction
     void STFWriter::setHeaderIEM(INST_IEM iem) {
         initial_iem_ = STFRecord::make<InstIEMRecord>(iem);
     }
 
+    // cppcheck-suppress unusedFunction
     void STFWriter::setHeaderPC(uint64_t pc) {
         initial_pc_ = STFRecord::make<ForcePCRecord>(pc);
     }
@@ -83,7 +86,6 @@ namespace stf {
         }
     }
 
-    // cppcheck-suppress unusedFunction
     void STFWriter::finalizeHeader() {
         if(header_finalized_) {
             return;

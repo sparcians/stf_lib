@@ -25,9 +25,9 @@ namespace stf {
              */
             class ChunkOffset {
                 private:
-                    off_t offset_; /**< File offset */
-                    uint64_t start_pc_; /**< Start PC */
-                    size_t uncompressed_chunk_size_; /**< Uncompressed chunk size */
+                    off_t offset_ = 0; /**< File offset */
+                    uint64_t start_pc_ = 0; /**< Start PC */
+                    size_t uncompressed_chunk_size_ = 0; /**< Uncompressed chunk size */
 
                 public:
                     ChunkOffset() = default;

@@ -5,6 +5,7 @@
 #include <array>
 #include <locale>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -71,6 +72,7 @@ namespace stf {
              * Packs an STFIdentifierRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 write_(writer, str_);
             }
@@ -80,6 +82,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 read_(reader, str_);
             }
@@ -142,6 +145,7 @@ namespace stf {
              * Packs a VersionRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 write_(writer, major_, minor_);
             }
@@ -151,6 +155,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 read_(reader, major_, minor_);
             }
@@ -205,6 +210,7 @@ namespace stf {
              * Packs a CommentRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 write_(writer, data_);
             }
@@ -214,6 +220,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 read_(reader, data_);
             }
@@ -225,14 +232,18 @@ namespace stf {
             inline void format_impl(std::ostream& os) const {
                 os << data_;
             }
-
-            /**
-             * Writes a CommentRecord to an ostream
-             */
-            friend std::ostream& operator<<(std::ostream& os, const CommentRecord& comment);
     };
 
     REGISTER_RECORD(CommentRecord)
+
+    /**
+     * Writes a CommentRecord to an ostream
+     */
+    inline std::ostream& operator<<(std::ostream& os, const CommentRecord& comment) {
+        format_utils::formatLabel(os, "    COMMENT");
+        comment.format_impl(os);
+        return os;
+    }
 
     /**
      * \class ISARecord
@@ -365,6 +376,7 @@ namespace stf {
              * Packs the record into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 writer.setVLen(getVLen());
                 GenericSingleDataRecord::pack_impl(writer);
@@ -375,6 +387,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 GenericSingleDataRecord::unpack_impl(reader);
                 reader.setVLen(getVLen());
@@ -418,6 +431,7 @@ namespace stf {
              * Packs the record into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 writer.setProtocolId(getId());
                 GenericSingleDataRecord::pack_impl(writer);
@@ -428,6 +442,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 GenericSingleDataRecord::unpack_impl(reader);
                 reader.setProtocolId(getId());
@@ -448,7 +463,7 @@ namespace stf {
      */
     class ClockIdRecord : public TypeAwareSTFRecord<ClockIdRecord, descriptors::internal::Descriptor::STF_CLOCK_ID> {
         private:
-            ClockId clock_id_;
+            ClockId clock_id_ = 0;
             SerializableString<uint16_t> name_;
 
         public:
@@ -524,7 +539,7 @@ namespace stf {
             /**
              * Gets the clock id
              */
-            ClockId getId() const {
+            ClockId getClockId() const {
                 return clock_id_;
             }
 
@@ -588,7 +603,7 @@ namespace stf {
             class PTE {
                 private:
                     uint64_t pa_ = page_utils::INVALID_PHYS_ADDR; /**< physical address */
-                    uint64_t pte_; /**< raw PTE */
+                    uint64_t pte_ = 0; /**< raw PTE */
 
                 public:
                     PTE() = default;
@@ -669,10 +684,10 @@ namespace stf {
             };
 
         private:
-            uint64_t va_; /**< virtual address */
-            uint64_t index_; /**< instruction index that this PTE becomes valid */
-            uint32_t page_size_; /**< size of the page in bytes */
-            uint32_t page_size_shift_; /**< PPN is shifted by this amount to get the page address */
+            uint64_t va_ = 0; /**< virtual address */
+            uint64_t index_ = 0; /**< instruction index that this PTE becomes valid */
+            uint32_t page_size_ = 0; /**< size of the page in bytes */
+            uint32_t page_size_shift_ = 0; /**< PPN is shifted by this amount to get the page address */
             SerializableVector<PTE, uint8_t> ptes_; /**< Raw PTEs that consitute the page walk needed to translate this address */
 
         public:
@@ -843,17 +858,27 @@ namespace stf {
     /**
      * Writes a PageTableWalkRecord::PTE to an STFOFstream
      */
-    STFOFstream& operator<<(STFOFstream& writer, const PageTableWalkRecord::PTE& rec);
+    inline STFOFstream& operator<<(STFOFstream& writer, const PageTableWalkRecord::PTE& rec) {
+        rec.pack_impl(writer);
+        return writer;
+    }
 
     /**
      * Reads a PageTableWalkRecord::PTE from an STFIFstream
      */
-    STFIFstream& operator>>(STFIFstream& reader, PageTableWalkRecord::PTE& rec);
+    inline STFIFstream& operator>>(STFIFstream& reader, PageTableWalkRecord::PTE& rec) {
+        rec.unpack_impl(reader);
+        return reader;
+    }
 
     /**
      * Formats a PageTableWalkRecord to an ostream
      */
-    std::ostream& operator<<(std::ostream& os, const PageTableWalkRecord& pte);
+    inline std::ostream& operator<<(std::ostream& os, const PageTableWalkRecord& pte) {
+        format_utils::formatLabel(os, "PTE");
+        pte.format_impl(os);
+        return os;
+    }
 
     /**
      * \class ProcessIDExtRecord
@@ -864,9 +889,9 @@ namespace stf {
      */
     class ProcessIDExtRecord : public TypeAwareSTFRecord<ProcessIDExtRecord, descriptors::internal::Descriptor::STF_PROCESS_ID_EXT> {
         private:
-            uint32_t tgid_;              /**< process ID */
-            uint32_t tid_;               /**< thread ID */
-            uint32_t asid_;              /**< Address Space ID */
+            uint32_t tgid_ = 0;              /**< process ID */
+            uint32_t tid_ = 0;               /**< thread ID */
+            uint32_t asid_ = 0;              /**< Address Space ID */
 
         public:
             ProcessIDExtRecord() = default;
@@ -958,50 +983,54 @@ namespace stf {
              *
              * Defines the different event types
              */
-            enum class TYPE : uint64_t {
+            // cppcheck-suppress badBitmaskCheck
+            STF_ENUM(STF_ENUM_CONFIG(AUTO_PRINT, OVERRIDE_START, OVERRIDE_END),
+                TYPE,
+                uint64_t,
                 // Synchronous Exceptions/Traps
-                INST_ADDR_MISALIGN          = 0x0, /**< Misaligned instruction exception */
-                INST_ADDR_FAULT             = 0x1, /**< Instruction address fault */
-                ILLEGAL_INST                = 0x2, /**< Illegal instruction exception */
-                BREAKPOINT                  = 0x3, /**< Breakpoint event */
-                LOAD_ADDR_MISALIGN          = 0x4, /**< Misaligned load exception */
-                LOAD_ACCESS_FAULT           = 0x5, /**< Load address fault */
-                STORE_ADDR_MISALIGN         = 0x6, /**< Misaligned store exception */
-                STORE_ACCESS_FAULT          = 0x7, /**< Store address fault */
-                USER_ECALL                  = 0x8, /**< User-mode syscall */
-                SUPERVISOR_ECALL            = 0x9, /**< Supervisor-mode syscall */
-                HYPERVISOR_ECALL            = 0xa, /**< Hypervisor-mode syscall */
-                MACHINE_ECALL               = 0xb, /**< Machine-mode syscall */
-                INST_PAGE_FAULT             = 0xc, /**< Instruction page fault */
-                LOAD_PAGE_FAULT             = 0xd, /**< Load page fault */
-                STORE_PAGE_FAULT            = 0xf, /**< Store page fault */
-                GUEST_INST_PAGE_FAULT       = 0x14, /**< Instruction guest-page fault */
-                GUEST_LOAD_PAGE_FAULT       = 0x15, /**< Load guest-page fault */
-                VIRTUAL_INST                = 0x16, /**< Virtual instruction */
-                GUEST_STORE_PAGE_FAULT      = 0x17, /**< Store/AMO guest-page fault */
+                STF_ENUM_VAL(INST_ADDR_MISALIGN,          0x0), /**< Misaligned instruction exception */
+                STF_ENUM_VAL(INST_ADDR_FAULT,             0x1), /**< Instruction address fault */
+                STF_ENUM_VAL(ILLEGAL_INST,                0x2), /**< Illegal instruction exception */
+                STF_ENUM_VAL(BREAKPOINT,                  0x3), /**< Breakpoint event */
+                STF_ENUM_VAL(LOAD_ADDR_MISALIGN,          0x4), /**< Misaligned load exception */
+                STF_ENUM_VAL(LOAD_ACCESS_FAULT,           0x5), /**< Load address fault */
+                STF_ENUM_VAL(STORE_ADDR_MISALIGN,         0x6), /**< Misaligned store exception */
+                STF_ENUM_VAL(STORE_ACCESS_FAULT,          0x7), /**< Store address fault */
+                STF_ENUM_VAL(USER_ECALL,                  0x8), /**< User-mode syscall */
+                STF_ENUM_VAL(SUPERVISOR_ECALL,            0x9), /**< Supervisor-mode syscall */
+                STF_ENUM_VAL(HYPERVISOR_ECALL,            0xa), /**< Hypervisor-mode syscall */
+                STF_ENUM_VAL(MACHINE_ECALL,               0xb), /**< Machine-mode syscall */
+                STF_ENUM_VAL(INST_PAGE_FAULT,             0xc), /**< Instruction page fault */
+                STF_ENUM_VAL(LOAD_PAGE_FAULT,             0xd), /**< Load page fault */
+                STF_ENUM_VAL(STORE_PAGE_FAULT,            0xf), /**< Store page fault */
+                STF_ENUM_VAL(GUEST_INST_PAGE_FAULT,       0x14), /**< Instruction guest-page fault */
+                STF_ENUM_VAL(GUEST_LOAD_PAGE_FAULT,       0x15), /**< Load guest-page fault */
+                STF_ENUM_VAL(VIRTUAL_INST,                0x16), /**< Virtual instruction */
+                STF_ENUM_VAL(GUEST_STORE_PAGE_FAULT,      0x17), /**< Store/AMO guest-page fault */
 
                 // Interrupts/Asynchronous Exceptions
-                INT_USER_SOFTWARE           = 0x0 | INTERRUPT_MASK, /**< User-mode software interrupt */
-                INT_SUPERVISOR_SOFTWARE     = 0x1 | INTERRUPT_MASK, /**< Supervisor-mode software interrupt */
-                INT_HYPERVISOR_SOFTWARE     = 0x2 | INTERRUPT_MASK, /**< Hypervisor-mode software interrupt */
-                INT_MACHINE_SOFTWARE        = 0x3 | INTERRUPT_MASK, /**< Machine-mode software interrupt */
-                INT_USER_TIMER              = 0x4 | INTERRUPT_MASK, /**< User-mode timer interrupt */
-                INT_SUPERVISOR_TIMER        = 0x5 | INTERRUPT_MASK, /**< Supervisor-mode timer interrupt */
-                INT_HYPERVISOR_TIMER        = 0x6 | INTERRUPT_MASK, /**< Hypervisor-mode timer interrupt */
-                INT_MACHINE_TIMER           = 0x7 | INTERRUPT_MASK, /**< Machine-mode timer interrupt */
-                INT_USER_EXT                = 0x8 | INTERRUPT_MASK, /**< User-mode external interrupt */
-                INT_SUPERVISOR_EXT          = 0x9 | INTERRUPT_MASK, /**< Supervisor-mode external interrupt */
-                INT_HYPERVISOR_EXT          = 0xa | INTERRUPT_MASK, /**< Hypervisor-mode external interrupt */
-                INT_MACHINE_EXT             = 0xb | INTERRUPT_MASK, /**< Machine-mode external interrupt */
-                INT_COPROCESSOR             = 0xc | INTERRUPT_MASK, /**< Coprocessor interrupt */
-                INT_HOST                    = 0xd | INTERRUPT_MASK, /**< Host interrupt */
+                STF_ENUM_VAL(INT_USER_SOFTWARE,           0x0 | INTERRUPT_MASK), /**< User-mode software interrupt */
+                STF_ENUM_VAL(INT_SUPERVISOR_SOFTWARE,     0x1 | INTERRUPT_MASK), /**< Supervisor-mode software interrupt */
+                STF_ENUM_VAL(INT_HYPERVISOR_SOFTWARE,     0x2 | INTERRUPT_MASK), /**< Hypervisor-mode software interrupt */
+                STF_ENUM_VAL(INT_MACHINE_SOFTWARE,        0x3 | INTERRUPT_MASK), /**< Machine-mode software interrupt */
+                STF_ENUM_VAL(INT_USER_TIMER,              0x4 | INTERRUPT_MASK), /**< User-mode timer interrupt */
+                STF_ENUM_VAL(INT_SUPERVISOR_TIMER,        0x5 | INTERRUPT_MASK), /**< Supervisor-mode timer interrupt */
+                STF_ENUM_VAL(INT_HYPERVISOR_TIMER,        0x6 | INTERRUPT_MASK), /**< Hypervisor-mode timer interrupt */
+                STF_ENUM_VAL(INT_MACHINE_TIMER,           0x7 | INTERRUPT_MASK), /**< Machine-mode timer interrupt */
+                STF_ENUM_VAL(INT_USER_EXT,                0x8 | INTERRUPT_MASK), /**< User-mode external interrupt */
+                STF_ENUM_VAL(INT_SUPERVISOR_EXT,          0x9 | INTERRUPT_MASK), /**< Supervisor-mode external interrupt */
+                STF_ENUM_VAL(INT_HYPERVISOR_EXT,          0xa | INTERRUPT_MASK), /**< Hypervisor-mode external interrupt */
+                STF_ENUM_VAL(INT_MACHINE_EXT,             0xb | INTERRUPT_MASK), /**< Machine-mode external interrupt */
+                STF_ENUM_VAL(INT_COPROCESSOR,             0xc | INTERRUPT_MASK), /**< Coprocessor interrupt */
+                STF_ENUM_VAL(INT_HOST,                    0xd | INTERRUPT_MASK), /**< Host interrupt */
 
                 // Special Events
-                MODE_CHANGE                 = 0x0 | SPECIAL_MASK    /**< Instruction causes an execution mode change */
-            };
+                STF_ENUM_VAL(MODE_CHANGE,                 0x0 | SPECIAL_MASK),   /**< Instruction causes an execution mode change */
+                __INVALID_TYPE
+            );
 
         private:
-            TYPE event_;
+            TYPE event_ = TYPE::__INVALID_TYPE;
             SerializableVector<uint64_t, uint8_t> content_;
 
             static constexpr uint32_t EVENT32_TOP_BITS_ = EVENT32_INTERRUPT_MASK | EVENT32_SPECIAL_MASK;
@@ -1142,13 +1171,6 @@ namespace stf {
     };
 
     REGISTER_RECORD(EventRecord)
-
-    /**
-     * Prints an EventRecord::TYPE to an std::ostream
-     * \param os std::ostream to print to
-     * \param event_type Event type to print
-     */
-    std::ostream& operator<<(std::ostream& os, EventRecord::TYPE event_type);
 
     // Have to define this after declaring the EventRecord::TYPE ostream operator
     inline void EventRecord::format_impl(std::ostream& os) const {
@@ -1831,8 +1853,8 @@ namespace stf {
      */
     class InstMicroOpRecord : public TypeAwareSTFRecord<InstMicroOpRecord, descriptors::internal::Descriptor::STF_INST_MICROOP> {
         private:
-            uint8_t size_;               /**< size of the micro-op */
-            uint32_t microop_;           /**< micro-op */
+            uint8_t size_ = 0;               /**< size of the micro-op */
+            uint32_t microop_ = 0;           /**< micro-op */
 
         public:
             InstMicroOpRecord() = default;
@@ -1938,12 +1960,12 @@ namespace stf {
      */
     class BusMasterAccessRecord : public TypeAwareSTFRecord<BusMasterAccessRecord, descriptors::internal::Descriptor::STF_BUS_MASTER_ACCESS> {
         private:
-            uint64_t address_;              /**< memory access address */
-            uint16_t size_;                 /**< memory access data size */
-            BUS_MASTER src_type_;           /**< memory access initiator type */
-            uint8_t src_idx_;               /**< memory access initiator index */
-            uint32_t attr_;                 /**< memory access attributes */
-            BUS_MEM_ACCESS access_type_;    /**< memory access type */
+            uint64_t address_ = 0;                                  /**< memory access address */
+            uint16_t size_ = 0;                                     /**< memory access data size */
+            BUS_MASTER src_type_ = BUS_MASTER::INVALID;             /**< memory access initiator type */
+            uint8_t src_idx_ = 0;                                   /**< memory access initiator index */
+            uint32_t attr_ = 0;                                     /**< memory access attributes */
+            BUS_MEM_ACCESS access_type_ = BUS_MEM_ACCESS::INVALID;  /**< memory access type */
 
         public:
             BusMasterAccessRecord() = default;
@@ -2308,7 +2330,15 @@ namespace stf {
     /**
      * Writes a TraceInfoRecord to an ostream
      */
-    std::ostream& operator<<(std::ostream& os, const TraceInfoRecord& rec);
+    inline std::ostream& operator<<(std::ostream& os, const TraceInfoRecord& rec) {
+        format_utils::formatLabel(os, "GENERATOR");
+        os << rec.getGenerator() << std::endl;
+        format_utils::formatLabel(os, "GEN_VERSION");
+        os << rec.getVersionString() << std::endl;
+        format_utils::formatLabel(os, "GEN_COMMENT");
+        os << rec.getComment() << std::endl;
+        return os;
+    }
 
     /**
      * \class TraceInfoFeatureRecord
@@ -2362,6 +2392,7 @@ namespace stf {
              * Packs a TraceInfoFeatureRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
+            // cppcheck-suppress duplInheritedMember
             inline void pack_impl(STFOFstream& writer) const {
                 handleStreamFlags_(writer);
                 GenericSingleDataRecord::pack_impl(writer);
@@ -2372,6 +2403,7 @@ namespace stf {
              * \param reader STFIFstream to use
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void unpack_impl(STFIFstream& reader) {
                 GenericSingleDataRecord::unpack_impl(reader);
                 handleStreamFlags_(reader);
@@ -2448,7 +2480,15 @@ namespace stf {
     /**
      * Writes a TraceInfoFeatureRecord to an ostream
      */
-    std::ostream& operator<<(std::ostream& os, const TraceInfoFeatureRecord& rec);
+    inline std::ostream& operator<<(std::ostream& os, const TraceInfoFeatureRecord& rec) {
+        for(size_t i = 0; i < byte_utils::bitSize<enums::int_t<TRACE_FEATURES>>(); ++i) {
+            const auto feat = static_cast<TRACE_FEATURES>(1ULL << i);
+            if(rec.hasFeature(feat)) {
+                os << feat << std::endl;
+            }
+        }
+        return os;
+    }
 
     /**
      * \class TransactionRecord
@@ -2670,12 +2710,12 @@ namespace stf {
 
                     __attribute__((always_inline))
                     inline void unpack_(STFIFstream& reader) {
-                        VectorSizeType size;
-                        TransactionRecord::read_(reader, size);
+                        VectorSizeType new_size;
+                        TransactionRecord::read_(reader, new_size);
                         metadata_.clear();
-                        metadata_.reserve(size);
+                        metadata_.reserve(new_size);
                         raw_size_ = 0;
-                        for(VectorSizeType i = 0; i < size; ++i) {
+                        for(VectorSizeType i = 0; i < new_size; ++i) {
                             metadata_.emplace_back(reader);
                             raw_size_ += metadata_.back().size();
                         }

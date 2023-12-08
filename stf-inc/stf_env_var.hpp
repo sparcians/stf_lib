@@ -131,6 +131,7 @@ namespace stf {
              * Gets the value of the variable
              * \returns Value of the variable, or the default value if it is unset
              */
+            // cppcheck-suppress duplInheritedMember
             inline bool get() const {
                 return bool_val_;
             }

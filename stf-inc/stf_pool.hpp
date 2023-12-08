@@ -10,12 +10,10 @@
 
 #include "boost_wrappers/pool.hpp"
 
-//#define BOOST_POOL_NO_MT
 #pragma push_macro("S1")
 #undef S1
 #include <boost/container/static_vector.hpp>
 #pragma pop_macro("S1")
-//#undef BOOST_POOL_NO_MT
 
 #include "stf_enum_utils.hpp"
 #include "type_utils.hpp"

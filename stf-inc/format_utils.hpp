@@ -56,7 +56,9 @@ namespace stf {
             static constexpr int PA_WIDTH = 10; /**< Width of a physical address, in hex*/
             static constexpr int DATA_WIDTH = 16; /**< Width of raw data, in hex*/
             static constexpr int OPCODE_WIDTH = 8; /**< Width of an opcode, in hex*/
+            // cppcheck-suppress unusedStructMember
             static constexpr int OPCODE_FIELD_WIDTH = 21; /**< Total width of the opcode field*/
+            // cppcheck-suppress unusedStructMember
             static constexpr int MEM_ACCESS_FIELD_WIDTH = 13; /**< Total width of the MEM_ATTR field*/
             static constexpr int OPERAND_LABEL_LEFT_PADDING = LABEL_WIDTH + VA_WIDTH + 1; /**< Left padding used for operand label*/
             static constexpr int OPERAND_LABEL_RIGHT_PADDING = 4; /**< Right padding used for operand label*/
@@ -64,9 +66,13 @@ namespace stf {
             static constexpr int TID_WIDTH = 8; /**< Width of a TID/PID/ASID, in hex*/
             static constexpr int REGISTER_NAME_WIDTH = 25; /**< Width of the register name field*/
             static constexpr int EVENT_WIDTH = 25; /**< Width of an event code string representation */
+            // cppcheck-suppress unusedStructMember
             static constexpr int EVENT_DATA_WIDTH = 8; /**< Width of event data, in hex*/
+            // cppcheck-suppress unusedStructMember
             static constexpr int ESCAPE_WIDTH = 4; /**< Width of an escape record, in decimal*/
+            // cppcheck-suppress unusedStructMember
             static constexpr int PTE_ACCESS_INDEX_WIDTH = 16; /**< Width of a PTE access index, in decimal*/
+            // cppcheck-suppress unusedStructMember
             static constexpr int PTE_DESC_LABEL_WIDTH = LABEL_WIDTH + 4; /**< Width of a PTE descriptor label*/
 
             /**
@@ -471,16 +477,14 @@ namespace stf {
 
                     for(auto it = vec.rbegin(); it != vec.rend(); ++it) {
                         for(auto i = static_cast<ssize_t>(VECTOR_ELEMENT_WIDTH - vlen); i >= 0; i -= vlen) {
-                            if(!first_line) {
+                            if(STF_EXPECT_TRUE(!first_line)) {
                                 os << std::endl;
                             }
-                            if(!first_line || indent_first_line) {
+                            if(STF_EXPECT_TRUE(!first_line || indent_first_line)) {
                                 formatSpaces(os, indent);
                             }
                             formatHex(os, (*it >> i) & mask, vlen_digits);
-                            if(first_line) {
-                                first_line = false;
-                            }
+                            first_line = false;
                         }
                     }
                 }
@@ -496,34 +500,30 @@ namespace stf {
                                "The number of vector elements must be a multiple of the number of elements per vlen");
                     auto it = vec.rbegin();
                     while(it != vec.rend()) {
-                        if(!first_line) {
+                        if(STF_EXPECT_TRUE(!first_line)) {
                             os << std::endl;
                         }
-                        if(!first_line || indent_first_line) {
+                        if(STF_EXPECT_TRUE(!first_line || indent_first_line)) {
                             formatSpaces(os, indent);
                         }
                         for(size_t i = 0; i < elements_per_vlen; ++i) {
                             formatHex(os, *it);
                             ++it;
                         }
-                        if(first_line) {
-                            first_line = false;
-                        }
+                        first_line = false;
                     }
                 }
                 else {
                     for(auto it = vec.rbegin(); it != vec.rend(); ++it) {
-                        if(!first_line) {
+                        if(STF_EXPECT_TRUE(!first_line)) {
                             os << std::endl;
                         }
-                        if(!first_line || indent_first_line) {
+                        if(STF_EXPECT_TRUE(!first_line || indent_first_line)) {
                             formatSpaces(os, indent);
                         }
                         formatSpaces(os, indent);
                         formatHex(os, *it);
-                        if(first_line) {
-                            first_line = false;
-                        }
+                        first_line = false;
                     }
                 }
             }

@@ -4,6 +4,9 @@
 #include <array>
 #include <memory>
 
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/stringize.hpp>
+
 #include "stf_factory_decl.hpp"
 #include "stf_ifstream.hpp"
 #include "stf_object_id.hpp"
@@ -191,12 +194,15 @@ namespace stf {
         return deleters_[object_id]; \
     }
 
+#define ___TEST_NAMESPACE(test_name, ns, msg) \
+    struct test_name;  \
+    static_assert(std::is_same_v<test_name, ::ns::test_name>, msg);
+
 #define __TEST_NAMESPACE(name, ns, msg) \
-    struct __TEST_NAMESPACE_##name;  \
-    static_assert(std::is_same_v<__TEST_NAMESPACE_##name, ::ns::__TEST_NAMESPACE_##name>, msg);
+    ___TEST_NAMESPACE(BOOST_PP_CAT(__TEST_NAMESPACE_, name), ns, msg)
 
 #define __PAUSE_NAMESPACE(name, ns) \
-    __TEST_NAMESPACE(name, ns, "Not currently in " #ns " namespace") \
+    __TEST_NAMESPACE(name, ns, "Not currently in " BOOST_PP_STRINGIZE(ns) " namespace") \
     } \
 
 #define __RESUME_NAMESPACE(ns) \

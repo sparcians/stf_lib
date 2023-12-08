@@ -1,8 +1,8 @@
 
 // <STF_Reg_Def> -*- HPP -*-
 
-#ifndef __STF_REGISTER_DEF_H_
-#define __STF_REGISTER_DEF_H_
+#ifndef __STF_REG_DEF_HPP__
+#define __STF_REG_DEF_HPP__
 
 #include <cstdint>
 #include <ostream>
@@ -54,13 +54,16 @@ namespace stf {
               *
               * Defines the different types of registers: integer, float, vector, CSR, etc.
               */
-            enum class STF_REG_TYPE : STF_REG_metadata_int {
-                RESERVED = 0,
-                INTEGER = 1,
-                FLOATING_POINT = 2,
-                VECTOR = 3,
-                CSR = 4
-            };
+            STF_ENUM(
+                STF_ENUM_CONFIG(AUTO_PRINT, ALLOW_UNKNOWN, OVERRIDE_START),
+                STF_REG_TYPE,
+                STF_REG_metadata_int,
+                RESERVED,
+                STF_ENUM_VAL(INTEGER, 1),
+                STF_ENUM_VAL(FLOATING_POINT, 2),
+                STF_ENUM_VAL(VECTOR, 3),
+                STF_ENUM_VAL(CSR, 4)
+            );
 
             /**
               * \enum STF_REG
@@ -112,12 +115,15 @@ namespace stf {
              * \enum STF_REG_OPERAND_TYPE
              * Defines the different types of register records
              */
-            enum class STF_REG_OPERAND_TYPE : STF_REG_metadata_int {
-                REG_RESERVED    = 0,
-                REG_STATE       = 1,
-                REG_SOURCE      = 2,
-                REG_DEST        = 3
-            };
+            STF_ENUM(
+                STF_ENUM_CONFIG(AUTO_PRINT, OVERRIDE_START),
+                STF_REG_OPERAND_TYPE,
+                STF_REG_metadata_int,
+                STF_ENUM_VAL(REG_RESERVED, 0, "RESERVED"),
+                STF_ENUM_VAL(REG_STATE, 1, "STATE"),
+                STF_ENUM_VAL(REG_SOURCE, 2, "SOURCE"),
+                STF_ENUM_VAL(REG_DEST, 3, "DEST")
+            );
 
             /**
              * Converts an STF_REG to its corresponding index
@@ -287,6 +293,9 @@ namespace stf {
 
     };
 
+    // Unfortunately we can't use STF_ENUM here since Boost::Preprocessor allows a maximum of
+    // 256 variadic parameters
+    // This isn't a huge loss since the format function for STF_REG is complicated
     enum class Registers::STF_REG : Registers::STF_REG_int {
         // 32 int registers
         STF_REG_X0                = Codec::toGPR(0x0000),
@@ -718,20 +727,6 @@ namespace stf {
      * \param reg register to format
      */
     std::ostream& operator<<(std::ostream& os, Registers::STF_REG reg);
-
-    /**
-     * Writes an STF_REG_TYPE to an ostream
-     * \param os ostream to use
-     * \param type register type to format
-     */
-    std::ostream& operator<<(std::ostream& os, Registers::STF_REG_TYPE type);
-
-    /**
-     * Writes an STF_REG_OPERAND_TYPE to an ostream
-     * \param os ostream to use
-     * \param type operand type to format
-     */
-    std::ostream& operator<<(std::ostream& os, Registers::STF_REG_OPERAND_TYPE type);
 
     template<size_t num_bits>
     static constexpr uint64_t calcRegMask() {

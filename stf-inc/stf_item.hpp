@@ -67,6 +67,7 @@ namespace stf {
              * Resets the item
              */
             __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
             inline void reset_() {
                 STFItem::reset_();
                 skipped_ = false;

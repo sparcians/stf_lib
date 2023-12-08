@@ -482,7 +482,7 @@ namespace stf {
                         ptr_ = std::make_unique<STFPageTableImpl<INST_IEM::STF_INST_IEM_RV64>>();
                         break;
                     case INST_IEM::STF_INST_IEM_INVALID:
-                    case INST_IEM::STF_INST_IEM_RESERVED:
+                    case INST_IEM::__RESERVED_END:
                         stf_throw("Invalid INST_IEM specified: " << iem);
                 }
             }

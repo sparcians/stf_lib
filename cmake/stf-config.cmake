@@ -25,7 +25,7 @@ include(stf_linker_setup)
 
 setup_stf_linker(true)
 
-add_compile_options(-Werror -std=c++17 -fPIC -Wall -Wextra -pedantic -Wconversion -Wno-unused-parameter -Wno-unused-function -pipe)
+add_compile_options(-Werror -std=c++17 -fPIC -Wall -Wextra -pedantic -Wconversion -Wno-unused-parameter -Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -pipe)
 
 if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
     if(NOT DISABLE_STF_DOXYGEN)
