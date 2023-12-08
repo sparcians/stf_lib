@@ -72,6 +72,16 @@ namespace stf {
         template<typename T>
         using optimal_const_ref_t = typename optimal_const_ref<T>::type;
 
+        template<typename T>
+        struct optimal_return_ref {
+            using type = std::conditional_t<std::is_fundamental_v<T>,
+                                            T,
+                                            optimal_const_ref_t<T>>;
+        };
+
+        template<typename T>
+        using optimal_return_ref_t = typename optimal_return_ref<T>::type;
+
         using none_t = boost::none_t;
         static inline constexpr auto none = boost::none;
     } // end namespace type_utils

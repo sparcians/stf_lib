@@ -98,7 +98,7 @@
 // Example: for a field named MyField it will generate a method named getMyField
 // Fields with overridden names (using the OVERRIDE_FIELD_NAME macro) will use the overridden name instead
 #define _FIELD_GETTER(r, field_ns, field)                           \
-    inline typename _NS_FIELD(_, field_ns, field)::ReferenceType    \
+    inline typename _NS_FIELD(_, field_ns, field)::ReturnType       \
     BOOST_PP_CAT(get, _GET_LOCAL_FIELD_NAME(field))() const {       \
         return get<_NS_FIELD(_, field_ns, field)>();                \
     }
@@ -263,7 +263,7 @@ namespace stf {
                      * Gets the value of the specified field
                      */
                     template<typename FieldType>
-                    inline typename FieldType::ReferenceType get() const {
+                    inline typename FieldType::ReturnType get() const {
                         return std::get<FieldType>(fields_).value();
                     }
             };

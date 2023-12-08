@@ -258,7 +258,7 @@ namespace stf {
      * Expected type of a ProtocolField formatter function
      */
     template<typename Value>
-    using ProtocolFieldFormatter = decltype(defaultProtocolFieldFormatter<Value>);
+    using ProtocolFieldFormatter = decltype(&defaultProtocolFieldFormatter<Value>);
 
     /**
      * Default formatter function used for ProtocolVectorField objects
@@ -300,6 +300,7 @@ namespace stf {
     class ProtocolField {
         public:
             using ReferenceType = type_utils::optimal_const_ref_t<DataType>;
+            using ReturnType = type_utils::optimal_return_ref_t<DataType>;
 
         protected:
             friend class STFIFstream;
@@ -360,7 +361,7 @@ namespace stf {
             /**
              * Gets the actual value stored in the field
              */
-            inline ReferenceType value() const {
+            inline ReturnType value() const {
                 return data_;
             }
     };
