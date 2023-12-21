@@ -17,6 +17,14 @@
 #include "stf_serializable_container.hpp"
 #include "type_utils.hpp"
 
+// Conda adds -fvisibility-inlines-hidden to the default compiler flags, which gives a compiler error unless
+// we add this visibility tag to field class definitions
+#if __GNUC__ >= 4
+    #define DEFAULT_VIS __attribute__((visibility("default")))
+#else
+    #define DEFAULT_VIS
+#endif
+
 // Defines r-value and l-value field class constructors for the given argument type
 // parent_class_tuple and arg_type should either be bare type names or tuples packed with STF_PACK_TEMPLATE
 #define __FIELD_CONSTRUCTOR(parent_class_tuple, field_name, arg_type)                                   \
@@ -36,7 +44,7 @@
 
 // Declares a field class with the given parent type, name, and constructor argument types
 #define __FIELD(parent_class_tuple, field_name, ...)                    \
-    class field_name : public STF_UNPACK_TEMPLATE(parent_class_tuple) { \
+    class DEFAULT_VIS field_name : public STF_UNPACK_TEMPLATE(parent_class_tuple) { \
         public:                                                         \
             field_name() = default;                                     \
             explicit field_name(STFIFstream& reader) :                  \
