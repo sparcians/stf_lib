@@ -155,7 +155,8 @@ namespace stf {
                    (wrote_event_record_group_ && desc == descriptors::internal::Descriptor::STF_EVENT) ||
                    ((wrote_page_table_walk_ || wrote_reg_) && desc == descriptors::internal::Descriptor::STF_INST_PC_TARGET) ||
                    (wrote_page_table_walk_ && desc == descriptors::internal::Descriptor::STF_INST_REG) ||
-                   (desc == descriptors::internal::Descriptor::STF_COMMENT),
+                   (desc == descriptors::internal::Descriptor::STF_COMMENT) ||
+                   (desc == descriptors::internal::Descriptor::STF_FORCE_PC),
                    "Attempted out of order write. " << desc << " should come before " << last_desc_);
         switch(desc) {
             case descriptors::internal::Descriptor::STF_IDENTIFIER:
