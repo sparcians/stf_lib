@@ -9,14 +9,15 @@ function(setup_stf_linker set_compiler_options)
     else()
       set(LD ld)
     endif()
-    execute_process(COMMAND ${LD} -v
-                    OUTPUT_VARIABLE LD_VERSION)
-    string(STRIP ${LD_VERSION} LD_VERSION)
-    string(REGEX MATCH "[^ \t\r\n]+$" LD_VERSION ${LD_VERSION})
-    message("-- ld version is ${LD_VERSION}")
 
     # Don't need to change default linker on OS X
     if (NOT APPLE)
+      execute_process(COMMAND ${LD} -v
+                      OUTPUT_VARIABLE LD_VERSION)
+      string(STRIP ${LD_VERSION} LD_VERSION)
+      string(REGEX MATCH "[^ \t\r\n]+$" LD_VERSION ${LD_VERSION})
+      message("-- ld version is ${LD_VERSION}")
+
       find_program(GOLD "ld.gold")
       find_program(LLD "ld.lld")
 
