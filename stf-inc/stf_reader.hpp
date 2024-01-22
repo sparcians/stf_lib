@@ -77,19 +77,19 @@ namespace stf {
             ISA getISA() const;
 
             /**
-             * Gets the initial TGID
+             * Gets the initial hardware thread ID
              */
-            uint32_t getInitialTGID() const;
+            uint32_t getInitialHardwareTID() const;
+
+            /**
+             * Gets the initial PID
+             */
+            uint32_t getInitialPID() const;
 
             /**
              * Gets the initial TID
              */
             uint32_t getInitialTID() const;
-
-            /**
-             * Gets the initial ASID
-             */
-            uint32_t getInitialASID() const;
 
             /**
              * Closes the file

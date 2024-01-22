@@ -101,7 +101,7 @@ namespace stf {
         }
 
         /**
-         * Prints a TID/PID/ASID
+         * Prints a TID/PID/HW TID
          * \param val value to format
          */
         template<typename T>

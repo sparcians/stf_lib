@@ -241,14 +241,14 @@ cdef class STFInst:
     def totalMemAccessSize(self):
         return self.c_inst.totalMemAccessSize()
 
-    def asid(self):
-        return self.c_inst.asid()
+    def hwtid(self):
+        return self.c_inst.hwtid()
+
+    def pid(self):
+        return self.c_inst.pid()
 
     def tid(self):
         return self.c_inst.tid()
-
-    def tgid(self):
-        return self.c_inst.tgid()
 
     def pc(self):
         return self.c_inst.pc()

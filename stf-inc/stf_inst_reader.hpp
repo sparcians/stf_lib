@@ -71,9 +71,9 @@ namespace stf {
             bool iem_changes_allowed_ = false;
 
             INST_IEM last_iem_ = INST_IEM::STF_INST_IEM_INVALID;         // the latest IEM
-            uint32_t tgid_ = 0;             // current tgid
+            uint32_t hw_thread_id_ = 0;     // current hardware thread ID
+            uint32_t pid_ = 0;              // current pid
             uint32_t tid_ = 0;              // current tid;
-            uint32_t asid_ = 0;             // current asid;
             std::unique_ptr<STFPTEReader> pte_reader_;       // the STF PTE reader;
 
 #ifdef STF_INST_HAS_IEM
@@ -230,9 +230,9 @@ namespace stf {
                             case IntDescriptor::STF_PROCESS_ID_EXT:
                                 {
                                     const auto& process_id = rec->template as<ProcessIDExtRecord>();
-                                    asid_ = process_id.getASID();
+                                    hw_thread_id_ = process_id.getHardwareTID();
+                                    pid_ = process_id.getPID();
                                     tid_ = process_id.getTID();
-                                    tgid_ = process_id.getTGID();
                                 }
                                 break;
 
@@ -299,9 +299,9 @@ namespace stf {
 #ifdef STF_INST_HAS_IEM
                                                          iem_changed_,
 #endif
-                                                         asid_,
+                                                         hw_thread_id_,
+                                                         pid_,
                                                          tid_,
-                                                         tgid_,
                                                          skippingEnabled_() && !pending_user_syscall_); // User syscalls need to be overridden instead of skipped
                 countSkipped_(inst.skipped());
 
@@ -408,9 +408,9 @@ namespace stf {
                       const bool enable_address_translation = false,
                       const bool force_single_threaded_stream = false) {
                 ParentReader::open(filename, force_single_threaded_stream);
-                asid_ = 0;
+                hw_thread_id_ = 0;
+                pid_ = 0;
                 tid_ = 0;
-                tgid_ = 0;
                 last_iem_ = getInitialIEM();
                 iem_changes_allowed_ = (getISA() != ISA::RISCV);
                 enable_address_translation_ = enable_address_translation;

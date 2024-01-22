@@ -889,9 +889,9 @@ namespace stf {
      */
     class ProcessIDExtRecord : public TypeAwareSTFRecord<ProcessIDExtRecord, descriptors::internal::Descriptor::STF_PROCESS_ID_EXT> {
         private:
-            uint32_t tgid_ = 0;              /**< process ID */
-            uint32_t tid_ = 0;               /**< thread ID */
-            uint32_t asid_ = 0;              /**< Address Space ID */
+            uint32_t hw_thread_id_ = 0;     /**< hardware thread/core ID */
+            uint32_t pid_ = 0;              /**< process ID */
+            uint32_t tid_ = 0;              /**< thread ID */
 
         public:
             ProcessIDExtRecord() = default;
@@ -906,21 +906,26 @@ namespace stf {
 
             /**
              * Constructs a ProcessIDExtRecord
-             * \param tgid tgid
-             * \param tid tid
-             * \param asid asid
+             * \param hw_thread_id Hardware thread/core ID
+             * \param pid Process ID
+             * \param tid Thread ID
              */
-            ProcessIDExtRecord(uint32_t tgid, uint32_t tid, uint32_t asid) :
-                tgid_(tgid),
-                tid_(tid),
-                asid_(asid)
+            ProcessIDExtRecord(const uint32_t hw_thread_id, const uint32_t pid, const uint32_t tid) :
+                hw_thread_id_(hw_thread_id),
+                pid_(pid),
+                tid_(tid)
             {
             }
 
             /**
-             * Gets the TGID
+             * Gets the hardware thread ID
              */
-            uint32_t getTGID() const { return tgid_; }
+            uint32_t getHardwareTID() const { return hw_thread_id_; }
+
+            /**
+             * Gets the PID
+             */
+            uint32_t getPID() const { return pid_; }
 
             /**
              * Gets the TID
@@ -928,16 +933,11 @@ namespace stf {
             uint32_t getTID() const { return tid_; }
 
             /**
-             * Gets the ASID
-             */
-            uint32_t getASID() const { return asid_; }
-
-            /**
              * Packs a ProcessIDExtRecord into an STFOFstream
              * \param writer STFOFstream to use
              */
             inline void pack_impl(STFOFstream& writer) const {
-                write_(writer, tgid_, tid_, asid_);
+                write_(writer, hw_thread_id_, pid_, tid_);
             }
 
             /**
@@ -946,7 +946,7 @@ namespace stf {
              */
             __attribute__((always_inline))
             inline void unpack_impl(STFIFstream& reader) {
-                read_(reader, tgid_, tid_, asid_);
+                read_(reader, hw_thread_id_, pid_, tid_);
             }
 
             /**
@@ -954,10 +954,10 @@ namespace stf {
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
-                os << "asid = ";
-                format_utils::formatHex(os, asid_);
-                os << " tgid = ";
-                format_utils::formatHex(os, tgid_);
+                os << "hw_tid = ";
+                format_utils::formatHex(os, hw_thread_id_);
+                os << " pid = ";
+                format_utils::formatHex(os, pid_);
                 os << " tid = ";
                 format_utils::formatHex(os, tid_);
             }

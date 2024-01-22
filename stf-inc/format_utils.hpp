@@ -63,7 +63,7 @@ namespace stf {
             static constexpr int OPERAND_LABEL_LEFT_PADDING = LABEL_WIDTH + VA_WIDTH + 1; /**< Left padding used for operand label*/
             static constexpr int OPERAND_LABEL_RIGHT_PADDING = 4; /**< Right padding used for operand label*/
             static constexpr int OPERAND_LABEL_WIDTH = OPERAND_LABEL_LEFT_PADDING + OPERAND_LABEL_RIGHT_PADDING; /**< Total width of operand field*/
-            static constexpr int TID_WIDTH = 8; /**< Width of a TID/PID/ASID, in hex*/
+            static constexpr int TID_WIDTH = 8; /**< Width of a TID/PID/HW TID, in hex*/
             static constexpr int REGISTER_NAME_WIDTH = 25; /**< Width of the register name field*/
             static constexpr int EVENT_WIDTH = 25; /**< Width of an event code string representation */
             // cppcheck-suppress unusedStructMember
@@ -370,7 +370,7 @@ namespace stf {
             }
 
             /**
-             * Formats a PID/TID/ASID
+             * Formats a TID/PID/HW TID
              * \param os ostream to write result to
              * \param val value to format
              */
