@@ -125,18 +125,18 @@ namespace stf {
     }
 
     // cppcheck-suppress unusedFunction
-    uint32_t STFReader::getInitialTGID() const {
-        return initial_process_id_ ? initial_process_id_->getTGID() : 0;
+    uint32_t STFReader::getInitialHardwareTID() const {
+        return initial_process_id_ ? initial_process_id_->getHardwareTID() : 0;
+    }
+
+    // cppcheck-suppress unusedFunction
+    uint32_t STFReader::getInitialPID() const {
+        return initial_process_id_ ? initial_process_id_->getPID() : 0;
     }
 
     // cppcheck-suppress unusedFunction
     uint32_t STFReader::getInitialTID() const {
         return initial_process_id_ ? initial_process_id_->getTID() : 0;
-    }
-
-    // cppcheck-suppress unusedFunction
-    uint32_t STFReader::getInitialASID() const {
-        return initial_process_id_ ? initial_process_id_->getASID() : 0;
     }
 
     int STFReader::close() {

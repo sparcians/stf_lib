@@ -417,9 +417,9 @@ namespace stf {
 #endif
             uint32_t opcode_ = 0; /**< opcode */
 
-            uint32_t tgid_ = 0; /**< Thread group ID */
-            uint32_t tid_ = 0; /**< Thread ID */
-            uint32_t asid_ = 0; /**< ASID */
+            uint32_t hw_thread_id_ = 0; /**< Hardware thread ID */
+            uint32_t pid_ = 0;          /**< Process ID */
+            uint32_t tid_ = 0;          /**< Thread ID */
 
 #ifdef STF_INST_HAS_PAGE_CROSS
             uint64_t i_page_cross_ = page_utils::INVALID_PHYS_ADDR; /**< inst page crossing physical addresses */
@@ -990,9 +990,9 @@ namespace stf {
                 iem_changed_ = 0;
 #endif
                 opcode_ = 0;
-                tgid_ = 0;
+                hw_thread_id_ = 0;
+                pid_ = 0;
                 tid_ = 0;
-                asid_ = 0;
 #ifdef STF_INST_HAS_PAGE_CROSS
                 i_page_cross_ = 0;
                 d_page_cross_ = 0;
@@ -1521,22 +1521,22 @@ namespace stf {
 #endif
 
             /**
+             * \brief Hardware thread ID
+             * \return Hardware thread ID
+             */
+            inline uint32_t hwtid() const { return hw_thread_id_; }
+
+            /**
              * \brief Process ID
              * \return Process ID
              */
-            inline uint32_t asid() const { return asid_; }
+            inline uint32_t pid() const { return pid_; }
 
             /**
              * \brief Thread ID
              * \return Thread ID
              */
             inline uint32_t tid() const { return tid_; }
-
-            /**
-             * \brief Thread Group ID (tgid)
-             * \return Thread Group ID (tgid)
-             */
-            inline uint32_t tgid() const { return tgid_; }
 
             /**
              * \brief Instruction virtual PC
@@ -1739,9 +1739,9 @@ namespace stf {
 #ifdef STF_INST_HAS_IEM
                                                 const bool iem_changed,
 #endif
-                                                const uint32_t asid,
+                                                const uint32_t hw_thread_id,
+                                                const uint32_t pid,
                                                 const uint32_t tid,
-                                                const uint32_t tgid,
                                                 const bool is_skipped) {
                     static constexpr bool is_compressed = std::is_same_v<InstRecordType, InstOpcode16Record>;
 
@@ -1755,9 +1755,9 @@ namespace stf {
                     inst.setSkipped_(is_skipped);
                     inst.setInstFlag_(math_utils::conditionalValue(STFBranchDecoder::isBranch(iem, rec), STFInst::INST_IS_BRANCH,
                                                                    is_compressed, STFInst::INST_OPCODE16));
-                    inst.asid_ = asid;
+                    inst.hw_thread_id_ = hw_thread_id;
+                    inst.pid_ = pid;
                     inst.tid_ = tid;
-                    inst.tgid_ = tgid;
                 }
 
                 /**
