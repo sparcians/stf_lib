@@ -493,7 +493,7 @@ namespace stf {
             __attribute__((always_inline))
             inline uint64_t translate(const uint64_t orig_va,
                                       const uint64_t index = std::numeric_limits<uint64_t>::max()) const {
-                return ptr_->translate(orig_va, index);
+                return ptr_ ? ptr_->translate(orig_va, index) : 0;
             }
 
             /**
