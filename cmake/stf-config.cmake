@@ -25,7 +25,11 @@ include(stf_linker_setup)
 
 setup_stf_linker(true)
 
-add_compile_options(-Werror -std=c++17 -fPIC -Wall -Wextra -pedantic -Wconversion -Wno-unused-parameter -Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -pipe)
+add_compile_options(-Werror -std=c++17 -fPIC -Wall -Wextra -pedantic -Wconversion -Wno-unused-parameter -Wno-unused-function -pipe)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
+endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
     if(NOT DISABLE_STF_DOXYGEN)
