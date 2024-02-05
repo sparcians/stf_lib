@@ -46,7 +46,7 @@ namespace stf {
              * \param data Data to write
              */
             template<typename... Ts>
-            static inline std::enable_if_t<type_utils::are_trivially_copyable_v<Ts...>>
+            static inline std::enable_if_t<type_utils::are_pod_v<Ts...>>
             write_(STFOFstream& writer, Ts&&... data) {
                 writer << PackedContainer<std::remove_cv_t<std::remove_reference_t<Ts>>...>(std::forward<Ts>(data)...);
             }
@@ -57,7 +57,7 @@ namespace stf {
              * \param data Data to write
              */
             template<typename... Ts>
-            static inline std::enable_if_t<std::negation_v<type_utils::are_trivially_copyable<Ts...>>>
+            static inline std::enable_if_t<std::negation_v<type_utils::are_pod<Ts...>>>
             write_(STFOFstream& writer, Ts&&... data) {
                 (writer << ... << data);
             }
@@ -132,7 +132,7 @@ namespace stf {
              */
             template<typename... Ts>
             __attribute__((always_inline))
-            static inline std::enable_if_t<type_utils::are_trivially_copyable_v<Ts...>, size_t>
+            static inline std::enable_if_t<type_utils::are_pod_v<Ts...>, size_t>
             read_(STFIFstream& reader, Ts&&... data) {
                 PackedContainerView<std::remove_reference_t<Ts>...> temp;
                 reader >> temp;
@@ -148,7 +148,7 @@ namespace stf {
              */
             template<typename... Ts>
             __attribute__((always_inline))
-            static inline std::enable_if_t<std::negation_v<type_utils::are_trivially_copyable<Ts...>>, size_t>
+            static inline std::enable_if_t<std::negation_v<type_utils::are_pod<Ts...>>, size_t>
             read_(STFIFstream& reader, Ts&&... data) {
                 (reader >> ... >> data);
 
