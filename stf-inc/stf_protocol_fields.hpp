@@ -25,6 +25,19 @@
     #define DEFAULT_VIS
 #endif
 
+// Some GCC versions complain about Formatter lambdas that are defined in this header. As far as I can tell,
+// these warnings are spurious. This disables the warnings if we're running GCC, but only around fields with
+// custom formatters
+#if defined(__GNUC__) && !defined(__clang__)
+    #define FORMATTER_PRAGMA_START \
+        _Pragma("GCC diagnostic push") \
+        _Pragma("GCC diagnostic ignored \"-Wsubobject-linkage\"")
+    #define FORMATTER_PRAGMA_END _Pragma("GCC diagnostic pop")
+#else
+    #define FORMATTER_PRAGMA_START
+    #define FORMATTER_PRAGMA_END
+#endif
+
 // Defines r-value and l-value field class constructors for the given argument type
 // parent_class_tuple and arg_type should either be bare type names or tuples packed with STF_PACK_TEMPLATE
 #define __FIELD_CONSTRUCTOR(parent_class_tuple, field_name, arg_type)                                   \
@@ -69,8 +82,10 @@
 // The __VA_ARGS__ correspond to the field class template parameters.
 // The first template parameter *must* be the underlying type of the field
 #define _FIELD_FORMAT_WRAPPER(fmt, field_macro, field_name, ...)            \
-    inline static const auto _FIELD_FORMATTER_NAME(field_name) = fmt;       \
-    field_macro(field_name, __VA_ARGS__, _FIELD_FORMATTER_NAME(field_name))
+    FORMATTER_PRAGMA_START \
+    inline static constexpr auto _FIELD_FORMATTER_NAME(field_name) = fmt;       \
+    field_macro(field_name, __VA_ARGS__, _FIELD_FORMATTER_NAME(field_name)); \
+    FORMATTER_PRAGMA_END
 
 // Declares a subclass of ProtocolField
 // The __VA_ARGS__ are the template parameters supplied to ProtocolField
