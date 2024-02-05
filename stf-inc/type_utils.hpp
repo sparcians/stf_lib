@@ -22,6 +22,12 @@ namespace stf {
         template<typename... Ts>
         inline constexpr bool are_trivially_copyable_v = are_trivially_copyable<Ts...>::value;
 
+        template <typename... Ts>
+        struct are_pod : std::conjunction<std::is_pod<std::remove_reference_t<Ts>>...> {};
+
+        template<typename... Ts>
+        inline constexpr bool are_pod_v = are_pod<Ts...>::value;
+
         template <typename T, typename = void>
         struct is_iterable : std::false_type {};
 
