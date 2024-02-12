@@ -66,7 +66,7 @@ namespace stf {
                             }
                         }
 
-                        stf_throw("Register " << reg_num << " not present in the map");
+                        return 0;
                     }
 
                     /**
