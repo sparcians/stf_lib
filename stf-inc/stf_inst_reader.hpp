@@ -413,7 +413,10 @@ namespace stf {
                 tid_ = 0;
                 last_iem_ = getInitialIEM();
                 iem_changes_allowed_ = (getISA() != ISA::RISCV);
-                enable_address_translation_ = enable_address_translation;
+                enable_address_translation_ = enable_address_translation &&
+                                              ParentReader::getTraceFeatures()->hasAnyFeatures(TRACE_FEATURES::STF_CONTAIN_PTE,
+                                                                                               TRACE_FEATURES::STF_CONTAIN_PTE_ONLY,
+                                                                                               TRACE_FEATURES::STF_CONTAIN_PTE_HW_AD);
 
                 if(enable_address_translation_) {
                     if(!pte_reader_) {
