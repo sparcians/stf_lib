@@ -220,6 +220,32 @@ namespace stf {
                 chunk_indices_.emplace_back(end, next_chunk_pc, 0);
             }
 
+            /**
+             * Closes the file
+             */
+            int close_() override {
+                if(!stream_) {
+                    return 0;
+                }
+
+                // Finish any pending chunk
+                if(pending_chunk_) {
+                    // Skip writing the chunk in the buffer if it would break any readers that try to use the trace
+                    if(incomplete_chunk_) {
+                        std::cerr << "WARNING: The pending chunk in the STF compressed writer buffer is in an inconsistent state. It will not be written to the output file." << std::endl;
+                    }
+                    else {
+                        compressChunk_();
+                    }
+                }
+                if(compression_in_progress_) {
+                    compression_done_.get();
+                    compression_in_progress_ = false;
+                }
+
+                return STFOFstream::close_();
+            }
+
         public:
             /**
              * Constructs an STFCompressedOFstream
@@ -258,9 +284,8 @@ namespace stf {
 
             // Have to override the base class destructor to ensure that *our* close method gets called before destruction
             inline ~STFCompressedOFstream() override {
-                if(stream_) {
-                    STFCompressedOFstream::close();
-                }
+                STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK();
+                STFCompressedOFstream::close_();
             }
 
             /**
@@ -315,31 +340,6 @@ namespace stf {
                 out_buf_.fit(Compressor::getInitialBoundedSize());
 
                 next_chunk_end_ = marker_record_chunk_size_;
-            }
-
-            /**
-             * Closes the file
-             */
-            int close() override {
-                if(!stream_) {
-                    return 0;
-                }
-
-                // Finish any pending chunk
-                if(pending_chunk_) {
-                    // Skip writing the chunk in the buffer if it would break any readers that try to use the trace
-                    if(incomplete_chunk_) {
-                        std::cerr << "WARNING: The pending chunk in the STF compressed writer buffer is in an inconsistent state. It will not be written to the output file." << std::endl;
-                    }
-                    else {
-                        compressChunk_();
-                    }
-                }
-                if(compression_in_progress_) {
-                    compression_done_.get();
-                    compression_in_progress_ = false;
-                }
-                return STFOFstream::close();
             }
 
             void markerRecordCallback() override {

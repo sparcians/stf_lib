@@ -76,6 +76,21 @@ namespace stf {
                                                           }));
             }
 
+            /**
+             * Closes the file
+             */
+            int close_() override {
+                if(!stream_) {
+                    return 0;
+                }
+
+                if(decompression_in_progress_) {
+                    decompress_result_.get();
+                }
+
+                return STFIFstream::close_();
+            }
+
         public:
             STFCompressedIFstream() = default;
 
@@ -87,14 +102,13 @@ namespace stf {
             explicit STFCompressedIFstream(const std::string_view filename) : // cppcheck-suppress passedByValue
                 STFCompressedIFstream()
             {
-                open(filename);
+                STFCompressedIFstream::open(filename);
             }
 
             // Have to override the base class destructor to ensure that *our* close method gets called before destruction
             inline ~STFCompressedIFstream() override {
-                if(stream_) {
-                    STFCompressedIFstream::close();
-                }
+                STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK();
+                STFCompressedIFstream::close_();
             }
 
             /**
@@ -106,21 +120,6 @@ namespace stf {
                 decompressed_buf_.initSize(block_size_);
                 // Read the next chunk
                 readNextChunk_();
-            }
-
-            /**
-             * Closes the file
-             */
-            int close() override {
-                if(!stream_) {
-                    return 0;
-                }
-
-                if(decompression_in_progress_) {
-                    decompress_result_.get();
-                }
-
-                return STFIFstream::close();
             }
 
             /**

@@ -15,6 +15,13 @@
 #include "stf_protocol_id.hpp"
 #include "stf_vlen.hpp"
 
+/**
+ * \macro STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK
+ *
+ * This macro must be invoked before calling the close_() method in an STFFstream-derived class
+ */
+#define STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK() std::lock_guard<std::mutex> l(STFFstream::open_close_mutex_)
+
 namespace stf {
     /**
      * \class STFFstream
@@ -38,6 +45,7 @@ namespace stf {
             size_t num_records_read_ = 0; /**< Number of records seen so far */
             size_t num_marker_records_ = 0; /**< Number of marker records seen so far */
             bool has_32bit_events_ = false; /**< If true, EventRecord event values are packed into 32 bits */
+            std::mutex open_close_mutex_; /**< Ensures open() and close() are not called from more than 1 thread simultaneously */
 
             STFFstream() = default;
 
@@ -106,15 +114,49 @@ namespace stf {
                 }
             }
 
+            /**
+             * Virtual method that does the actual work of closing a file.
+             * WARNING: This function should not be called unless the open/close mutex has been locked with STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK
+             * This can be overridden by subclasses, but note that any subclass that overrides it must also override the destructor.
+             */
+            inline virtual int close_() {
+                int retcode = 0;
+                if(stream_) {
+                    if(stream_ == stdout) {
+                        fflush(stream_); // need to manually flush stdout
+                    }
+                    else if(stream_ != stdin) { // don't close stdin/stdout
+                        if (used_popen_) {
+                            retcode = pclose (stream_);
+                        }
+                        else if (stream_ != stdout) {
+                            retcode = fclose (stream_);
+                        }
+                    }
+                    stream_ = nullptr;
+                }
+                num_records_read_ = 0;
+                num_marker_records_ = 0;
+
+                // If we aren't closing this from the atexit handler, go ahead and remove ourselves
+                // from open_streams_
+                if(!lock_open_streams_) {
+                    std::lock_guard<std::mutex> l(open_streams_mutex_);
+                    open_streams_.erase(this);
+                }
+                return retcode;
+            }
+
         public:
             // Prevents copying any STF I/O objects
             STFFstream(const STFFstream&) = delete;
             void operator=(const STFFstream&) = delete;
 
+            // Any class that overrides close_ must also override the destructor!
+            // Also note that the open/close mutex must be manually locked with STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK in any overridden destructor
             virtual inline ~STFFstream() {
-                if (stream_) {
-                    STFFstream::close();
-                }
+                STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK();
+                STFFstream::close_();
             }
 
             /**
@@ -143,6 +185,10 @@ namespace stf {
              * \param rw_mode R/W mode
              */
             inline void open(const std::string_view filename, const std::string_view rw_mode) { // cppcheck-suppress passedByValue
+                STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK();
+
+                stf_assert(!stream_, "Stream is already open. Call close() first.");
+
                 // special handling for stdin/stdout
                 if(filename.compare("-") == 0) {
                     if(rw_mode.compare("rb") == 0) {
@@ -166,32 +212,9 @@ namespace stf {
             /**
              * \brief close the trace reader/writer
              */
-            virtual inline int close() {
-                int retcode = 0;
-                if (stream_) {
-                    if(stream_ == stdout) {
-                        fflush(stream_); // need to manually flush stdout
-                    }
-                    else if(stream_ != stdin) { // don't close stdin/stdout
-                        if (used_popen_) {
-                            retcode = pclose (stream_);
-                        }
-                        else if (stream_ != stdout) {
-                            retcode = fclose (stream_);
-                        }
-                    }
-                    stream_ = nullptr;
-                }
-                num_records_read_ = 0;
-                num_marker_records_ = 0;
-
-                // If we aren't closing this from the atexit handler, go ahead and remove ourselves
-                // from open_streams_
-                if(!lock_open_streams_) {
-                    std::lock_guard<std::mutex> l(open_streams_mutex_);
-                    open_streams_.erase(this);
-                }
-                return retcode;
+            inline int close() {
+                STF_FSTREAM_ACQUIRE_OPEN_CLOSE_LOCK();
+                return close_();
             }
 
             /**
