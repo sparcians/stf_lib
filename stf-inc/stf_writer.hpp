@@ -18,6 +18,7 @@ namespace stf {
     class ISARecord;
     class InstIEMRecord;
     class ForcePCRecord;
+    class ProcessIDExtRecord;
     class VLenConfigRecord;
 
     /**
@@ -37,6 +38,9 @@ namespace stf {
 
             STFRecord::Handle<ForcePCRecord> initial_pc_;
             bool initial_pc_written_ = false;
+
+            STFRecord::Handle<ProcessIDExtRecord> initial_process_id_;
+            bool initial_process_id_written_ = false;
 
             STFRecord::Handle<VLenConfigRecord> vlen_config_;
             bool vlen_config_written_ = false;
@@ -82,6 +86,14 @@ namespace stf {
              * \param pc PC to set
              */
             void setHeaderPC(const uint64_t pc);
+
+            /**
+             * Sets header PC
+             * \param hw_thread_id Hardware thread/core ID
+             * \param pid Process ID
+             * \param tid Thread ID
+             */
+            void setHeaderProcessID(const uint32_t hw_thread_id, const uint32_t pid, const uint32_t tid);
 
             /**
              * Removes trace feature from header
