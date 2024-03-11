@@ -22,6 +22,11 @@ namespace stf {
         vlen_config_ = STFRecord::make<VLenConfigRecord>(vlen);
     }
 
+    // cppcheck-suppress unusedFunction
+    void STFWriter::setHeaderProcessID(uint32_t hw_thread_id, uint32_t pid, uint32_t tid) {
+        initial_process_id_ = STFRecord::make<ProcessIDExtRecord>(hw_thread_id, pid, tid);
+    }
+
     void STFWriter::flushHeader() {
         stf_assert(!header_finalized_, "Cannot write anything else to the header after it has been finalized");
 
@@ -67,6 +72,12 @@ namespace stf {
             stf_assert(!initial_pc_written_, "TRACE_INFO_FEATURE record must come before FORCE_PC record");
             *this << *trace_features_;
             trace_features_written_ = true;
+        }
+
+        // Initial process ID is optional
+        if(!initial_process_id_written_ && initial_process_id_) {
+            *this << *initial_process_id_;
+            initial_process_id_written_ = true;
         }
 
         if(!initial_pc_written_ && initial_pc_) {
@@ -156,6 +167,7 @@ namespace stf {
                    ((wrote_page_table_walk_ || wrote_reg_) && desc == descriptors::internal::Descriptor::STF_INST_PC_TARGET) ||
                    (wrote_page_table_walk_ && desc == descriptors::internal::Descriptor::STF_INST_REG) ||
                    (desc == descriptors::internal::Descriptor::STF_COMMENT) ||
+                   (desc == descriptors::internal::Descriptor::STF_PROCESS_ID_EXT) ||
                    (desc == descriptors::internal::Descriptor::STF_FORCE_PC),
                    "Attempted out of order write. " << desc << " should come before " << last_desc_);
         switch(desc) {
@@ -169,10 +181,10 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_ISA:
             case descriptors::internal::Descriptor::STF_TRACE_INFO:
             case descriptors::internal::Descriptor::STF_TRACE_INFO_FEATURE:
-            case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
             case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
             case descriptors::internal::Descriptor::STF_END_HEADER:
                 stf_assert(!headerFinalized(), "Attempted to write " << desc << " record outside of the header"); //FALLTHRU
+            case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
             case descriptors::internal::Descriptor::STF_INST_IEM:
             case descriptors::internal::Descriptor::STF_FORCE_PC:
                 stf_assert(headerStarted(), "Attempted to write " << desc << " before the header has started");
