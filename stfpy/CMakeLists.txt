@@ -4,7 +4,7 @@ find_package(Python3 COMPONENTS Interpreter Development)
 
 include_directories(${STF_BASE}/stf-inc)
 
-add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy)
+add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-implicit-int-conversion -Wno-missing-field-initializers)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-ignored-optimization-argument -Wno-unknown-warning-option)
@@ -68,9 +68,10 @@ add_custom_command(
 
 add_custom_target(stfpy ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/stfpy.stamp)
 
+if(STFPY_INSTALL_DIR)
+    install(CODE "execute_process(COMMAND pip install --prefix ${STFPY_INSTALL_DIR} --no-index --find-links=${CMAKE_CURRENT_BINARY_DIR} stfpy)")
+endif()
 if(STF_INSTALL_DIR)
-    file(GLOB whl_file "${CMAKE_CURRENT_BINARY_DIR}/stfpy*.whl")
-    install(CODE "execute_process(COMMAND pip install --prefix ${STF_INSTALL_DIR} ${whl_file})")
     install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tools/stfpython DESTINATION ${STF_INSTALL_DIR})
-    install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tools/stfpy_init.py DESTINATION ${STF_INSTALL_DIR}/lib)
+    install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tools/stfpy_init.py DESTINATION ${STF_INSTALL_DIR})
 endif()

@@ -3,8 +3,10 @@
 SCRIPTPATH="$( cd -- "$(dirname "$(realpath "$0")")" >/dev/null 2>&1 ; pwd -P )"
 LIBPATH=${SCRIPTPATH}/lib
 
-site_packages_dir=$(find ${LIBPATH} -type d -name "site-packages")
+if [ -d $LIBPATH ]; then
+    site_packages_dir=$(find ${LIBPATH} -type d -name "site-packages")
 
-export PYTHONPATH=${site_packages_dir}:$PYTHONPATH
-export PYTHONSTARTUP=${LIBPATH}/stfpy_init.py
-python $@
+    export PYTHONPATH=${site_packages_dir}:$PYTHONPATH
+fi
+
+PYTHONSTARTUP=${SCRIPTPATH}/stfpy_init.py python $@
