@@ -1,6 +1,6 @@
 # distutils: language = c++
 
-from cython.operator cimport dereference, preincrement
+from cython.operator cimport dereference
 from stfpy.stf_lib.stf_record_types cimport VectorValueType as _VectorValueType, VectorValueTypeIterator as _VectorValueTypeIterator
 from stfpy.stf_lib.stf_inst cimport EventDataVector as _EventDataVector, EventDataVectorIterator as _EventDataVectorIterator, EventVectorIterator as _EventVectorIterator, OperandVectorIterator as _OperandVectorIterator, MemAccessVectorIterator as _MemAccessVectorIterator, Event as _Event, Operand as _Operand, MemAccess as _MemAccess, STFInst as _STFInst
 
