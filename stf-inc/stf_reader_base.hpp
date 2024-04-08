@@ -62,6 +62,9 @@ namespace stf {
 
         public:
             STFReaderBase() = default;
+            ~STFReaderBase();
+            STFReaderBase(STFReaderBase&& rhs) = default;
+            STFReaderBase& operator=(STFReaderBase&& rhs) = default;
 
             /**
              * \brief Check STF and trace versions for compatibility
