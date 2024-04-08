@@ -7,6 +7,8 @@
 #include "zstd/stf_zstd_decompressor.hpp"
 
 namespace stf {
+    STFReaderBase::~STFReaderBase() = default;
+
     void STFReaderBase::validateHeader_() const {
         stf_assert(!trace_info_records_.empty(), "TRACE_INFO record missing from header");
         stf_assert(trace_features_, "TRACE_INFO_FEATURE record missing from header");
