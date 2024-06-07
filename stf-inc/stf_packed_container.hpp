@@ -49,7 +49,7 @@ namespace stf {
 
     template<typename T>
     class __attribute__ ((packed)) PackedContainer<T> /**< Specialized definition for the single-member variant */ {
-        static_assert(std::is_pod_v<T>,
+        static_assert(type_utils::are_pod_v<T>,
                       "All types held in a PackedContainer must be trivially copyable!");
 
         private:

@@ -22,8 +22,9 @@ namespace stf {
         template<typename... Ts>
         inline constexpr bool are_trivially_copyable_v = are_trivially_copyable<Ts...>::value;
 
+        // POD is deprecated in C++20, so trivial and standard layout types are equivalently used instead.
         template <typename... Ts>
-        struct are_pod : std::conjunction<std::is_pod<std::remove_reference_t<Ts>>...> {};
+        struct are_pod : std::conjunction<std::is_trivial<std::remove_reference_t<Ts>>..., std::is_standard_layout<std::remove_reference_t<Ts>>...> {};
 
         template<typename... Ts>
         inline constexpr bool are_pod_v = are_pod<Ts...>::value;
