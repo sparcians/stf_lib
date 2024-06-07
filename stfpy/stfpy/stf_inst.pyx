@@ -8,11 +8,11 @@ from stfpy.stf_record_map import STFRecordMap, STFRecordMapSmallVector
 
 cdef class EventDataVectorIterator:
     def __next__(self):
-        preincrement(self.c_it)
-        if self.c_it != self.c_end_it:
-            return dereference(self.c_it)
-        else:
+        if self.c_it == self.c_end_it:
             raise StopIteration
+        value = dereference(self.c_it)
+        preincrement(self.c_it)
+        return value
 
 cdef class EventDataVector:
     def __iter__(self):
@@ -54,11 +54,11 @@ cdef class Event:
 
 cdef class EventVectorIterator:
     def __next__(self):
-        preincrement(self.c_it)
-        if self.c_it != self.c_end_it:
-            return Event._construct(dereference(self.c_it))
-        else:
+        if self.c_it == self.c_end_it:
             raise StopIteration
+        value = Event._construct(dereference(self.c_it))
+        preincrement(self.c_it)
+        return value
 
 cdef class EventVector:
     def __iter__(self):
@@ -75,11 +75,11 @@ cdef class EventVector:
 
 cdef class VectorValueTypeIterator:
     def __next__(self):
-        preincrement(self.c_it)
-        if self.c_it != self.c_end_it:
-            return dereference(self.c_it)
-        else:
+        if self.c_it == self.c_end_it:
             raise StopIteration
+        value = dereference(self.c_it)
+        preincrement(self.c_it)
+        return value
 
 cdef class VectorValueType:
     def __iter__(self):
@@ -115,11 +115,11 @@ cdef class Operand:
 
 cdef class OperandVectorIterator:
     def __next__(self):
-        preincrement(self.c_it)
-        if self.c_it != self.c_end_it:
-            return Operand._construct(dereference(self.c_it))
-        else:
+        if self.c_it == self.c_end_it:
             raise StopIteration
+        value = Operand._construct(dereference(self.c_it))
+        preincrement(self.c_it)
+        return value
 
 cdef class OperandVector:
     def __iter__(self):
@@ -152,11 +152,11 @@ cdef class MemAccess:
 
 cdef class MemAccessVectorIterator:
     def __next__(self):
-        preincrement(self.c_it)
-        if self.c_it != self.c_end_it:
-            return MemAccess._construct(dereference(self.c_it))
-        else:
+        if self.c_it == self.c_end_it:
             raise StopIteration
+        value = MemAccess._construct(dereference(self.c_it))
+        preincrement(self.c_it)
+        return value
 
 cdef class MemAccessVector:
     def __iter__(self):

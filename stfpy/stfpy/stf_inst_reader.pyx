@@ -9,11 +9,11 @@ include "stfpy/stf_lib/stf_reader_constants.pxi"
 
 cdef class STFInstReaderIterator:
     def __next__(self):
-        preincrement(self.c_it)
-        if self.c_it != self.c_end_it:
-            return STFInst._construct(dereference(self.c_it))
-        else:
+        if self.c_it == self.c_end_it:
             raise StopIteration
+        value = STFInst._construct(dereference(self.c_it))
+        preincrement(self.c_it)
+        return value
 
 cdef class STFInstReader:
     def __cinit__(self,
