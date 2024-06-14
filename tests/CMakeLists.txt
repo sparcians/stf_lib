@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(stf_lib tests)
+project(stf_tests)
 
 include_directories(${PROJECT_SOURCE_DIR}/..)
 include(CTest)
@@ -14,8 +14,11 @@ endif()
 
 message(STATUS "Found " ${NUM_CORES} " cores in machine (for ctest)")
 
-add_custom_target (test DEPENDS libstf)
+add_subdirectory(stf_writer_test)
 
-add_custom_command(TARGET test POST_BUILD
+add_custom_target(stf_test)
+add_dependencies(stf_test stf stf_writer_test)
+
+add_custom_command(TARGET stf_test POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E echo "Running tests..."
                    COMMAND ${CMAKE_CTEST_COMMAND} ${ctest_test_args})
