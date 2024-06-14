@@ -106,3 +106,16 @@ stf_writer << stf::InstOpcode32Record(0xfee59ce3);
 
 ```
 
+## Unit Tests for STF_LIB
+
+A regression target `regress` is available for unit testing STF_LIB. These tests are based on CTest and can be run using the following commands:
+
+```sh
+mkdir -p release/
+cd release/
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j32 regress
+cd ..
+```
+
+This setup provides a stub of CTest-based unit tests to ensure the functionality and reliability of the library. Please note that these tests do not yet cover the STF_LIB extensively and are currently just a stub.
