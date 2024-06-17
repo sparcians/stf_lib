@@ -20,9 +20,23 @@ add_compile_options(
     -D_LARGEFILE_SOURCE
     -D_GNU_SOURCE
     -D__STDC_FORMAT_MACROS
+    -Werror
+    -Wdeprecated
+    -Wextra
+    -Winline
+    -Winit-self
+    -Wno-unused-function
+    -Wuninitialized
+    -Wno-sequence-point
+    -Wno-inline
+    -Wno-unknown-pragmas
+    -Woverloaded-virtual
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
 )
 
 add_compile_options($<$<CONFIG:Release>:-Ofast>)
+add_link_options($<$<CONFIG:Release>:-flto>)
 
 set(SOURCES
     main.cpp
