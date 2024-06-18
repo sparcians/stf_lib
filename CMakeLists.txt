@@ -22,3 +22,6 @@ add_subdirectory(lib)
 if(BUILD_STF_PYTHON_LIB)
     add_subdirectory(stfpy)
 endif()
+
+enable_testing()
+add_subdirectory (tests)
