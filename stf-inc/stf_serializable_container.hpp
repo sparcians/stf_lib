@@ -298,6 +298,25 @@ namespace stf {
             }
     };
 
+    namespace type_utils {
+        template<typename T>
+        struct is_serializable_vector : std::false_type {};
+
+        template<typename DataType, typename SizeType>
+        struct is_serializable_vector<SerializableVector<DataType, SizeType>> : std::true_type {};
+
+        template<typename T>
+        struct is_serializable_packed_bit_vector : std::false_type {};
+
+        template<typename DataType, typename SizeType>
+        struct is_serializable_packed_bit_vector<SerializablePackedBitVector<DataType, SizeType>> : std::true_type {};
+
+        template<typename Value>
+        using is_array_or_serializable_vector_like = std::disjunction<std::is_array<Value>,
+                                                                      type_utils::is_serializable_vector<Value>,
+                                                                      type_utils::is_serializable_packed_bit_vector<Value>>;
+    }
+
     /**
      * \class SerializableString
      *

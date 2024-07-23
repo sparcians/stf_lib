@@ -271,23 +271,18 @@ namespace stf {
      * Default formatter function used for ProtocolField objects
      */
     template<typename Value>
-    inline void defaultProtocolFieldFormatter(std::ostream& os, const char* name, const Value& data) {
+    inline std::enable_if_t<std::negation_v<type_utils::is_array_or_serializable_vector_like<Value>>>
+    defaultProtocolFieldFormatter(std::ostream& os, const char* name, const Value& data) {
         format_utils::formatLabel(os, name);
         format_utils::formatHex(os, data);
     }
 
     /**
-     * \typedef ProtocolFieldFormatter
-     * Expected type of a ProtocolField formatter function
+     * Default formatter function used for ProtocolArrayField, ProtocolVectorField, and ProtocolPackedBitVectorField objects
      */
     template<typename Value>
-    using ProtocolFieldFormatter = decltype(&defaultProtocolFieldFormatter<Value>);
-
-    /**
-     * Default formatter function used for ProtocolVectorField objects
-     */
-    template<typename VectorType>
-    inline void defaultProtocolVectorFieldFormatter(std::ostream& os, const char* name, const VectorType& data) {
+    inline std::enable_if_t<type_utils::is_array_or_serializable_vector_like<Value>::value>
+    defaultProtocolFieldFormatter(std::ostream& os, const char* name, const Value& data) {
         format_utils::formatLabel(os, name);
         os << '[';
         if(!data.empty()) {
@@ -304,12 +299,11 @@ namespace stf {
     }
 
     /**
-     * Default formatter function used for ProtocolArrayField objects
+     * \typedef ProtocolFieldFormatter
+     * Expected type of a ProtocolField formatter function
      */
-    template<typename Value, size_t N>
-    inline void defaultProtocolArrayFieldFormatter(std::ostream& os, const char* name, const std::array<Value, N>& data) {
-        defaultProtocolVectorFieldFormatter(os, name, data);
-    }
+    template<typename Value>
+    using ProtocolFieldFormatter = decltype(&defaultProtocolFieldFormatter<Value>);
 
     /**
      * \class ProtocolField
@@ -396,7 +390,7 @@ namespace stf {
     template<size_t Size,
              typename FieldType,
              typename DataType,
-             ProtocolFieldFormatter<std::array<DataType, Size>> Formatter = defaultProtocolArrayFieldFormatter>
+             ProtocolFieldFormatter<std::array<DataType, Size>> Formatter = defaultProtocolFieldFormatter<std::array<DataType, Size>>>
     using ProtocolArrayField = ProtocolField<FieldType, std::array<DataType, Size>, Formatter>;
 
     /**
@@ -408,7 +402,7 @@ namespace stf {
              typename DataType,
              typename SizeType,
              typename VectorType = SerializableVector<DataType, SizeType>,
-             ProtocolFieldFormatter<VectorType> Formatter = defaultProtocolVectorFieldFormatter>
+             ProtocolFieldFormatter<VectorType> Formatter = defaultProtocolFieldFormatter<VectorType>>
     class ProtocolVectorField : public ProtocolField<FieldType,
                                                      VectorType,
                                                      Formatter>
@@ -465,7 +459,7 @@ namespace stf {
     template<typename FieldType,
              typename DataType,
              typename SizeType,
-             ProtocolFieldFormatter<SerializablePackedBitVector<DataType, SizeType>> Formatter = defaultProtocolVectorFieldFormatter>
+             ProtocolFieldFormatter<SerializablePackedBitVector<DataType, SizeType>> Formatter = defaultProtocolFieldFormatter<SerializablePackedBitVector<DataType, SizeType>>>
     using ProtocolPackedBitVectorField = ProtocolVectorField<FieldType, DataType, SizeType, SerializablePackedBitVector<DataType, SizeType>, Formatter>;
 }
 
