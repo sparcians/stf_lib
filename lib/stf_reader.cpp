@@ -42,6 +42,7 @@ namespace stf {
                 switch(rec->getId()) {
                     case descriptors::internal::Descriptor::STF_COMMENT:
                         header_comments_.emplace_back(STFRecord::grabOwnership<CommentRecord>(rec));
+                        header_comments_str_.emplace_back(header_comments_.back()->getData());
                         break;
                     case descriptors::internal::Descriptor::STF_ISA:
                         stf_assert(!isa_, "Header has multiple ISA records");
