@@ -136,9 +136,10 @@ namespace stf {
                 return header_comments_;
              }
 
-            inline const std::vector<std::string>& getHeaderCommentsString() const {
-                return header_comments_str_;
-            }
+            /**
+             * Gets the header comments in vector type of std::string
+             */
+            const std::vector<std::string>& getHeaderCommentsString();
 
             /**
              * Returns the number of records read so far

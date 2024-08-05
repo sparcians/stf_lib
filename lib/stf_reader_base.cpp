@@ -76,6 +76,15 @@ namespace stf {
         return *trace_info_records_.back();
     }
 
+    const std::vector<std::string>& STFReaderBase::getHeaderCommentsString() {
+        if(!header_comments_.empty() && header_comments_str_.empty()) {
+            for(const auto& c : header_comments_) {
+                header_comments_str_.emplace_back(c->getData());
+            }
+        }
+        return header_comments_str_;
+    }
+
     int STFReaderBase::close() {
         version_.reset();
         header_comments_.clear();
