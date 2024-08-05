@@ -5,8 +5,8 @@ from libcpp.vector cimport vector
 from cython.cimports.libcpp.string import string
 from stfpy.stf_lib.stf_inst cimport STFInst
 
-ctypedef vector[string] StringVector
-ctypedef vector[string].const_iterator StringVectorIterator
+ctypedef vector[string] HeaderCommentsType
+ctypedef vector[string].const_iterator HeaderCommentsTypeIterator
 
 cdef extern from "stf_inst_reader.hpp" namespace "stf":
     cdef cppclass STFInstReader:
@@ -25,4 +25,4 @@ cdef extern from "stf_inst_reader.hpp" namespace "stf":
         iterator end()
         uint32_t major()
         uint32_t minor()
-        const StringVector& getHeaderCommentsString()
+        const HeaderCommentsType& getHeaderCommentsString()

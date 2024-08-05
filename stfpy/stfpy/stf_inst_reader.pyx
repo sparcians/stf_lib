@@ -7,7 +7,7 @@ from stfpy.stf_inst import STFInst
 from cython.operator cimport dereference, preincrement
 include "stfpy/stf_lib/stf_reader_constants.pxi"
 
-cdef class StringVectorIterator:
+cdef class HeaderCommentsTypeIterator:
     def __next__(self):
         if self.c_it == self.c_end_it:
             raise StopIteration
@@ -15,9 +15,9 @@ cdef class StringVectorIterator:
         preincrement(self.c_it)
         return value
 
-cdef class StringVector:
+cdef class HeaderCommentsType:
     def __iter__(self):
-        return StringVectorIterator._construct(self.c_vec)
+        return HeaderCommentsTypeIterator._construct(self.c_vec)
 
     def __len__(self):
         return dereference(self.c_vec).size()
@@ -73,4 +73,4 @@ cdef class STFInstReader:
         return self.c_reader.minor()
 
     def getHeaderComments(self):
-        return StringVector._construct(dereference(self.c_reader).getHeaderCommentsString())
+        return HeaderCommentsType._construct(dereference(self.c_reader).getHeaderCommentsString())

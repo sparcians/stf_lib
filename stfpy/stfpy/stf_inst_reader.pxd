@@ -2,27 +2,27 @@
 
 from cython.operator cimport dereference
 from stfpy.stf_lib.stf_inst_reader cimport STFInstReader as _STFInstReader
-from stfpy.stf_lib.stf_inst_reader cimport StringVector as _StringVector, StringVectorIterator as _StringVectorIterator
+from stfpy.stf_lib.stf_inst_reader cimport HeaderCommentsType as _HeaderCommentsType, HeaderCommentsTypeIterator as _HeaderCommentsTypeIterator
 
 ctypedef _STFInstReader.iterator _STFInstReaderIterator
 
-cdef class StringVectorIterator:
-    cdef _StringVectorIterator c_it
-    cdef _StringVectorIterator c_end_it
+cdef class HeaderCommentsTypeIterator:
+    cdef _HeaderCommentsTypeIterator c_it
+    cdef _HeaderCommentsTypeIterator c_end_it
 
     @staticmethod
-    cdef inline StringVectorIterator _construct(const _StringVector* vec):
-        it = StringVectorIterator()
+    cdef inline HeaderCommentsTypeIterator _construct(const _HeaderCommentsType* vec):
+        it = HeaderCommentsTypeIterator()
         it.c_it = dereference(vec).begin()
         it.c_end_it = dereference(vec).end()
         return it
 
-cdef class StringVector:
-    cdef const _StringVector* c_vec
+cdef class HeaderCommentsType:
+    cdef const _HeaderCommentsType* c_vec
 
     @staticmethod
-    cdef inline StringVector _construct(const _StringVector& vec):
-        new_vec = StringVector()
+    cdef inline HeaderCommentsType _construct(const _HeaderCommentsType& vec):
+        new_vec = HeaderCommentsType()
         new_vec.c_vec = &vec
         return new_vec
 
