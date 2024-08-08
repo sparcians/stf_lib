@@ -37,6 +37,7 @@ namespace stf {
         protected:
             STFRecord::ConstHandle<VersionRecord> version_; /**< Version record */
             std::vector<STFRecord::ConstHandle<CommentRecord>> header_comments_; /**< Header commment records */
+            std::vector<std::string> header_comments_str_; /** String type of header comments*/
             std::vector<STFRecord::ConstHandle<TraceInfoRecord>> trace_info_records_; /**< Trace info records */
             STFRecord::ConstHandle<TraceInfoFeatureRecord> trace_features_; /**< Trace feature records */
 
@@ -127,6 +128,18 @@ namespace stf {
             inline const STFRecord::ConstHandle<TraceInfoFeatureRecord>& getTraceFeatures() const {
                 return trace_features_;
             }
+
+            /**
+             * Gets the header comments
+             */
+            inline const std::vector<STFRecord::ConstHandle<CommentRecord>>& getHeaderComments() const {
+                return header_comments_;
+             }
+
+            /**
+             * Gets the header comments in vector type of std::string
+             */
+            const std::vector<std::string>& getHeaderCommentsString();
 
             /**
              * Returns the number of records read so far
