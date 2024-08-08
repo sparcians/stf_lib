@@ -11,6 +11,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_link_options(-Wno-unused-command-line-argument -Wno-ignored-optimization-argument)
 endif()
 
+# Disable _FORTIFY_SOURCE unless we're in Release mode
+if (NOT CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
+    add_compile_options(-U_FORTIFY_SOURCE -Wp,-U_FORTIFY_SOURCE)
+endif()
+
 get_directory_property(include_dirs INCLUDE_DIRECTORIES)
 get_directory_property(compile_opts COMPILE_OPTIONS)
 get_directory_property(link_opts LINK_OPTIONS)
