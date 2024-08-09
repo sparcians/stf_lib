@@ -2,7 +2,7 @@
 
 from libc.stdint cimport *
 from libcpp.vector cimport vector
-from cython.cimports.libcpp.string import string
+from libcpp.string cimport string
 from stfpy.stf_lib.stf_inst cimport STFInst
 
 ctypedef vector[string] HeaderCommentsType

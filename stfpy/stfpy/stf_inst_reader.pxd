@@ -13,8 +13,8 @@ cdef class HeaderCommentsTypeIterator:
     @staticmethod
     cdef inline HeaderCommentsTypeIterator _construct(const _HeaderCommentsType* vec):
         it = HeaderCommentsTypeIterator()
-        it.c_it = dereference(vec).begin()
-        it.c_end_it = dereference(vec).end()
+        it.c_it = dereference(vec).const_begin()
+        it.c_end_it = dereference(vec).const_end()
         return it
 
 cdef class HeaderCommentsType:
