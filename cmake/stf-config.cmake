@@ -29,6 +29,10 @@ add_compile_options(-Werror -std=c++17 -fPIC -Wall -Wextra -pedantic -Wconversio
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
+
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0)
+        add_compile_options(-Wno-c++20-extensions)
+    endif()
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
