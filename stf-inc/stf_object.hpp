@@ -207,6 +207,9 @@ namespace stf {
              * \note Name chosen to avoid collision in Spike codebase
              */
             virtual void pack(STFOFstream& writer) const = 0;
+            STFBaseObject() = default;
+            STFBaseObject(const STFBaseObject&) = default;
+            STFBaseObject(STFBaseObject&&) = default;
             virtual inline ~STFBaseObject() = default;
     };
 

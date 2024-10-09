@@ -142,6 +142,7 @@ function(setup_stf_linker set_compiler_options)
     set(CMAKE_AR  "gcc-ar" PARENT_SCOPE)
   endif()
 
+  set(STF_LINK_FLAGS "${STF_LINK_FLAGS}" PARENT_SCOPE)
   set(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>" PARENT_SCOPE)
   set(CMAKE_CXX_ARCHIVE_FINISH   true PARENT_SCOPE)
 endfunction()

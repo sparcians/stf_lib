@@ -33,6 +33,7 @@ add_compile_options(
     -Woverloaded-virtual
     -Wno-unused-parameter
     -Wno-missing-field-initializers
+    -Wno-unused-command-line-argument
 )
 
 add_compile_options($<$<CONFIG:Release>:-Ofast>)
