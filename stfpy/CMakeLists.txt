@@ -20,7 +20,7 @@ get_directory_property(include_dirs INCLUDE_DIRECTORIES)
 get_directory_property(compile_opts COMPILE_OPTIONS)
 get_directory_property(link_opts LINK_OPTIONS)
 
-set(stfpy_link_opts $ENV{LDFLAGS} ${link_opts} ${STF_LINK_FLAGS})
+string(JOIN " " stfpy_link_opts $ENV{LDFLAGS} ${link_opts})
 
 set(extra_lib_dirs $<TARGET_FILE_DIR:stf>)
 string(REPLACE ";" ":" include_dirs "${include_dirs}")
@@ -52,7 +52,7 @@ add_custom_command(
                                   CXX="${CMAKE_CXX_COMPILER}"
                                   LD="${CMAKE_CXX_COMPILER}"
                                   CPPFLAGS="${compile_opts}"
-                                  LDFLAGS="${stfpy_link_opts}"
+                                  LDFLAGS=${stfpy_link_opts}
                                   STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
                                   ${Python3_EXECUTABLE} setup.py build_ext -f
                                                                            ${CYTHON_PARALLEL_FLAG}
