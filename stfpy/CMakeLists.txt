@@ -20,7 +20,7 @@ get_directory_property(include_dirs INCLUDE_DIRECTORIES)
 get_directory_property(compile_opts COMPILE_OPTIONS)
 get_directory_property(link_opts LINK_OPTIONS)
 
-set(stfpy_link_opts ${link_opts} ${STF_LINK_FLAGS})
+set(stfpy_link_opts $ENV{LDFLAGS} ${link_opts} ${STF_LINK_FLAGS})
 
 set(extra_lib_dirs $<TARGET_FILE_DIR:stf>)
 string(REPLACE ";" ":" include_dirs "${include_dirs}")
