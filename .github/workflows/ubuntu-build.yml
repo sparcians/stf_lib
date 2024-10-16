@@ -3,32 +3,67 @@ on:
     branches:
       - master
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+        lto_config:
+          - lto: false
+            full_lto: false
+          - lto: true
+            full_lto: false
+          - lto: true
+            full_lto: true
+        exclude:
+          # Don't try to build Debug with LTO enabled
+          - build_type: Debug
+            lto_config:
+              lto: true
+          # GCC doesn't have a thin LTO mode
+          - compiler: gcc
+            build_type: Release 
+            lto_config:
+              lto: true
+              full_lto: false
+
+    env:
+      CC: ${{ matrix.compiler }}
+      CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+      LTO_CONFIG: ${{ matrix.build_type == 'Release' && format('-DNO_STF_LTO={0}', !matrix.lto_config.lto) || '' }}
+      CLANG_FULL_LTO_CONFIG: ${{ (matrix.compiler == 'clang' && matrix.build_type == 'Release') && format('-DFULL_LTO={0}', matrix.lto_config.full_lto) || '' }}
+
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Get number of CPU cores
+      uses: SimenB/github-actions-cpu-cores@v2
+      id: cpu-cores
+
+    - uses: actions/checkout@v4
 
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get -y install libboost-dev
+        sudo apt-get -y install libboost-dev cython3
+
+    - name: Install Clang
+      run: |
+        sudo apt-get -y install clang lld llvm
+      if: ${{ matrix.compiler == 'clang' }}
 
     - name: Create Build Directory
       run: cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure CMAKE
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_STF_PYTHON_LIB=ON $LTO_CONFIG $CLANG_FULL_LTO_CONFIG
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config $BUILD_TYPE
+      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ steps.cpu-cores.outputs.count }}
 
     - name: Regress
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config $BUILD_TYPE --target regress
+      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ steps.cpu-cores.outputs.count }} --target regress

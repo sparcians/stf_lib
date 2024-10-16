@@ -115,6 +115,9 @@ namespace stf
                 reason_(std::move(reason))
             { }
 
+            STFException(const STFException&) = default;
+            STFException(STFException&&) = default;
+
             /// Destroy!
             inline ~STFException() noexcept override = default;
 
