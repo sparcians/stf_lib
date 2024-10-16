@@ -100,6 +100,7 @@ namespace stf {
 #endif
 
                 bool event_valid = false;
+                bool filtered_mode_change = false;
 
                 updateSkipping_();
 
@@ -210,6 +211,7 @@ namespace stf {
                                     if(STF_EXPECT_FALSE((onlyUserMode_() || filter_mode_change_events_) &&
                                                         is_mode_change)) {
                                         // Filter out mode change events when mode skipping or if it is explicitly required
+                                        filtered_mode_change = true;
                                         break;
                                     }
 
@@ -219,7 +221,10 @@ namespace stf {
 
                             case IntDescriptor::STF_EVENT_PC_TARGET:
                                 stf_assert(event_valid, "Saw EventPCTargetRecord without accompanying EventRecord");
-                                delegates::STFInstDelegate::setLastEventTarget_(inst, rec);
+                                if(!filtered_mode_change)
+                                {
+                                    delegates::STFInstDelegate::setLastEventTarget_(inst, rec);
+                                }
                                 event_valid = false;
                                 break;
 
