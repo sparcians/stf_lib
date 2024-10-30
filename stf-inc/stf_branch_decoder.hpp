@@ -228,8 +228,10 @@ namespace stf {
                                                   bool& compare_unsigned) {
                 const auto opcode_top = byte_utils::getBitRange<6, 5, 1>(opcode);
                 const auto opcode_bottom = byte_utils::getBitRange<4, 2, 2>(opcode);
+                const auto opcode_bottom7 = byte_utils::getBitRange<6, 0, 6>(opcode);
 
-                if(STF_EXPECT_TRUE(opcode_top != 0b11)) {
+                // Early out if clearly not a RISC-V or AndeStar branch
+                if(STF_EXPECT_TRUE(opcode_top != 0b11 && opcode_bottom7 != 0x5b)) {
                     return false;
                 }
 
@@ -251,56 +253,75 @@ namespace stf {
 
                 using extractor = byte_utils::BitExtractor<decltype(opcode)>;
 
-                switch(opcode_bottom) {
-                    case 0b000:
-                    {
-                        // conditional branch
-                        target = getTarget_(pc, signExtendTarget_<13>(extractor::get<extractor::Bit<31, 12>,
-                                                                                     extractor::Bit<7, 11>,
-                                                                                     extractor::BitRange<30, 25, 10>,
-                                                                                     extractor::BitRange<11, 8, 4>>(opcode)));
-                        const bool eq_ne_lt_ge = byte_utils::getBit<14>(opcode);
-                        const bool pos_neg = byte_utils::getBit<12>(opcode);
+                if (opcode_top == 0b11) {
+                    switch(opcode_bottom) {
+                        case 0b000:
+                        {
+                            // conditional branch
+                            target = getTarget_(pc, signExtendTarget_<13>(extractor::get<extractor::Bit<31, 12>,
+                                                                                         extractor::Bit<7, 11>,
+                                                                                         extractor::BitRange<30, 25, 10>,
+                                                                                         extractor::BitRange<11, 8, 4>>(opcode)));
+                            const bool eq_ne_lt_ge = byte_utils::getBit<14>(opcode);
+                            const bool pos_neg = byte_utils::getBit<12>(opcode);
 
-                        compare_eq = !eq_ne_lt_ge && !pos_neg;
-                        compare_not_eq = !eq_ne_lt_ge && pos_neg;
-                        compare_greater_than_or_equal = eq_ne_lt_ge && pos_neg;
-                        compare_less_than = eq_ne_lt_ge && !pos_neg;
-                        compare_unsigned = byte_utils::getBit<13>(opcode);
-                        rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
-                        rs2 = encodeRegNum_(byte_utils::getBitRange<24, 20, 4>(opcode));
-                        is_conditional = true;
-                        break;
-                    }
-                    case 0b001:
-                    {
-                        // jalr
-                        rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
-                        rd = encodeRegNum_(byte_utils::getBitRange<11, 7, 4>(opcode));
+                            compare_eq = !eq_ne_lt_ge && !pos_neg;
+                            compare_not_eq = !eq_ne_lt_ge && pos_neg;
+                            compare_greater_than_or_equal = eq_ne_lt_ge && pos_neg;
+                            compare_less_than = eq_ne_lt_ge && !pos_neg;
+                            compare_unsigned = byte_utils::getBit<13>(opcode);
+                            rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
+                            rs2 = encodeRegNum_(byte_utils::getBitRange<24, 20, 4>(opcode));
+                            is_conditional = true;
+                            break;
+                        }
+                        case 0b001:
+                        {
+                            // jalr
+                            rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
+                            rd = encodeRegNum_(byte_utils::getBitRange<11, 7, 4>(opcode));
 
-                        is_millicall = (rd == Registers::STF_REG::STF_REG_X5); // Indirect millicalls have rd == x5
-                        is_call = is_millicall || (rd == Registers::STF_REG::STF_REG_X1); // Indirect calls have rd == x1/x5
+                            is_millicall = (rd == Registers::STF_REG::STF_REG_X5); // Indirect millicalls have rd == x5
+                            is_call = is_millicall || (rd == Registers::STF_REG::STF_REG_X1); // Indirect calls have rd == x1/x5
 
-                        const bool possible_return = (rs1 != rd); // Returns have rs != rd
-                        is_millireturn = possible_return && (rs1 == Registers::STF_REG::STF_REG_X5); // Millireturns read from x5
-                        is_return = is_millireturn || (possible_return && (rs1 == Registers::STF_REG::STF_REG_X1)); // Returns have rs == x1/x5
+                            const bool possible_return = (rs1 != rd); // Returns have rs != rd
+                            is_millireturn = possible_return && (rs1 == Registers::STF_REG::STF_REG_X5); // Millireturns read from x5
+                            is_return = is_millireturn || (possible_return && (rs1 == Registers::STF_REG::STF_REG_X1)); // Returns have rs == x1/x5
 
-                        is_indirect = true;
-                        break;
-                    }
-                    case 0b011:
-                        // jal
-                        target = getTarget_(pc, signExtendTarget_<21>(extractor::get<extractor::Bit<31, 20>,
-                                                                                     extractor::BitRange<19, 12>,
-                                                                                     extractor::Bit<20, 11>,
-                                                                                     extractor::BitRange<30, 21, 10>>(opcode)));
-                        rd = encodeRegNum_(byte_utils::getBitRange<11, 7, 4>(opcode));
-                        is_millicall = (rd == Registers::STF_REG::STF_REG_X5); // Millicalls have rd == x5
-                        is_call = is_millicall || (rd == Registers::STF_REG::STF_REG_X1); // Calls have rd == x1/x5
-                        break;
-                    default:
-                        return false;
-                };
+                            is_indirect = true;
+                            break;
+                        }
+                        case 0b011:
+                            // jal
+                            target = getTarget_(pc, signExtendTarget_<21>(extractor::get<extractor::Bit<31, 20>,
+                                                                                         extractor::BitRange<19, 12>,
+                                                                                         extractor::Bit<20, 11>,
+                                                                                         extractor::BitRange<30, 21, 10>>(opcode)));
+                            rd = encodeRegNum_(byte_utils::getBitRange<11, 7, 4>(opcode));
+                            is_millicall = (rd == Registers::STF_REG::STF_REG_X5); // Millicalls have rd == x5
+                            is_call = is_millicall || (rd == Registers::STF_REG::STF_REG_X1); // Calls have rd == x1/x5
+                            break;
+                        default:
+                            return false;
+                    };
+                }
+
+                else {
+                    const auto opcode3 = byte_utils::getBitRange<14, 12, 2>(opcode);
+                    switch (opcode3) {
+                        case 0b111:
+                        case 0b101:
+                            // AndeStar bbc, bbs, beqc, or bnec
+                            target = getTarget_(pc, signExtendTarget_<11>(extractor::get<extractor::Bit<31, 10>,
+                                                                                         extractor::BitRange<29, 25, 9>,
+                                                                                         extractor::BitRange<11, 8, 4>>(opcode)));
+                            rs1 = encodeRegNum_(byte_utils::getBitRange<19, 15, 4>(opcode));
+                            is_conditional = true;
+                            break;
+                        default:
+                            return false;
+                    };
+                }
 
                 return true;
             }
