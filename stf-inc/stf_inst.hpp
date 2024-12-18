@@ -42,19 +42,198 @@ namespace stf {
      *
      */
     class MemAccess {
+        public:
+            /**
+             * \class ContentVector
+             * \brief Holds a vector of const InstMemContentRecord*, but iterators dereference to const InstMemContentRecord&
+             */
+            class ContentVector {
+                private:
+                    using VectorType = boost::container::small_vector<const InstMemContentRecord*, 1>;
+                    VectorType data_;
+
+                public:
+                    /**
+                     * \class iterator
+                     * \brief Iterator that dereferences to a const InstMemContentRecord&
+                     */
+                    class iterator : public VectorType::const_iterator {
+                        public:
+                            iterator() = default;
+
+                            /**
+                             * Constructs an iterator from a boost::container::small_vector<const InstMemContentRecord*, 1> iterator
+                             */
+                            iterator(const VectorType::const_iterator& rhs) :
+                                VectorType::const_iterator(rhs)
+                            {
+                            }
+
+                            /**
+                             * Move-constructs an iterator from a boost::container::small_vector<const InstMemContentRecord*, 1> iterator
+                             */
+                            iterator(VectorType::const_iterator&& rhs) :
+                                VectorType::const_iterator(std::move(rhs))
+                            {
+                            }
+
+                            /**
+                             * Dereferences the iterator
+                             */
+                            const InstMemContentRecord& operator*() const {
+                                return *VectorType::const_iterator::operator*();
+                            }
+
+                            /**
+                             * Dereferences the iterator
+                             */
+                            const InstMemContentRecord* operator->() const {
+                                return VectorType::const_iterator::operator*();
+                            }
+                    };
+
+                    /**
+                     * Default constructor
+                     */
+                    ContentVector() = default;
+
+                    /**
+                     * Constructs a ContentVector from a single InstMemContentRecord
+                     */
+                    explicit ContentVector(const InstMemContentRecord* data) :
+                        data_(1, data)
+                    {
+                    }
+
+                    /**
+                     * Appends a new InstMemContentRecord
+                     */
+                    void emplace_back(const InstMemContentRecord* record) {
+                        data_.emplace_back(record);
+                    }
+
+                    /**
+                     * Appends a new STFRecord that points to an InstMemContentRecord
+                     */
+                    void emplace_back(const STFRecord* record) {
+                        emplace_back(static_cast<const InstMemContentRecord*>(record));
+                    }
+
+                    /**
+                     * Gets an iterator to the beginning of the memory content records
+                     */
+                    iterator begin() const {
+                        return data_.begin();
+                    }
+
+                    /**
+                     * Gets an iterator to the end of the memory content records
+                     */
+                    iterator end() const {
+                        return data_.end();
+                    }
+
+                    /**
+                     * Clears the vector
+                     */
+                    void clear() {
+                        data_.clear();
+                    }
+            };
+
+            /**
+             * \class ContentValueView
+             * \brief Provides a view of a ContentVector whose iterators dereference to the value
+             * returned by InstMemContentRecord::getData
+             */
+            class ContentValueView {
+                public:
+                    /**
+                     * \class iterator
+                     * \brief Dereferences to the data contained by an InstMemContentRecord
+                     */
+                    class iterator : public ContentVector::iterator {
+                        public:
+                            iterator() = default;
+
+                            /**
+                             * Constructs an iterator from a ContentVector::iterator
+                             */
+                            iterator(const ContentVector::iterator& rhs) :
+                                ContentVector::iterator(rhs)
+                            {
+                            }
+
+                            /**
+                             * Move-constructs an iterator from a ContentVector::iterator
+                             */
+                            iterator(ContentVector::iterator&& rhs) :
+                                ContentVector::iterator(std::move(rhs))
+                            {
+                            }
+
+                            /**
+                             * Dereferences the iterator
+                             */
+                            uint64_t operator*() const {
+                                return ContentVector::iterator::operator*().getData();
+                            }
+                    };
+
+                private:
+                    const iterator begin_;
+                    const iterator end_;
+
+                public:
+                    /**
+                     * Constructs a ContentValueView
+                     * \param data ContentVector that provides the underlying values
+                     */
+                    ContentValueView(const ContentVector& data) :
+                        begin_(data.begin()),
+                        end_(data.end())
+                    {
+                    }
+
+                    /**
+                     * Gets an iterator to the beginning of the sequence
+                     */
+                    const iterator& begin() const {
+                        return begin_;
+                    }
+
+                    /**
+                     * Gets an iterator to the end of the sequence
+                     */
+                    const iterator& end() const {
+                        return end_;
+                    }
+            };
+
         private:
             const STFInst* inst_;
             const InstMemAccessRecord* access_ = nullptr;
-            const InstMemContentRecord* data_ = nullptr;
+            ContentVector data_;
 
         public:
             /**
              * Constructs a MemAccess
              * \param inst Parent STFInst object
              * \param access_record Pointer to underlying InstMemAccessRecord
+             */
+            MemAccess(const STFInst* inst, const STFRecord* const access_record) :
+                inst_(inst),
+                access_(static_cast<const InstMemAccessRecord*>(access_record))
+            {
+            }
+
+            /**
+             * Constructs a MemAccess
+             * \param inst Parent STFInst object
+             * \param access_record Pointer to underlying InstMemAccessRecord
              * \param content_record Pointer to underlying InstMemContentRecord
              */
-            MemAccess(const STFInst* inst, const STFRecord* const access_record, const STFRecord* const content_record = nullptr) :
+            MemAccess(const STFInst* inst, const STFRecord* const access_record, const STFRecord* const content_record) :
                 inst_(inst),
                 access_(static_cast<const InstMemAccessRecord*>(access_record)),
                 data_(static_cast<const InstMemContentRecord*>(content_record))
@@ -65,8 +244,8 @@ namespace stf {
              * Sets the content for the memory access
              * \param record Pointer to underlying InstMemContentRecord
              */
-            inline void setContent(const STFRecord* const record) {
-                data_ = static_cast<const InstMemContentRecord*>(record);
+            inline void appendContent(const STFRecord* const record) {
+                data_.emplace_back(static_cast<const InstMemContentRecord*>(record));
             }
 
             /**
@@ -74,7 +253,7 @@ namespace stf {
              */
             inline void reset() {
                 access_ = nullptr;
-                data_ = nullptr;
+                data_.clear();
             }
 
             /**
@@ -100,7 +279,7 @@ namespace stf {
             /**
              * Gets data of access
              */
-            inline uint64_t getData() const { return getContentRecord().getData(); }
+            inline ContentValueView getData() const { return data_; }
 
             /**
              * Gets type of access
@@ -120,9 +299,56 @@ namespace stf {
             /**
              * Gets underlying content record
              */
-            inline const InstMemContentRecord& getContentRecord() const {
-                stf_assert(data_, "MemAccess has invalid content record");
-                return *data_;
+            inline const ContentVector& getContentRecords() const {
+                return data_;
+            }
+
+            /**
+             * Formats the contents of a memory access to an std::ostream
+             * \tparam single_line If true, prints the contents on a single line
+             * \tparam prefix_0x If true, prefixes values with 0x. Defaults to false.
+             * \param os std::ostream to use for output
+             * \param sep If not nullptr, use the specified string to separate the values
+             */
+            template<bool single_line, bool prefix_0x = false>
+            void formatContent(std::ostream& os, const char* sep = nullptr) const {
+                static constexpr size_t default_indent = single_line ? 1 : 0;
+                formatContent<single_line, prefix_0x>(os, default_indent, sep);
+            }
+
+            /**
+             * Formats the contents of a memory access to an std::ostream
+             * \tparam single_line If true, prints the contents on a single line
+             * \tparam prefix_0x If true, prefixes values with 0x. Defaults to false.
+             * \param os std::ostream to use for output
+             * \param indent Indent values by the specified number of spaces
+             * \param sep If not nullptr, use the specified string to separate the values
+             */
+            template<bool single_line, bool prefix_0x = false>
+            void formatContent(std::ostream& os, const size_t indent, const char* sep = nullptr) const {
+                bool first = true;
+
+                for(const auto val: getData()) {
+                    if(STF_EXPECT_FALSE(first)) {
+                        first = false;
+                    }
+                    else {
+                        if constexpr(!single_line) {
+                            os << std::endl;
+                        }
+
+                        format_utils::formatSpaces(os, indent);
+
+                        if(sep) {
+                            os << sep;
+                        }
+                    }
+
+                    if constexpr(prefix_0x) {
+                        os << "0x";
+                    }
+                    format_utils::formatData(os, val);
+                }
             }
 
             /**
@@ -869,6 +1095,8 @@ namespace stf {
                                       * from the trace
                                       */
 
+            MemAccess* last_mem_access_ = nullptr; /**< Pointer to the last MemAccess object added to this instruction */
+
             /**
              * Writes a record type, paired with a second record type
              */
@@ -932,12 +1160,31 @@ namespace stf {
              * \brief Appends a new MemAccess
              * \param type Memory access type
              * \param access_record Memory access record
+             */
+            inline void appendMemAccess_(const INST_MEM_ACCESS type,
+                                         const STFRecord* const access_record) {
+                last_mem_access_ = &getMemAccessVector_(type).emplace_back(this, access_record);
+            }
+
+            /**
+             * \brief Appends a new MemAccess
+             * \param type Memory access type
+             * \param access_record Memory access record
              * \param content_record Memory content record
              */
             inline void appendMemAccess_(const INST_MEM_ACCESS type,
                                          const STFRecord* const access_record,
                                          const STFRecord* const content_record) {
-                getMemAccessVector_(type).emplace_back(this, access_record, content_record);
+                last_mem_access_ = &getMemAccessVector_(type).emplace_back(this, access_record, content_record);
+            }
+
+            /**
+             * \brief Appends another content record to the last MemAccess
+             * \param content_record Memory content record
+             */
+            inline void appendMemContent_(const STFRecord* const content_record) {
+                stf_assert(last_mem_access_, "Attempted to attach a memory content record without an accompanying access record");
+                last_mem_access_->appendContent(content_record);
             }
 
             /**
@@ -1635,6 +1882,19 @@ namespace stf {
                  * \param inst STFInst to modify
                  * \param type Type of memory access
                  * \param access_record Memory access record
+                 */
+                __attribute__((always_inline))
+                static inline void appendMemAccess_(STFInst& inst,
+                                                    const INST_MEM_ACCESS type,
+                                                    const STFRecord* const access_record) {
+                    inst.appendMemAccess_(type, access_record);
+                }
+
+                /**
+                 * Appends a memory access
+                 * \param inst STFInst to modify
+                 * \param type Type of memory access
+                 * \param access_record Memory access record
                  * \param content_record Memory content record
                  */
                 __attribute__((always_inline))
@@ -1643,6 +1903,17 @@ namespace stf {
                                                     const STFRecord* const access_record,
                                                     const STFRecord* const content_record) {
                     inst.appendMemAccess_(type, access_record, content_record);
+                }
+
+                /**
+                 * Appends additional content to the last memory access record
+                 * \param inst STFInst to modify
+                 * \param content_record Memory content record
+                 */
+                __attribute__((always_inline))
+                static inline void appendMemContent_(STFInst& inst,
+                                                     const STFRecord* const content_record) {
+                    inst.appendMemContent_(content_record);
                 }
 
                 /**
@@ -1727,9 +1998,13 @@ namespace stf {
                 }
 
                 /**
-                 * Appends a record to the instruction's record map
+                 * Finalizes an instruction
                  * \param inst STFInst to modify
-                 * \param urec Record to append
+                 * \param rec Record containing instruction's opcode
+                 * \param hw_thread_id HW thread ID
+                 * \param pid Process ID
+                 * \param tid Thread ID
+                 * \param is_skipped If true, instruction should be skipped
                  */
                 template<typename InstRecordType>
                 __attribute__((always_inline))
@@ -1758,6 +2033,7 @@ namespace stf {
                     inst.hw_thread_id_ = hw_thread_id;
                     inst.pid_ = pid;
                     inst.tid_ = tid;
+                    inst.last_mem_access_ = nullptr;
                 }
 
                 /**

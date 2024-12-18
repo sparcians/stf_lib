@@ -1,10 +1,12 @@
 # STF Library
 
-The acronym STF stands for Simulation Tracing Format. This is intended to be used
+The acronym STF stands for Simulation Trace Format. This is intended to be used
 with Sparta-based simulators, but that's not necessary.
+
+You can view the STF specification at [stf_spec](https://github.com/sparcians/stf_spec).
+
 This repo contains the following:
 
-1. The STF definition
 1. Trace generators (writers)
 1. Trace consumers (readers)
 

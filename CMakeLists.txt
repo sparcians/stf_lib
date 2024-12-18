@@ -11,11 +11,11 @@ if(hasParent)
     set (STF_BASE ${STF_BASE} PARENT_SCOPE)
 endif()
 
-include (${STF_BASE}/cmake/stf-config.cmake)
-
 # Boost
 find_package (Boost 1.49.0)
 include_directories (SYSTEM ${Boost_INCLUDE_DIRS})
+
+include (${STF_BASE}/cmake/stf-config.cmake)
 
 add_subdirectory(lib)
 

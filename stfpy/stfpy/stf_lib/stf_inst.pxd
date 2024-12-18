@@ -16,9 +16,16 @@ ctypedef SerializableVector[uint64_t, uint8_t].const_iterator EventDataVectorIte
 
 cdef extern from "stf_inst.hpp" namespace "stf":
     cdef cppclass MemAccess:
+        cppclass ContentValueView:
+            cppclass iterator:
+                uint64_t operator*()
+                bint operator==(const iterator&)
+                iterator& operator++()
+            iterator begin()
+            iterator end()
         uint64_t getSize()
         uint64_t getAddress()
-        uint64_t getData()
+        ContentValueView getData()
         _INST_MEM_ACCESS getType()
         uint16_t getAttr()
 
