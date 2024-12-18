@@ -1,3 +1,8 @@
+/**
+ * \file
+ * \brief  This file defines the descriptor values for each STF record type
+ */
+
 #ifndef __STF_DESCRIPTOR_HPP__
 #define __STF_DESCRIPTOR_HPP__
 
@@ -133,8 +138,10 @@ namespace stf {
 
                     using ArrayType = enums::EnumArray<ToDescriptor, FromDescriptor>; /**< Array that maps FromDescriptor values to ToDescriptor values */
 
+#ifndef DOXYGEN
                     #define _INIT_DESC_ARRAY_ENTRY(r, data, elem) \
                         case FromDescriptor::elem: newarr[i] = ToDescriptor::elem; continue;
+#endif
 
                     /**
                      * \def INIT_DESC_ARRAY
@@ -463,6 +470,9 @@ namespace stf {
         } // end namespace iterators
 
         namespace encoded {
+            /**
+             * Formats an encoded Descriptor to an std::ostream
+             */
             inline std::ostream& operator<<(std::ostream& os, const Descriptor desc) {
                 return os << conversion::toInternal(desc);
             }

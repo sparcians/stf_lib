@@ -316,18 +316,33 @@ namespace stf {
              ProtocolFieldFormatter<DataType> Formatter = defaultProtocolFieldFormatter<DataType>>
     class ProtocolField {
         public:
+            /**
+             * \typedef ReferenceType
+             * Reference type
+             */
             using ReferenceType = type_utils::optimal_const_ref_t<DataType>;
+
+            /**
+             * \typedef ReturnType
+             * Return type of getValue() method
+             */
             using ReturnType = type_utils::optimal_return_ref_t<DataType>;
 
         protected:
             friend class STFIFstream;
 
-            DataType data_ {};
+            DataType data_ {}; /**< The data stored in this field */
 
+            /**
+             * Gets the field name
+             */
             inline const char* getName_() const {
                 return static_cast<const FieldType*>(this)->getName();
             }
 
+            /**
+             * Gets the data
+             */
             DataType& getData_() {
                 return data_;
             }
@@ -335,26 +350,41 @@ namespace stf {
         public:
             ProtocolField() = default;
 
+            /**
+             * Constructs a ProtocolField from an STFIFstream
+             */
             explicit ProtocolField(STFIFstream& reader) {
                 reader >> data_;
             }
 
+            /**
+             * Constructs a ProtocolField from a data value
+             */
             explicit ProtocolField(const DataType& data) :
                 data_(data)
             {
             }
 
+            /**
+             * Move-constructs a ProtocolField from a data value
+             */
             template<typename T = DataType>
             explicit ProtocolField(DataType&& data) :
                 data_(std::move(data))
             {
             }
 
+            /**
+             * Constructs an empty ProtocolField
+             */
             explicit ProtocolField(const type_utils::none_t&) :
                 ProtocolField()
             {
             }
 
+            /**
+             * Move-constructs an empty ProtocolField
+             */
             explicit ProtocolField(type_utils::none_t&&) :
                 ProtocolField()
             {
@@ -416,36 +446,57 @@ namespace stf {
 
             ProtocolVectorField() = default;
 
+            /**
+             * Constructs a ProtocolVectorField from an STFIFstream
+             */
             explicit ProtocolVectorField(STFIFstream& reader) :
                 ParentType(reader)
             {
             }
 
+            /**
+             * Constructs a ProtocolVectorField from a single data value
+             */
             explicit ProtocolVectorField(ReferenceType data) :
                 ParentType(data)
             {
             }
 
+            /**
+             * Move-constructs a ProtocolVectorField from a serializable vector of data values
+             */
             explicit ProtocolVectorField(VectorType&& data) :
                 ParentType(std::forward<VectorType>(data))
             {
             }
 
+            /**
+             * Constructs a ProtocolVectorField from a vector of data values
+             */
             explicit ProtocolVectorField(const std::vector<DataType>& data) :
                 ParentType(VectorType(data))
             {
             }
 
+            /**
+             * Move-constructs a ProtocolVectorField from a vector of data values
+             */
             explicit ProtocolVectorField(std::vector<DataType>&& data) :
                 ParentType(VectorType(std::forward<std::vector<DataType>>(data)))
             {
             }
 
+            /**
+             * Constructs an empty ProtocolVectorField
+             */
             explicit ProtocolVectorField(const type_utils::none_t&) :
                 ParentType(type_utils::none)
             {
             }
 
+            /**
+             * Move-constructs an empty ProtocolVectorField
+             */
             explicit ProtocolVectorField(type_utils::none_t&&) :
                 ParentType(type_utils::none)
             {

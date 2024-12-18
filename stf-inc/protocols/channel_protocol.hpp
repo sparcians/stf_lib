@@ -174,6 +174,10 @@ namespace stf {
          */
         template<typename ChannelType>
         struct ChannelProtocol {
+            /**
+             * \class Channel
+             * Base Channel class that can be constructed from an STF
+             */
             class Channel : public STFObject<Channel, ChannelType> {
                 public:
                     /**
@@ -221,17 +225,26 @@ namespace stf {
                     }
 
                 public:
+                    /**
+                     * Constructs a FieldChannel from an STFIFstream
+                     */
                     explicit FieldChannel(STFIFstream& reader) :
                         fields_(Fields(reader)...)
                     {
                     }
 
+                    /**
+                     * Constructs a FieldChannel by specifying individual field values
+                     */
                     template<typename ... FieldArgs>
                     explicit FieldChannel(const FieldArgs&... args) :
                         fields_(args...)
                     {
                     }
 
+                    /**
+                     * Move-constructs a FieldChannel by specifying individual field values
+                     */
                     template<typename ... FieldArgs>
                     explicit FieldChannel(FieldArgs&&... args) :
                         fields_(std::forward<FieldArgs>(args)...)

@@ -14,6 +14,9 @@
 
 namespace stf {
     std::ostream& operator<<(std::ostream& os, const MemAccess& access) {
+        static constexpr size_t ATTR_TO_VA_PADDING = 7;
+        static constexpr size_t VA_TO_DATA_PADDING = 5;
+
         if (format_utils::showPhys()) {
             format_utils::formatSpaces(os, format_utils::PA_WIDTH + 1);
         }
@@ -21,15 +24,26 @@ namespace stf {
         format_utils::formatLeft(os, access.getType(), format_utils::MEM_ACCESS_FIELD_WIDTH);
         format_utils::formatSpaces(os, 1);
         format_utils::formatHex(os, access.getAttr());
-        format_utils::formatSpaces(os, 7);
+        format_utils::formatSpaces(os, ATTR_TO_VA_PADDING);
         format_utils::formatVA(os, access.getAddress());
 
         if (format_utils::showPhys()) {
             os << ':';
             format_utils::formatPA(os, access.getPhysAddress());
         }
-        format_utils::formatSpaces(os, 5);
-        format_utils::formatData(os, access.getData());
+        format_utils::formatSpaces(os, VA_TO_DATA_PADDING);
+
+        const size_t num_data_spaces = (format_utils::showPhys() ? format_utils::PA_WIDTH + 1 : 0) +
+                                       format_utils::OPERAND_LABEL_WIDTH +
+                                       format_utils::MEM_ACCESS_FIELD_WIDTH +
+                                       1 + // single space
+                                       4 + // attr
+                                       ATTR_TO_VA_PADDING +
+                                       format_utils::VA_WIDTH +
+                                       (format_utils::showPhys() ? format_utils::PA_WIDTH + 1 : 0) +
+                                       VA_TO_DATA_PADDING;
+
+        access.formatContent<false>(os, num_data_spaces);
 
         return os;
     }

@@ -144,8 +144,6 @@ namespace stf {
                     }
 
                     const auto desc = rec->getId();
-                    stf_assert(desc != IntDescriptor::STF_INST_MEM_CONTENT,
-                               "Saw MemContentRecord without accompanying MemAccessRecord");
 
                     // These are the most common records - moving them outside of the switch statement
                     // eliminates a hard to predict indirect branch and improves performance
@@ -163,18 +161,13 @@ namespace stf {
                         break;
                     }
                     else if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_MEM_ACCESS)) {
-                        // Assume in the trace, INST_MEM_CONTENT always appears right
-                        // after INST_MEM_ACCESS of the same memory access
-                        const auto content_rec = readRecord_(inst);
-                        if(STF_EXPECT_TRUE(content_rec != nullptr)) {
-                            stf_assert(content_rec->getId() == IntDescriptor::STF_INST_MEM_CONTENT,
-                                       "Invalid trace: memory access must be followed by memory content");
+                        const auto access_type = rec->template as<InstMemAccessRecord>().getType();
+                        delegates::STFInstDelegate::setFlag_(inst, MEM_ACCESS_FLAGS[enums::to_int(access_type)]);
 
-                            const auto access_type = rec->template as<InstMemAccessRecord>().getType();
-                            delegates::STFInstDelegate::setFlag_(inst, MEM_ACCESS_FLAGS[enums::to_int(access_type)]);
-
-                            delegates::STFInstDelegate::appendMemAccess_(inst, access_type, rec, content_rec);
-                        }
+                        delegates::STFInstDelegate::appendMemAccess_(inst, access_type, rec);
+                    }
+                    else if(STF_EXPECT_TRUE(desc == IntDescriptor::STF_INST_MEM_CONTENT)) {
+                        delegates::STFInstDelegate::appendMemContent_(inst, rec);
                     }
                     // These are the least common records
                     else {

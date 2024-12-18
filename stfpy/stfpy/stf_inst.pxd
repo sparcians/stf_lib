@@ -102,6 +102,26 @@ cdef class OperandVector:
         new_vec.c_vec = &vec
         return new_vec
 
+cdef class MemAccessContentValueViewIterator:
+    cdef _MemAccess.ContentValueView.iterator c_it
+    cdef _MemAccess.ContentValueView.iterator c_end_it
+
+    @staticmethod
+    cdef inline MemAccessContentValueViewIterator _construct(const _MemAccess.ContentValueView* view):
+        it = MemAccessContentValueViewIterator()
+        it.c_it = dereference(view).begin()
+        it.c_end_it = dereference(view).end()
+        return it
+
+cdef class MemAccessContentValueView:
+    cdef const _MemAccess.ContentValueView* c_view
+
+    @staticmethod
+    cdef inline MemAccessContentValueView _construct(const _MemAccess.ContentValueView& view):
+        new_view = MemAccessContentValueView()
+        new_view.c_view = &view
+        return new_view
+
 cdef class MemAccess:
     cdef const _MemAccess* c_mem
 

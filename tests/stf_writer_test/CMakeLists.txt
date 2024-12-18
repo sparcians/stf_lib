@@ -36,7 +36,7 @@ add_compile_options(
     -Wno-unused-command-line-argument
 )
 
-add_compile_options($<$<CONFIG:Release>:-Ofast>)
+add_compile_options($<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-ffast-math>)
 add_link_options($<$<CONFIG:Release>:-flto>)
 
 set(SOURCES

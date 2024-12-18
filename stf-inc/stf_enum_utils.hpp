@@ -86,20 +86,32 @@
  *   STF_ENUM_VAL(name, val, str, enable_print)
  *     Defines an STF_ENUM entry with the given name, value, string representation, and print-enable setting.
  */
+#ifdef DOXYGEN
+#define STF_ENUM_VAL(name, val, ...) name = val
+#else
 #define STF_ENUM_VAL(name, ...) BOOST_PP_OVERLOAD(_STF_ENUM_VAL_, __VA_ARGS__)(name, __VA_ARGS__)
+#endif
 
 /**
  * \def STF_ENUM_ALIAS
  * Defines an STF_ENUM entry as an alias of another entry
  */
+#ifdef DOXYGEN
+#define STF_ENUM_ALIAS name = other_name
+#else
 #define STF_ENUM_ALIAS(name, other_name) STF_ENUM_VAL(name, other_name, BOOST_PP_NIL, STF_ENUM_NO_PRINT)
+#endif
 
 /**
  * \def STF_ENUM_STR
  * Defines an STF_ENUM entry with the given name and string representation. Value is auto-generated and
  * print-enable is set to 1.
  */
+#ifdef DOXYGEN
+#define STF_ENUM_STR(name, str) name
+#else
 #define STF_ENUM_STR(name, str) (name, str)
+#endif
 
 // Defines an STF_ENUM entry tuple from a name only. Allows users to use bare names in an STF_ENUM just as
 // they would with a normal enum class. String representation and value are auto-generated and print-enable
@@ -343,6 +355,9 @@
 // STF_ENUM_VAL/STF_ENUM_STR/STF_ENUM_ALIAS directives. The config is converted from an STF_ENUM_CONFIG
 // tuple to a tuple of binary flags with _FLATTEN_STF_ENUM_CONFIG before passing everything to
 // __STF_ENUM_CONFIG
+#ifdef DOXYGEN
+#define _STF_ENUM_CONFIG(config, name, type, ...) _STF_ENUM_NO_CONFIG(name, type, __VA_ARGS__)
+#else
 #define _STF_ENUM_CONFIG(config, name, type, ...)   \
     __STF_ENUM_CONFIG(                              \
             _FLATTEN_STF_ENUM_CONFIG(config),       \
@@ -350,10 +365,17 @@
             type,                                   \
             __VA_ARGS__                             \
     )
+#endif
 
 // Defines an STF_ENUM with the given name and underlying type.
 // The __VA_ARGS__ are the enum elements, which can be either bare names or tuples generated with
 // STF_ENUM_VAL/STF_ENUM_STR/STF_ENUM_ALIAS directives. Uses a default config where all flags are disabled.
+#ifdef DOXYGEN
+#define _STF_ENUM_NO_CONFIG(name, type, ...)    \
+    enum class name : type {                    \
+        __VA_ARGS__                             \
+    }
+#else
 #define _STF_ENUM_NO_CONFIG(name, type, ...)    \
     __STF_ENUM_CONFIG(                          \
         _DEFAULT_STF_CONFIG,                    \
@@ -361,6 +383,7 @@
         type,                                   \
         __VA_ARGS__                             \
     )
+#endif
 
 /**
  * \def STF_ENUM

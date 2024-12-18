@@ -29,35 +29,14 @@ namespace stf {
      *
      */
     STF_ENUM(
-        STF_ENUM_CONFIG(OVERRIDE_START, OVERRIDE_END),
+        STF_ENUM_CONFIG(OVERRIDE_START, OVERRIDE_END, AUTO_PRINT),
         INST_IEM,
         uint16_t,
-        STF_INST_IEM_INVALID,           /**< Invalid */
-        STF_ENUM_VAL(STF_INST_IEM_RV32, 1),
-        STF_ENUM_VAL(STF_INST_IEM_RV64, 2),
-        STF_ENUM_VAL(STF_INST_IEM_RESERVED, 0xFFFF)
+        STF_ENUM_STR(STF_INST_IEM_INVALID, "INVALID"),           /**< Invalid */
+        STF_ENUM_VAL(STF_INST_IEM_RV32, 1, "RV32"),
+        STF_ENUM_VAL(STF_INST_IEM_RV64, 2, "RV64"),
+        STF_ENUM_VAL(STF_INST_IEM_RESERVED, 0xFFFF, "RESERVED")
     );
-
-    inline std::ostream& operator<<(std::ostream& os, const INST_IEM iem)
-    {
-        switch(iem)
-        {
-            case INST_IEM::STF_INST_IEM_INVALID:
-                os << "INVALID";
-                break;
-            case INST_IEM::STF_INST_IEM_RV32:
-                os << "RV32";
-                break;
-            case INST_IEM::STF_INST_IEM_RV64:
-                os << "RV64";
-                break;
-            case INST_IEM::STF_INST_IEM_RESERVED:
-                os << "RESERVED";
-                break;
-        }
-
-        return os;
-    }
 
     /**
      * \enum BUS_MASTER

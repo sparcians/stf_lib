@@ -115,7 +115,14 @@ namespace stf
                 reason_(std::move(reason))
             { }
 
+            /**
+             * \brief Copy constructor
+             */
             STFException(const STFException&) = default;
+
+            /**
+             * \brief Move constructor
+             */
             STFException(STFException&&) = default;
 
             /// Destroy!

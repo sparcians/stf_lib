@@ -134,6 +134,18 @@ cdef class OperandVector:
     def __bool__(self):
         return not dereference(self.c_vec).empty()
 
+cdef class MemAccessContentValueViewIterator:
+    def __next__(self):
+        if self.c_it == self.c_end_it:
+            raise StopIteration
+        value = dereference(self.c_it)
+        preincrement(self.c_it)
+        return value
+
+cdef class MemAccessContentValueView:
+    def __iter__(self):
+        return MemAccessContentValueViewIterator._construct(self.c_view)
+
 cdef class MemAccess:
     def getSize(self):
         return dereference(self.c_mem).getSize()
@@ -142,7 +154,7 @@ cdef class MemAccess:
         return dereference(self.c_mem).getAddress()
 
     def getData(self):
-        return dereference(self.c_mem).getData()
+        return MemAccessContentValueView._construct(dereference(self.c_mem).getData())
 
     def getType(self):
         return INST_MEM_ACCESS(dereference(self.c_mem).getType())

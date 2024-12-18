@@ -213,6 +213,12 @@ namespace stf {
             }
     };
 
+    /**
+     * \class SerializablePackedBitVector
+     *
+     * Type that holds single bit values in single T-type elements, but transparently packs those bits
+     * together into uint8_t elements when writing the vector to an STF
+     */
     template<typename T, typename SerializedSizeT>
     class SerializablePackedBitVector : public std::vector<T> {
         private:
@@ -224,7 +230,7 @@ namespace stf {
             SerializablePackedBitVector() = default;
 
             /**
-             * Copy-constructs a SerializableVector from its underlying type
+             * Copy-constructs a SerializablePackedBitVector from its underlying type
              */
             explicit SerializablePackedBitVector(const std::vector<T>& rhs) :
                 std::vector<T>(rhs)
@@ -232,7 +238,7 @@ namespace stf {
             }
 
             /**
-             * Move-constructs a SerializableVector from its underlying container type
+             * Move-constructs a SerializablePackedBitVector from its underlying container type
              */
             explicit SerializablePackedBitVector(std::vector<T>&& rhs) :
                 std::vector<T>(std::forward<std::vector<T>>(rhs))
@@ -241,6 +247,10 @@ namespace stf {
 
             using std::vector<T>::operator=;
 
+            /**
+             * Unpacks a SerializablePackedBitVector object from an STFIFstream
+             * \param reader STFIFstream to use
+             */
             inline void unpack(STFIFstream& reader) {
                 SerializedSizeT new_size;
                 reader >> new_size;
@@ -256,7 +266,7 @@ namespace stf {
             }
 
             /**
-             * Packs a tilelink::MaskedChannel object to an STFOFstream
+             * Packs a SerializablePackedBitVector object to an STFOFstream
              * \param writer STFOFstream to use
              */
             inline void pack(STFOFstream& writer) const {

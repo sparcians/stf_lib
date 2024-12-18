@@ -208,7 +208,13 @@ namespace stf {
              */
             virtual void pack(STFOFstream& writer) const = 0;
             STFBaseObject() = default;
+            /**
+             * Copy constructor
+             */
             STFBaseObject(const STFBaseObject&) = default;
+            /**
+             * Move constructor
+             */
             STFBaseObject(STFBaseObject&&) = default;
             virtual inline ~STFBaseObject() = default;
     };
