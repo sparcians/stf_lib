@@ -13,6 +13,11 @@ endif()
 
 include (${STF_BASE}/cmake/stf-config.cmake)
 
+# To suppress find boost warning (to see details execute: cmake --help-policy CMP0167)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.30)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 # Boost
 find_package (Boost 1.49.0)
 include_directories (SYSTEM ${Boost_INCLUDE_DIRS})
