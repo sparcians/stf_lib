@@ -332,6 +332,7 @@ namespace stf {
                                              Registers::STF_REG& rs1,
                                              Registers::STF_REG& rs2,
                                              Registers::STF_REG& rd,
+                                             bool& compressed,
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
@@ -343,6 +344,7 @@ namespace stf {
                                              bool& compare_greater_than_or_equal,
                                              bool& compare_less_than,
                                              bool& compare_unsigned) {
+                compressed = true;
                 return decodeBranch16_(iem,
                                        rec.getPC(),
                                        rec.getOpcode(),
@@ -390,6 +392,7 @@ namespace stf {
                                              Registers::STF_REG& rs1,
                                              Registers::STF_REG& rs2,
                                              Registers::STF_REG& rd,
+                                             bool& compressed,
                                              bool& is_conditional,
                                              bool& is_call,
                                              bool& is_return,
@@ -401,6 +404,7 @@ namespace stf {
                                              bool& compare_greater_than_or_equal,
                                              bool& compare_less_than,
                                              bool& compare_unsigned) {
+                compressed = false;
                 return decodeBranch32_(rec.getPC(),
                                        rec.getOpcode(),
                                        target,
@@ -449,6 +453,7 @@ namespace stf {
                                       Registers::STF_REG& rs1,
                                       Registers::STF_REG& rs2,
                                       Registers::STF_REG& rd,
+                                      bool& compressed,
                                       bool& is_conditional,
                                       bool& is_call,
                                       bool& is_return,
@@ -466,6 +471,7 @@ namespace stf {
                                      rs1,
                                      rs2,
                                      rd,
+                                     compressed,
                                      is_conditional,
                                      is_call,
                                      is_return,
@@ -495,6 +501,7 @@ namespace stf {
                 Registers::STF_REG rs1;
                 Registers::STF_REG rs2;
                 Registers::STF_REG rd;
+                bool compressed = false;
                 bool is_conditional = false;
                 bool is_call = false;
                 bool is_return = false;
@@ -513,6 +520,7 @@ namespace stf {
                                               rs1,
                                               rs2,
                                               rd,
+                                              compressed,
                                               is_conditional,
                                               is_call,
                                               is_return,
@@ -534,6 +542,7 @@ namespace stf {
                                                            rs1,
                                                            rs2,
                                                            rd,
+                                                           compressed,
                                                            is_conditional,
                                                            is_call,
                                                            is_return,
@@ -562,6 +571,7 @@ namespace stf {
                 Registers::STF_REG rs1 = Registers::STF_REG::STF_REG_INVALID;
                 Registers::STF_REG rs2 = Registers::STF_REG::STF_REG_INVALID;
                 Registers::STF_REG rd = Registers::STF_REG::STF_REG_INVALID;
+                bool compressed = false;
                 bool is_conditional = false;
                 bool is_call = false;
                 bool is_return = false;
@@ -580,6 +590,7 @@ namespace stf {
                               rs1,
                               rs2,
                               rd,
+                              compressed,
                               is_conditional,
                               is_call,
                               is_return,

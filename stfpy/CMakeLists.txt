@@ -7,7 +7,7 @@ include_directories(${STF_BASE}/stf-inc)
 add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-implicit-int-conversion -Wno-missing-field-initializers)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wno-ignored-optimization-argument -Wno-unknown-warning-option)
+    add_compile_options(-Wno-ignored-optimization-argument -Wno-unknown-warning-option -Wno-gnu-anonymous-struct -Wno-nested-anon-types)
     add_link_options(-Wno-unused-command-line-argument -Wno-ignored-optimization-argument)
 endif()
 
