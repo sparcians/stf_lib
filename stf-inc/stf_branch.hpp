@@ -114,6 +114,7 @@ namespace stf {
             uint64_t rs1_value_ = 0;
             uint64_t rs2_value_ = 0;
             uint64_t rd_value_ = 0;
+            bool compressed_ = false;
             bool taken_ = false;
             bool conditional_ = false;
             bool call_ = false;
@@ -164,6 +165,7 @@ namespace stf {
                 rs1_value_ = 0;
                 rs2_value_ = 0;
                 rd_value_ = 0;
+                compressed_ = false;
                 taken_ = false;
                 conditional_ = false;
                 call_ = false;
@@ -224,6 +226,7 @@ namespace stf {
                                  const Registers::STF_REG rs1,
                                  const Registers::STF_REG rs2,
                                  const Registers::STF_REG rd,
+                                 const bool compressed,
                                  const bool is_conditional,
                                  const bool is_call,
                                  const bool is_return,
@@ -245,6 +248,7 @@ namespace stf {
                 rs1_ = rs1;
                 rs2_ = rs2;
                 rd_ = rd;
+                compressed_ = compressed;
                 conditional_ = is_conditional;
                 call_ = is_call;
                 return_ = is_return;
@@ -329,6 +333,13 @@ namespace stf {
              */
             inline uint32_t getTargetOpcode() const {
                 return target_opcode_;
+            }
+
+            /**
+             * Gets whether the branch is compressed
+             */
+            inline bool isCompressed() const {
+                return compressed_;
             }
 
             /**
@@ -513,6 +524,7 @@ namespace stf {
                                             const Registers::STF_REG rs1,
                                             const Registers::STF_REG rs2,
                                             const Registers::STF_REG rd,
+                                            const bool compressed,
                                             const bool is_conditional,
                                             const bool is_call,
                                             const bool is_return,
@@ -530,6 +542,7 @@ namespace stf {
                                     rs1,
                                     rs2,
                                     rd,
+                                    compressed,
                                     is_conditional,
                                     is_call,
                                     is_return,
