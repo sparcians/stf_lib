@@ -136,8 +136,6 @@ namespace stf {
         vlen_config_.reset();
         vlen_config_written_ = false;
         last_desc_ = descriptors::encoded::Descriptor::STF_RESERVED;
-        wrote_inst_memory_access_content_pair_ = false;
-        wrote_bus_memory_access_content_pair_ = false;
         return STFWriterBase::close();
     }
 
@@ -146,8 +144,11 @@ namespace stf {
         const auto encoded_desc = descriptors::conversion::toEncoded(desc);
         const bool last_was_memory_access = last_desc_ == descriptors::encoded::Descriptor::STF_INST_MEM_ACCESS;
         const bool last_was_bus_access = last_desc_ == descriptors::encoded::Descriptor::STF_BUS_MASTER_ACCESS;
+        const bool last_was_memory_content = last_desc_ == descriptors::encoded::Descriptor::STF_INST_MEM_CONTENT;
+        const bool last_was_bus_content = last_desc_ == descriptors::encoded::Descriptor::STF_BUS_MASTER_CONTENT;
         const bool cur_is_memory_content = encoded_desc == descriptors::encoded::Descriptor::STF_INST_MEM_CONTENT;
         const bool cur_is_bus_content = encoded_desc == descriptors::encoded::Descriptor::STF_BUS_MASTER_CONTENT;
+        const bool cur_is_reg = desc == descriptors::internal::Descriptor::STF_INST_REG;
 
         stf_assert(!last_was_memory_access || cur_is_memory_content,
                    descriptors::encoded::Descriptor::STF_INST_MEM_CONTENT
@@ -161,11 +162,12 @@ namespace stf {
 
         stf_assert(encoded_desc >= last_desc_ ||
                    STFRecord::isInstructionRecord(last_desc_) ||
-                   (wrote_inst_memory_access_content_pair_ && desc == descriptors::internal::Descriptor::STF_INST_MEM_ACCESS) ||
-                   (wrote_bus_memory_access_content_pair_ && desc == descriptors::internal::Descriptor::STF_BUS_MASTER_ACCESS) ||
+                   (last_was_memory_content && desc == descriptors::internal::Descriptor::STF_INST_MEM_ACCESS) || // Allow repeated MARGs
+                   (last_was_bus_content && desc == descriptors::internal::Descriptor::STF_BUS_MASTER_ACCESS) || // Allow repeated bus access record groups
                    (wrote_event_record_group_ && desc == descriptors::internal::Descriptor::STF_EVENT) ||
                    ((wrote_page_table_walk_ || wrote_reg_) && desc == descriptors::internal::Descriptor::STF_INST_PC_TARGET) ||
-                   (wrote_page_table_walk_ && desc == descriptors::internal::Descriptor::STF_INST_REG) ||
+                   (wrote_page_table_walk_ && cur_is_reg) ||
+                   ((last_was_memory_content || last_was_bus_content) && cur_is_reg) || // Allow register records to come after MARGs or bus access record groups
                    (desc == descriptors::internal::Descriptor::STF_COMMENT) ||
                    (desc == descriptors::internal::Descriptor::STF_PROCESS_ID_EXT) ||
                    (desc == descriptors::internal::Descriptor::STF_FORCE_PC),
@@ -216,15 +218,12 @@ namespace stf {
 
         STFWriterBase::operator<<(rec);
 
-        wrote_inst_memory_access_content_pair_ = last_was_memory_access && cur_is_memory_content;
-        wrote_bus_memory_access_content_pair_ = last_was_bus_access && cur_is_bus_content;
-
         const bool last_was_event = (last_desc_ == descriptors::encoded::Descriptor::STF_EVENT);
         wrote_event_record_group_ =
             ((encoded_desc == descriptors::encoded::Descriptor::STF_EVENT_PC_TARGET) && last_was_event);
 
         wrote_page_table_walk_ = (encoded_desc == descriptors::encoded::Descriptor::STF_PAGE_TABLE_WALK);
-        wrote_reg_ = (encoded_desc == descriptors::encoded::Descriptor::STF_INST_REG);
+        wrote_reg_ = cur_is_reg;
 
         last_desc_ = encoded_desc;
 
