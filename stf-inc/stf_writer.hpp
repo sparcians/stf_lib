@@ -45,8 +45,6 @@ namespace stf {
             STFRecord::Handle<VLenConfigRecord> vlen_config_;
             bool vlen_config_written_ = false;
 
-            bool wrote_inst_memory_access_content_pair_ = false;
-            bool wrote_bus_memory_access_content_pair_ = false;
             bool wrote_event_record_group_ = false;
             bool wrote_page_table_walk_ = false;
             bool wrote_reg_ = false;
