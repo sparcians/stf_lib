@@ -66,4 +66,4 @@ jobs:
 
     - name: Regress
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ steps.cpu-cores.outputs.count }} --target regress
+      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ steps.cpu-cores.outputs.count }} --target stf_regress
