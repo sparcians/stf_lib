@@ -21,7 +21,9 @@ namespace stf {
         format_utils::formatLeft(os, access.getType(), format_utils::MEM_ACCESS_FIELD_WIDTH);
         format_utils::formatSpaces(os, 1);
         format_utils::formatHex(os, access.getAttr());
-        format_utils::formatSpaces(os, 7);
+        format_utils::formatSpaces(os, 1);
+        format_utils::formatDec(os, access.getSize(), 2, ' ');       
+        format_utils::formatSpaces(os, 4);
         format_utils::formatVA(os, access.getAddress());
 
         if (format_utils::showPhys()) {
