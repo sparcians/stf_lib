@@ -316,7 +316,7 @@ namespace stf {
 
         template<typename T, typename ... Ts>
         inline std::enable_if_t<std::conjunction_v<type_utils::is_integral_or_enum<T>, type_utils::is_pack_empty<Ts...>>, T>
-        conditionalValue(const bool enable1, const T val1, const Ts ... args) {
+        conditionalValue(const bool enable1, const T val1, const Ts ...) {
             return conditionalValue(enable1, val1);
         }
 
