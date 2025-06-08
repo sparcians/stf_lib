@@ -311,6 +311,7 @@ namespace stf {
                     switch (opcode3) {
                         case 0b111:
                         case 0b101:
+                        case 0b110:
                             // AndeStar bbc, bbs, beqc, or bnec
                             target = getTarget_(pc, signExtendTarget_<11>(extractor::get<extractor::Bit<31, 10>,
                                                                                          extractor::BitRange<29, 25, 9>,
