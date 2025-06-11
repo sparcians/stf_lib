@@ -122,10 +122,10 @@ namespace stf {
             inline virtual int close_() {
                 int retcode = 0;
                 if(stream_) {
-                    if(stream_ == stdout) {
-                        fflush(stream_); // need to manually flush stdout
-                    }
-                    else if(stream_ != stdin) { // don't close stdin/stdout
+                    // Always flush the stream
+                    fflush(stream_);
+
+                    if(stream_ != stdin && stream_ != stdout) { // don't close stdin/stdout
                         if (used_popen_) {
                             retcode = pclose (stream_);
                         }

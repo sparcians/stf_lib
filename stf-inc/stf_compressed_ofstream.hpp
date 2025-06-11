@@ -224,23 +224,21 @@ namespace stf {
              * Closes the file
              */
             int close_() override {
-                if(!stream_) {
-                    return 0;
-                }
-
-                // Finish any pending chunk
-                if(pending_chunk_) {
-                    // Skip writing the chunk in the buffer if it would break any readers that try to use the trace
-                    if(incomplete_chunk_) {
-                        std::cerr << "WARNING: The pending chunk in the STF compressed writer buffer is in an inconsistent state. It will not be written to the output file." << std::endl;
+                if(stream_) {
+                    // Finish any pending chunk
+                    if(pending_chunk_) {
+                        // Skip writing the chunk in the buffer if it would break any readers that try to use the trace
+                        if(incomplete_chunk_) {
+                            std::cerr << "WARNING: The pending chunk in the STF compressed writer buffer is in an inconsistent state. It will not be written to the output file." << std::endl;
+                        }
+                        else {
+                            compressChunk_();
+                        }
                     }
-                    else {
-                        compressChunk_();
+                    if(compression_in_progress_) {
+                        compression_done_.get();
+                        compression_in_progress_ = false;
                     }
-                }
-                if(compression_in_progress_) {
-                    compression_done_.get();
-                    compression_in_progress_ = false;
                 }
 
                 return STFOFstream::close_();
