@@ -6,15 +6,17 @@ if(CMAKE_CXX_COMPILER_ID MATCHES GNU AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS
     message(FATAL_ERROR "Provided gcc version (${CMAKE_CXX_COMPILER_VERSION}) is older than required version (7.4.0)")
 endif()
 
-# zstd
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_MODULE_PATH})
-find_package(zstd)
+
+# zstd
+find_package(PkgConfig)
+pkg_check_modules(zstd REQUIRED libzstd)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 include_directories (${zstd_INCLUDE_DIRS})
 
-set (STF_LINK_LIBS ${CMAKE_THREAD_LIBS_INIT} stf ${zstd_LIBRARIES})
+set (STF_LINK_LIBS ${CMAKE_THREAD_LIBS_INIT} stf ${zstd_LINK_LIBRARIES})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
@@ -32,6 +34,16 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0)
         add_compile_options(-Wno-c++20-extensions)
+    endif()
+endif()
+
+# The Boost containers trigger some warnings in recent Clang:
+# https://github.com/boostorg/container/issues/300
+if (Boost_VERSION_STRING VERSION_LESS_EQUAL 1.88.0)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 20.0)
+            add_compile_options(-Wno-nontrivial-memcall)
+        endif()
     endif()
 endif()
 

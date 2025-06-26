@@ -1,6 +1,8 @@
 project(stfpy)
 
 find_package(Python3 COMPONENTS Interpreter Development)
+find_package(PkgConfig)
+pkg_check_modules(zstd REQUIRED libzstd)
 
 include_directories(${STF_BASE}/stf-inc)
 
@@ -58,7 +60,7 @@ add_custom_command(
                                                                            ${CYTHON_PARALLEL_FLAG}
                                                                            --include-dirs "${include_dirs}"
                                                                            --libraries "${stf_libraries}"
-                                                                           --library-dirs "${extra_lib_dirs}"
+                                                                           --library-dirs "${extra_lib_dirs}:${zstd_LIBRARY_DIRS}"
   COMMAND ${CMAKE_COMMAND} -E env STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
                                   ${Python3_EXECUTABLE} setup.py bdist_wheel --bdist-dir "${CMAKE_CURRENT_BINARY_DIR}/bdist_wheel"
                                                                              --dist-dir "${CMAKE_CURRENT_BINARY_DIR}"
