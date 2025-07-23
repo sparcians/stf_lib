@@ -24,6 +24,7 @@ namespace stf {
     class ForcePCRecord;
     class ProcessIDExtRecord;
     class VLenConfigRecord;
+    class ISAExtendedRecord;
     class STFWriter;
 
     /**
@@ -38,6 +39,7 @@ namespace stf {
             STFRecord::ConstHandle<ForcePCRecord> initial_pc_;
             STFRecord::ConstHandle<ProcessIDExtRecord> initial_process_id_;
             STFRecord::ConstHandle<VLenConfigRecord> vlen_config_;
+            STFRecord::ConstHandle<ISAExtendedRecord> isa_extended_;
 
             /**
              * Reads the STF header
@@ -57,9 +59,7 @@ namespace stf {
              * \param filename file to open
              * \param force_single_threaded_stream If true, forces single threaded mode
              */
-            explicit STFReader(const std::string_view filename, const bool force_single_threaded_stream = false) {
-                open(filename, force_single_threaded_stream);
-            }
+            explicit STFReader(const std::string_view filename, const bool force_single_threaded_stream = false);
 
             /**
              * Gets the initial PC
@@ -90,6 +90,11 @@ namespace stf {
              * Gets the initial TID
              */
             uint32_t getInitialTID() const;
+
+            /**
+             * Gets extended ISA info
+             */
+            const std::string& getISAExtendedInfo() const;
 
             /**
              * Closes the file

@@ -20,6 +20,7 @@ namespace stf {
     class ForcePCRecord;
     class ProcessIDExtRecord;
     class VLenConfigRecord;
+    class ISAExtendedRecord;
 
     /**
      * \class STFWriter
@@ -44,6 +45,9 @@ namespace stf {
 
             STFRecord::Handle<VLenConfigRecord> vlen_config_;
             bool vlen_config_written_ = false;
+
+            STFRecord::Handle<ISAExtendedRecord> isa_extended_;
+            bool isa_extended_written_ = false;
 
             bool wrote_event_record_group_ = false;
             bool wrote_page_table_walk_ = false;
@@ -110,6 +114,11 @@ namespace stf {
              * \param vlen vlen value to set
              */
             void setVLen(vlen_t vlen);
+
+            /** Sets extended ISA info
+             * \param info Extended ISA info string
+             */
+            void setISAExtendedInfo(const std::string& info);
 
             void flushHeader() final;
 

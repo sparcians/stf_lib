@@ -433,6 +433,7 @@ namespace stf {
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
              * \param[out] rd Number of dest register (if any)
+             * \param[out] compressed Set to true if the branch is compressed
              * \param[out] is_conditional Set to true if the branch is conditional
              * \param[out] is_call Set to true if the branch is a call
              * \param[out] is_return Set to true if the branch is a return

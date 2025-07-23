@@ -57,6 +57,7 @@ namespace stf {
                             case IntDescriptor::STF_BUS_MASTER_CONTENT:
                             case IntDescriptor::STF_ISA:
                             case IntDescriptor::STF_VLEN_CONFIG:
+                            case IntDescriptor::STF_ISA_EXTENDED:
                             case IntDescriptor::STF_INST_IEM:
                             case IntDescriptor::STF_PROCESS_ID_EXT:
                             case IntDescriptor::STF_FORCE_PC:

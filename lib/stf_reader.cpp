@@ -6,8 +6,13 @@
 #include "stf_record.hpp"
 #include "stf_record_types.hpp"
 #include "stf_writer.hpp"
+#include "stf_isa_defaults.hpp"
 
 namespace stf {
+    STFReader::STFReader(const std::string_view filename, const bool force_single_threaded_stream) {
+        open(filename, force_single_threaded_stream);
+    }
+
     void STFReader::validateHeader_() const {
         stf_assert(isa_, "ISA record is missing from header");
         stf_assert(initial_iem_, "IEM record is missing from header");
@@ -69,6 +74,10 @@ namespace stf {
                     case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
                         stf_assert(!vlen_config_, "Header has multiple VLEN_CONFIG records");
                         STFRecord::grabOwnership(vlen_config_, rec);
+                        break;
+                    case descriptors::internal::Descriptor::STF_ISA_EXTENDED:
+                        stf_assert(!isa_extended_, "Header has multiple ISA_EXTENDED records");
+                        STFRecord::grabOwnership(isa_extended_, rec);
                         break;
                     case descriptors::internal::Descriptor::STF_END_HEADER:
                         complete_header = true;
@@ -139,12 +148,17 @@ namespace stf {
         return initial_process_id_ ? initial_process_id_->getTID() : 0;
     }
 
+    const std::string& STFReader::getISAExtendedInfo() const {
+        return isa_extended_ ? isa_extended_->getData() : ISADefaults::getISAExtendedInfo(getISA(), getInitialIEM());
+    }
+
     int STFReader::close() {
         isa_.reset();
         initial_iem_.reset();
         initial_pc_.reset();
         initial_process_id_.reset();
         vlen_config_.reset();
+        isa_extended_.reset();
 
         return STFReaderBase::close();
     }
@@ -157,6 +171,10 @@ namespace stf {
         stf_writer.setHeaderPC(initial_pc_->getAddr());
         stf_writer.addTraceInfoRecords(trace_info_records_);
         stf_writer.setTraceFeature(trace_features_->getFeatures());
+
+        if(isa_extended_) {
+            stf_writer.setISAExtendedInfo(isa_extended_->getData());
+        }
 
         if(const vlen_t vlen = getVLen()) {
             stf_writer.setVLen(vlen);
@@ -175,6 +193,10 @@ namespace stf {
         os << std::endl;
         initial_iem_->format(os);
         os << std::endl;
+        if(isa_extended_) {
+            isa_extended_->format(os);
+            os << std::endl;
+        }
         initial_pc_->format(os);
         os << std::endl;
         for(const auto& i: trace_info_records_) {

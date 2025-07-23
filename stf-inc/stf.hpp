@@ -25,12 +25,12 @@ namespace stf {
     /// Current STF library major version
     static constexpr uint32_t STF_CUR_VERSION_MAJOR = 1;
     /// Current STF library minor version
-    static constexpr uint32_t STF_CUR_VERSION_MINOR = 5;
+    static constexpr uint32_t STF_CUR_VERSION_MINOR = 6;
 
     /// Current STF library major version
-    static constexpr uint32_t STF_OLDEST_SUPPORTED_VERSION_MAJOR = 0;
+    static constexpr uint32_t STF_OLDEST_SUPPORTED_VERSION_MAJOR = 1;
     /// Current STF library minor version
-    static constexpr uint32_t STF_OLDEST_SUPPORTED_VERSION_MINOR = 8;
+    static constexpr uint32_t STF_OLDEST_SUPPORTED_VERSION_MINOR = 2;
 
     /**
      * \brief Format the STF library version as a string
