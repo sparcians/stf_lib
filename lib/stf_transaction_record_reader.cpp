@@ -57,6 +57,7 @@ namespace stf {
                     case descriptors::internal::Descriptor::STF_FORCE_PC:
                     case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
                     case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
+                    case descriptors::internal::Descriptor::STF_ISA_EXTENDED:
                     case descriptors::internal::Descriptor::STF_INST_OPCODE32:
                     case descriptors::internal::Descriptor::STF_INST_OPCODE16:
                     case descriptors::internal::Descriptor::STF_INST_REG:

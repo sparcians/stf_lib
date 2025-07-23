@@ -226,7 +226,7 @@ namespace stf {
             }
 
             /**
-             * Formats a VersionRecord to an std::ostream
+             * Formats a CommentRecord to an std::ostream
              * \param os ostream to use
              */
             inline void format_impl(std::ostream& os) const {
@@ -552,6 +552,80 @@ namespace stf {
     };
 
     REGISTER_RECORD(ClockIdRecord)
+
+    /**
+     * \class ISAExtendedRecord
+     *
+     * Provides additional ISA-specific information related to a trace
+     *
+     */
+    class ISAExtendedRecord : public TypeAwareSTFRecord<ISAExtendedRecord, descriptors::internal::Descriptor::STF_ISA_EXTENDED> {
+        private:
+            SerializableString<uint32_t> data_;                /**< the comment */
+
+        public:
+            ISAExtendedRecord() = default;
+
+            /**
+             * Constructs an ISAExtendedRecord
+             * \param data comment string data
+             */
+            explicit ISAExtendedRecord(std::string data) :
+                data_(std::move(data))
+            {
+            }
+
+            /**
+             * Constructs an ISAExtendedRecord
+             * \param strm STFIFstream to read from
+             */
+            explicit ISAExtendedRecord(STFIFstream& strm) {
+                unpack_impl(strm);
+            }
+
+            /**
+             * Gets the extended ISA data
+             */
+            const std::string& getData() const { return data_; }
+
+            /**
+             * Packs an ISAExtendedRecord into an STFOFstream
+             * \param writer STFOFstream to use
+             */
+            // cppcheck-suppress duplInheritedMember
+            inline void pack_impl(STFOFstream& writer) const {
+                write_(writer, data_);
+            }
+
+            /**
+             * Unpacks an ISAExtendedRecord from an STFIFstream
+             * \param reader STFIFstream to use
+             */
+            __attribute__((always_inline))
+            // cppcheck-suppress duplInheritedMember
+            inline void unpack_impl(STFIFstream& reader) {
+                read_(reader, data_);
+            }
+
+            /**
+             * Formats an ISAExtendedRecord to an std::ostream
+             * \param os ostream to use
+             */
+            inline void format_impl(std::ostream& os) const {
+                os << data_;
+            }
+    };
+
+    REGISTER_RECORD(ISAExtendedRecord)
+
+    /**
+     * Writes an ISAExtendedRecord to an ostream
+     */
+    inline std::ostream& operator<<(std::ostream& os, const ISAExtendedRecord& comment) {
+        format_utils::formatLabel(os, "    ISA_EXT");
+        comment.format_impl(os);
+        return os;
+    }
 
     /**
      * \class EndOfHeaderRecord

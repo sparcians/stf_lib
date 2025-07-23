@@ -125,6 +125,7 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_ISA:
             case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:
             case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
+            case descriptors::internal::Descriptor::STF_ISA_EXTENDED:
             case descriptors::internal::Descriptor::STF_INST_IEM:
             case descriptors::internal::Descriptor::STF_FORCE_PC:
                 stf_throw("Attempted to write instruction record " << desc << " in a transaction trace");

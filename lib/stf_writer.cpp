@@ -27,6 +27,15 @@ namespace stf {
         initial_process_id_ = STFRecord::make<ProcessIDExtRecord>(hw_thread_id, pid, tid);
     }
 
+    void STFWriter::setISAExtendedInfo(const std::string& info) {
+        if(info.empty()) {
+            isa_extended_.reset();
+        }
+        else {
+            isa_extended_ = STFRecord::make<ISAExtendedRecord>(info);
+        }
+    }
+
     void STFWriter::flushHeader() {
         stf_assert(!header_finalized_, "Cannot write anything else to the header after it has been finalized");
 
@@ -95,6 +104,11 @@ namespace stf {
             *this << *vlen_config_;
             vlen_config_written_ = true;
         }
+
+        if(!isa_extended_written_ && isa_extended_) {
+            *this << *isa_extended_;
+            isa_extended_written_ = true;
+        }
     }
 
     void STFWriter::finalizeHeader() {
@@ -135,6 +149,8 @@ namespace stf {
         initial_pc_written_ = false;
         vlen_config_.reset();
         vlen_config_written_ = false;
+        isa_extended_.reset();
+        isa_extended_written_ = false;
         last_desc_ = descriptors::encoded::Descriptor::STF_RESERVED;
         return STFWriterBase::close();
     }
@@ -184,6 +200,7 @@ namespace stf {
             case descriptors::internal::Descriptor::STF_TRACE_INFO:
             case descriptors::internal::Descriptor::STF_TRACE_INFO_FEATURE:
             case descriptors::internal::Descriptor::STF_VLEN_CONFIG:
+            case descriptors::internal::Descriptor::STF_ISA_EXTENDED:
             case descriptors::internal::Descriptor::STF_END_HEADER:
                 stf_assert(!headerFinalized(), "Attempted to write " << desc << " record outside of the header"); //FALLTHRU
             case descriptors::internal::Descriptor::STF_PROCESS_ID_EXT:

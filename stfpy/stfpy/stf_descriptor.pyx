@@ -24,6 +24,11 @@ cpdef enum InternalDescriptor:
         STF_TRACE_INFO_FEATURE = <uint8_t> _STF_TRACE_INFO_FEATURE
         STF_VERSION = <uint8_t> _STF_VERSION
         STF_VLEN_CONFIG = <uint8_t> _STF_VLEN_CONFIG
+        STF_PROTOCOL_ID = <uint8_t> _STF_PROTOCOL_ID
+        STF_CLOCK_ID = <uint8_t> _STF_CLOCK_ID
+        STF_ISA_EXTENDED = <uint8_t> _STF_ISA_EXTENDED
         STF_END_HEADER = <uint8_t> _STF_END_HEADER
+        STF_TRANSACTION = <uint8_t> _STF_TRANSACTION
+        STF_TRANSACTION_DEPENDENCY = <uint8_t> _STF_TRANSACTION_DEPENDENCY
         STF_RESERVED = <uint8_t> _STF_RESERVED
         STF_RESERVED_END = <uint8_t> _RESERVED_END

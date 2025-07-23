@@ -11,6 +11,12 @@ add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations -Wno-depre
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-ignored-optimization-argument -Wno-unknown-warning-option -Wno-gnu-anonymous-struct -Wno-nested-anon-types)
     add_link_options(-Wno-unused-command-line-argument -Wno-ignored-optimization-argument)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    # Some of the Python headers generate warnings in newer GCC compilers
+    # because they're actually C code
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14)
+        add_compile_options(-Wno-pedantic -Wno-conversion)
+    endif()
 endif()
 
 # Disable _FORTIFY_SOURCE unless we're in Release mode

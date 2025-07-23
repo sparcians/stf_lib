@@ -41,6 +41,7 @@ namespace stf {
                 STF_ENUM_VAL(STF_VLEN_CONFIG,            10),    /**< Sets the vector vlen parameter */
                 STF_ENUM_VAL(STF_PROTOCOL_ID,            11),    /**< Sets the protocol encoded in a transaction trace */
                 STF_ENUM_VAL(STF_CLOCK_ID,               12),    /**< Adds a clock domain ID to a transaction trace */
+                STF_ENUM_VAL(STF_ISA_EXTENDED,           13),    /**< ISA-specific extension information */
 
                 STF_ENUM_VAL(STF_END_HEADER,             19),    /**< End of header record */
 
@@ -106,6 +107,7 @@ namespace stf {
                 STF_ENUM_STR(STF_VLEN_CONFIG, "VLEN_CONFIG"),
                 STF_ENUM_STR(STF_PROTOCOL_ID, "PROTOCOL_ID"),
                 STF_ENUM_STR(STF_CLOCK_ID, "CLOCK_ID"),
+                STF_ENUM_STR(STF_ISA_EXTENDED, "ISA_EXTENDED"),
                 STF_ENUM_STR(STF_END_HEADER, "END_HEADER"),
                 STF_ENUM_STR(STF_TRANSACTION, "TRANSACTION"),
                 STF_ENUM_STR(STF_TRANSACTION_DEPENDENCY, "TRANSACTION_DEPENDENCY")
@@ -178,6 +180,7 @@ namespace stf {
                                     STF_VLEN_CONFIG,
                                     STF_PROTOCOL_ID,
                                     STF_CLOCK_ID,
+                                    STF_ISA_EXTENDED,
                                     STF_END_HEADER,
                                     STF_INST_PC_TARGET,
                                     STF_INST_REG,
