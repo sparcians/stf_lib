@@ -181,17 +181,27 @@ namespace stf {
                                 event_valid = true;
                                 {
                                     const auto& event = rec->template as<EventRecord>();
-                                    const bool is_syscall = event.isSyscall();
-                                    const bool is_fault = event.isFault();
-                                    bool is_mode_change = false;
+                                    const bool is_mode_change = event.isModeChange();
+                                    const bool is_syscall = !is_mode_change && event.isSyscall();
+                                    const bool is_fault = !is_syscall && event.isFault();
+                                    const bool is_interrupt = !is_fault && event.isInterrupt();
 
-                                    delegates::STFInstDelegate::setFlag_(inst,
-                                                                         math_utils::conditionalValue(
-                                                                            is_syscall, STFInst::INST_IS_SYSCALL,
-                                                                            is_fault, STFInst::INST_IS_FAULT,
-                                                                            event.isInterrupt(), STFInst::INST_IS_INTERRUPT,
-                                                                            !is_syscall && (is_mode_change = event.isModeChange()), MODE_CHANGE_FLAGS[event.getData().front()]
-                                    ));
+                                    STFInst::INSTFLAGS event_flag = STFInst::INST_INIT_FLAGS;
+
+                                    if(is_mode_change) {
+                                        event_flag = MODE_CHANGE_FLAGS[event.getData().front()];
+                                    }
+                                    else if(is_syscall) {
+                                        event_flag = STFInst::INST_IS_SYSCALL;
+                                    }
+                                    else if(is_fault) {
+                                        event_flag = STFInst::INST_IS_FAULT;
+                                    }
+                                    else if(is_interrupt) {
+                                        event_flag = STFInst::INST_IS_INTERRUPT;
+                                    }
+
+                                    delegates::STFInstDelegate::setFlag_(inst, event_flag);
 
                                     checkSkipping_(is_mode_change, inst.isChangeToUserMode());
 
