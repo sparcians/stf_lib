@@ -175,8 +175,23 @@ namespace stf {
                         break;
                     }
                     case 0b101:
+                        // popret/popretz
+                        if(STF_EXPECT_FALSE(opcode_bottom == 0b10)) {
+                            const auto funct = byte_utils::getBitRange<12, 8, 4>(opcode);
+
+                            if(funct != 0b11100 && funct != 0b11110) {
+                                return false;
+                            }
+                            is_indirect = true;
+                            is_return = true;
+
+                            // Leaving out the other popped registers for now since they aren't pertinent to the branch behavior
+                            rs1 = Registers::STF_REG::STF_REG_X1;
+                            rd = Registers::STF_REG::STF_REG_X0;
+                            return true;
+                        }
                         // J
-                        if(STF_EXPECT_TRUE(opcode_bottom != 0b01)) {
+                        else if(STF_EXPECT_TRUE(opcode_bottom != 0b01)) {
                             return false;
                         }
                         target = getCJTarget_(pc, opcode);
