@@ -1679,6 +1679,13 @@ namespace stf {
             }
 
             /**
+             * Gets whether this record is a CSR
+             */
+            inline bool isCSR() const {
+                return stf::Registers::isCSR(reg_);
+            }
+
+            /**
              * Gets the vlen parameter used when this record was read or written
              */
             inline vlen_t getVLen() const {

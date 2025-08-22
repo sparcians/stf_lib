@@ -426,6 +426,27 @@ namespace stf {
             }
 
             /**
+             * Gets whether this is an FP operand
+             */
+            inline bool isFP() const {
+                return rec_->isFP();
+            }
+
+            /**
+             * Gets whether this is an integer operand
+             */
+            inline bool isInt() const {
+                return rec_->isInt();
+            }
+
+            /**
+             * Gets whether this is a CSR operand
+             */
+            inline bool isCSR() const {
+                return rec_->isCSR();
+            }
+
+            /**
              * Gets whether this is a vector operand
              */
             inline bool isVector() const {
