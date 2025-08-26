@@ -74,11 +74,16 @@ namespace stf {
             trace_info_records_written_ = true;
         }
 
-        if(!trace_features_written_ && trace_features_) {
+        if(!trace_features_written_) {
             stf_assert(isa_written_, "ISA record must come before TRACE_INFO_FEATURE record");
             stf_assert(initial_iem_written_, "IEM record must come before TRACE_INFO_FEATURE record");
             stf_assert(trace_info_records_written_, "TRACE_INFO records must come before TRACE_INFO_FEATURE record");
             stf_assert(!initial_pc_written_, "TRACE_INFO_FEATURE record must come before FORCE_PC record");
+
+            if(!trace_features_) {
+                trace_features_ = STFRecord::make<TraceInfoFeatureRecord>();
+            }
+
             *this << *trace_features_;
             trace_features_written_ = true;
         }
