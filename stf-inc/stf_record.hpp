@@ -53,6 +53,11 @@ namespace stf {
             bool isInstructionRecord() const {
                 return isInstructionRecord(getId());
             }
+
+            /**
+             * Returns whether this is a marker record
+             */
+            virtual bool isMarkerRecord() const { return false; }
     };
 } // end namespace stf
 

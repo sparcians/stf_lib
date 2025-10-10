@@ -12,6 +12,7 @@ namespace stf {
     void STFReaderBase::validateHeader_() const {
         stf_assert(!trace_info_records_.empty(), "TRACE_INFO record missing from header");
         stf_assert(trace_features_, "TRACE_INFO_FEATURE record missing from header");
+        stream_->setTraceStart();
     }
 
     void STFReaderBase::initSimpleStreamAndOpen_(const std::string_view filename) {

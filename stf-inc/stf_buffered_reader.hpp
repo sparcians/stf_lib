@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <map>
 #include <string>
 #include <string_view>
 #include "stf_enums.hpp"
@@ -18,6 +19,7 @@
 #include "stf_reader_base.hpp"
 #include "stf_record.hpp"
 #include "stf_record_types.hpp"
+#include "stf_indexer.hpp"
 
 /**
  * \namespace stf
@@ -30,7 +32,7 @@ namespace stf {
      * \class STFBufferedReader
      * \brief The STFBufferedReader provides an iterator to a buffered stream of objects constructed from a trace
      */
-    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered = false>
+    template<bool Indexed, typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered = false>
     class STFBufferedReader : public BaseReaderType {
         private:
             static_assert(std::is_base_of_v<STFReaderBase, BaseReaderType>,
@@ -48,6 +50,7 @@ namespace stf {
              * \brief Internal descriptor type
              */
             using IntDescriptor = descriptors::internal::Descriptor;
+            using BaseReaderType::stream_;
 
             static constexpr size_t DEFAULT_BUFFER_SIZE_ = 1024; /**< Default buffer size */
 
@@ -70,6 +73,11 @@ namespace stf {
             size_t num_skipped_items_ = 0; /**< Counts number of skipped items so that item indices can be adjusted */
 
             FilterType filter_; /**< Filter type used to skip over certain record types */
+
+            struct NoIndexer {};
+
+            using IndexerType = std::conditional_t<Indexed, STFIndexer<BaseReaderType>, NoIndexer>;
+            IndexerType indexer_;
 
             /**
              * Default skipped_ method
@@ -631,7 +639,7 @@ namespace stf {
                     return seekFromBeginning(skip);
                 }
 
-                return typename U::iterator(static_cast<U*>(this));
+                return begin();
             }
 
             /**
@@ -652,6 +660,11 @@ namespace stf {
             void open(const std::string_view filename,
                       const bool force_single_threaded_stream = false) {
                 BaseReaderType::open(filename, force_single_threaded_stream);
+
+                if constexpr(Indexed) {
+                    indexer_.open(filename);
+                }
+
                 resetBuffer_();
             }
 
@@ -671,6 +684,10 @@ namespace stf {
              */
             template<typename U = ReaderType>
             inline typename U::iterator seekFromBeginning(const size_t num_items) {
+                BaseReaderType::rewind_();
+                head_ = 0;
+                tail_ = 0;
+                initItemBuffer_();
                 auto it = begin();
                 seek(it, num_items);
                 return it;
@@ -704,11 +721,56 @@ namespace stf {
             }
 
             /**
+             * \brief Jumps the reader to the item with the given index, returning an iterator to that item
+             * \param index Index of the item
+             */
+            template<typename U = ReaderType, bool IsIndexed = Indexed>
+            inline std::enable_if_t<IsIndexed && std::is_same_v<U, ReaderType>, typename U::iterator> jumpToIndex(const size_t index) {
+                stf_assert(num_skipped_items_ == 0, "Indexed seeking does not support item skipping");
+
+                auto it = indexer_.findNearestEntry(index);
+                stream_->seekFromOffset(it->second, it->first, index - it->first);
+                head_ = 0;
+                tail_ = 0;
+                initItemBuffer_();
+                return begin();
+            }
+
+            /**
+             * \brief Returns true if the index scan has completed
+             */
+            template<bool IsIndexed = Indexed>
+            inline std::enable_if_t<IsIndexed, bool> indexScanComplete() {
+                return indexer_.scanComplete();
+            }
+
+            /**
+             * \brief Waits for the index scan to complete, then returns
+             */
+            template<bool IsIndexed = Indexed>
+            inline std::enable_if_t<IsIndexed> waitForIndexScan() {
+                return indexer_.waitForScanComplete();
+            }
+
+            /**
+             * \brief Returns the number of items that have been scanned by the indexer so far
+             */
+            template<bool IsIndexed = Indexed>
+            inline std::enable_if_t<IsIndexed, size_t> numItemsScanned() {
+                return indexer_.numItemsScanned();
+            }
+
+            /**
              * Gets the filter object for this reader
              */
             FilterType& getFilter() {
                 return filter_;
             }
+
+            /**
+             * \brief Gets the size of the internal buffer
+             */
+            size_t getBufferSize() const { return buffer_size_; }
     };
 } //end namespace stf
 

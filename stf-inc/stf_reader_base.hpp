@@ -61,6 +61,8 @@ namespace stf {
              */
             void initSimpleStreamAndOpenProcess_(std::string_view cmd, std::string_view filename);
 
+            virtual void rewind_() { stream_->rewind(); }
+
         public:
             STFReaderBase() = default;
             ~STFReaderBase();
@@ -152,6 +154,20 @@ namespace stf {
              */
             inline size_t numRecordsRead() const {
                 return getNumRecords_();
+            }
+
+            /**
+             * Returns the number of marker records read so far
+             */
+            inline size_t numMarkerRecordsRead() const {
+                return getNumMarkerRecords_();
+            }
+
+            /**
+             * Returns the current offset within the trace file
+             */
+            inline size_t getCurrentOffset() const {
+                return stream_->tell();
             }
 
             /**

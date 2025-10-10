@@ -39,6 +39,38 @@ namespace stf {
 
         public:
             /**
+             * \class Index
+             * Holds an index that can be used to reference a specific record within a RecordMap
+             */
+            class Index {
+                private:
+                    const key_type key_;
+                    const size_t index_;
+
+                public:
+                    Index(const descriptors::internal::Descriptor desc, const size_t index) :
+                        Index(static_cast<key_type>(desc), index)
+                    {
+                    }
+
+                    Index(const key_type key, const size_t index) :
+                        key_(key),
+                        index_(index)
+                    {
+                    }
+
+                    /**
+                     * Gets the key for the record
+                     */
+                    key_type getKey() const { return key_; }
+
+                    /**
+                     * Gets the index of the record within its key-specific vector
+                     */
+                    size_t getIndex() const { return index_; }
+            };
+
+            /**
              * \class SmallVector
              * Wraps a boost::small_vector. Optimizes the common case for STF records (most instructions have
              * at most one of any particular record type) by always having one record slot available (optimizes out some
@@ -58,6 +90,10 @@ namespace stf {
                                            return ptr->clone();
                                        }
                         );
+                    }
+
+                    auto remove_(const STFRecord* rec) {
+                        return std::remove_if(data_.begin(), data_.end(), [rec](const STFRecord::UniqueHandle& item) { return item.get() == rec; });
                     }
 
                 public:
@@ -202,6 +238,54 @@ namespace stf {
                      */
                     inline void push_back(STFRecord::UniqueHandle&& rec) {
                         emplace_back(std::move(rec));
+                    }
+
+                    /**
+                     * Removes the element at the given index from the vector
+                     * \param idx Index of the element that should be removed
+                     */
+                    inline void remove(const size_t idx) {
+                        data_.erase(std::next(data_.begin(), static_cast<ssize_t>(idx)));
+                    }
+
+                    /**
+                     * Removes the given record from the vector
+                     * \param rec Record to be removed
+                     */
+                    inline void remove(const STFRecord* rec) {
+                        const auto it = remove_(rec);
+                        data_.erase(it, data_.end());
+                    }
+
+                    /**
+                     * Extracts the element at the given index from the vector
+                     * \param idx Index of the element that should be extracted
+                     */
+                    STFRecord::UniqueHandle extract(const size_t idx) {
+                        STFRecord::UniqueHandle temp(std::move(data_[idx]));
+                        remove(idx);
+                        return temp;
+                    }
+
+                    /**
+                     * Extracts the given record from the vector
+                     * \param rec Record to be extracted
+                     */
+                    STFRecord::UniqueHandle extract(const STFRecord* rec) {
+                        auto it = remove_(rec);
+                        STFRecord::UniqueHandle temp(std::move(*it));
+                        data_.erase(it, data_.end());
+                        return temp;
+                    }
+
+                    /**
+                     * Gets the index of the given record
+                     * \param rec Record to query
+                     */
+                    size_t getIndex(const STFRecord* rec) const {
+                        const auto it = std::find_if(data_.begin(), data_.end(), [rec](const STFRecord::UniqueHandle& item) { return item.get() == rec; });
+                        stf_assert(it != data_.end(), "Record does not belong to this array");
+                        return static_cast<size_t>(std::distance(data_.begin(), it));
                     }
 
                     /**
@@ -365,6 +449,22 @@ namespace stf {
                         return vec_array_[static_cast<key_type>(rec->getId())].second.emplace_back(std::move(rec));
                     }
 
+                    void remove(const Index& index) {
+                        vec_array_[index.getKey()].second.remove(index.getIndex());
+                    }
+
+                    void remove(const STFRecord* rec) {
+                        vec_array_[static_cast<key_type>(rec->getId())].second.remove(rec);
+                    }
+
+                    STFRecord::UniqueHandle extract(const Index& index) {
+                        return vec_array_[index.getKey()].second.extract(index.getIndex());
+                    }
+
+                    STFRecord::UniqueHandle extract(const STFRecord* rec) {
+                        return vec_array_[static_cast<key_type>(rec->getId())].second.extract(rec);
+                    }
+
                     inline auto& operator[](const key_type key) {
                         return vec_array_[key].second;
                     }
@@ -411,6 +511,11 @@ namespace stf {
 
                     inline bool empty() const {
                         return vec_array_.empty();
+                    }
+
+                    inline Index getIndex(const STFRecord* rec) const {
+                        const auto key = static_cast<key_type>(rec->getId());
+                        return Index(key, vec_array_[key].second.getIndex(rec));
                     }
             };
 
@@ -661,6 +766,46 @@ namespace stf {
             inline void clear() {
                 size_ = 0;
                 map_.clear();
+            }
+
+            /**
+             * Removes the element at the given index from the map
+             * \param index Index of the element that should be removed
+             */
+            inline void remove(const Index& index) {
+                map_.remove(index);
+            }
+
+            /**
+             * Removes the given record from the map
+             * \param rec Record to be removed
+             */
+            inline void remove(const STFRecord* rec) {
+                map_.remove(rec);
+            }
+
+            /**
+             * Extracts the element at the given index from the map
+             * \param index Index of the element that should be extracted
+             */
+            inline STFRecord::UniqueHandle extract(const Index& index) {
+                return map_.extract(index);
+            }
+
+            /**
+             * Extracts the given record from the map
+             * \param rec Record to be extracted
+             */
+            inline STFRecord::UniqueHandle extract(const STFRecord* rec) {
+                return map_.extract(rec);
+            }
+
+            /**
+             * Gets the index of the given record within the map
+             * \param rec Record to be queried
+             */
+            inline Index getIndex(const STFRecord* rec) const {
+                return map_.getIndex(rec);
             }
 
             /**

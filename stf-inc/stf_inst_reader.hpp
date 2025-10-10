@@ -44,10 +44,10 @@ namespace stf {
      * easy to use format.
      *
      */
-    template<typename FilterType>
-    class STFInstReaderBase final : public STFUserModeSkippingReader<STFInst, FilterType, STFInstReaderBase<FilterType>> {
+    template<bool Indexed, typename FilterType>
+    class STFInstReaderBase final : public STFUserModeSkippingReader<Indexed, STFInst, FilterType, STFInstReaderBase<Indexed, FilterType>> {
         private:
-            using ParentReader = STFUserModeSkippingReader<STFInst, FilterType, STFInstReaderBase<FilterType>>;
+            using ParentReader = STFUserModeSkippingReader<Indexed, STFInst, FilterType, STFInstReaderBase<Indexed, FilterType>>;
             friend ParentReader;
             /// \cond DOXYGEN_IGNORED
             friend typename ParentReader::BufferedReader;
@@ -475,13 +475,19 @@ namespace stf {
      * \typedef STFInstReader
      * \brief Basic STFInst reader with no filtering
      */
-    using STFInstReader = STFInstReaderBase<DummyFilter>;
+    using STFInstReader = STFInstReaderBase<false, DummyFilter>;
 
     /**
      * \typedef FilteredInstReader
      * \brief STFInst reader with descriptor-based filtering
      */
-    using FilteredInstReader = STFInstReaderBase<RecordFilter>;
+    using FilteredInstReader = STFInstReaderBase<false, RecordFilter>;
+
+    /**
+     * \typedef STFIndexedInstReader
+     * \brief STFInst reader with indexing enabled
+     */
+    using STFIndexedInstReader = STFInstReaderBase<true, DummyFilter>;
 
 } //end namespace stf
 

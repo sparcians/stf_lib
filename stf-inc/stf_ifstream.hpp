@@ -25,6 +25,9 @@ namespace stf {
      */
     class STFIFstream : public STFFstream {
         protected:
+            size_t trace_start_ = 0;
+            uint64_t initial_pc_ = 0;
+
             /**
              * Virtual method that reads arbitrary buffers from a file
              * Can be overridden for e.g. transparent decompression
@@ -408,6 +411,34 @@ namespace stf {
              * \param num_marker_records Number of marker records to skip
              */
             virtual void seek(size_t num_marker_records);
+
+            /**
+             * Seeks forward from an offset by the given number of marker records
+             * \param offset Offset to seek from
+             * \param num_markers_at_offset Number of marker records present in the trace up to offset
+             * \param num_markers_to_seek Number of marker records to skip
+             */
+            virtual void seekFromOffset(const size_t offset, const size_t num_markers_at_offset, const size_t num_markers_to_seek);
+
+            /**
+             * Rewinds the trace to the beginning
+             */
+            virtual void rewind();
+
+            /**
+             * Gets the current offset within the trace
+             */
+            virtual size_t tell() const;
+
+            /**
+             * Sets the position of the first marker record in the trace to the current offset
+             */
+            virtual void setTraceStart();
+
+            /**
+             * Sets the initial PC in the trace
+             */
+            virtual void setInitialPC(const uint64_t initial_pc) { initial_pc_ = initial_pc; }
     };
 } // end namespace stf
 

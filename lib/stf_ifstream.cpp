@@ -16,4 +16,27 @@ namespace stf {
             stf_throw("Attempted to seek past the end of the trace");
         }
     }
+
+    void STFIFstream::seekFromOffset(const size_t offset, const size_t num_markers_at_offset, const size_t num_markers_to_seek) {
+        fseek(stream_, static_cast<ssize_t>(offset), SEEK_SET);
+        num_marker_records_ = num_markers_at_offset;
+
+        if(num_markers_to_seek) {
+            seek(num_markers_to_seek);
+        }
+    }
+
+    void STFIFstream::rewind() {
+        num_marker_records_ = 0;
+        fseek(stream_, static_cast<ssize_t>(trace_start_), SEEK_SET);
+        pc_tracker_.forcePC(initial_pc_);
+    }
+
+    size_t STFIFstream::tell() const {
+        return static_cast<size_t>(ftell(stream_));
+    }
+
+    void STFIFstream::setTraceStart() {
+        trace_start_ = tell();
+    }
 } // end namespace stf

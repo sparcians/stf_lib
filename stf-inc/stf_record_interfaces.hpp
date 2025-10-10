@@ -321,6 +321,8 @@ namespace stf {
             static constexpr size_t getOpcodeSize() {
                 return sizeof(OpcodeT);
             }
+
+            bool isMarkerRecord() const override final { return true; }
     };
 
 } // end namespace stf
