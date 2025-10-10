@@ -10,8 +10,8 @@ namespace stf {
      * \class STFUserModeSkippingReader
      * \brief A buffered STF reader that can skip past non-user mode code
      */
-    template<typename ItemType, typename FilterType, typename ReaderType>
-    class STFUserModeSkippingReader : public STFBufferedReader<ItemType, FilterType, ReaderType, STFReader> {
+    template<bool Indexed, typename ItemType, typename FilterType, typename ReaderType>
+    class STFUserModeSkippingReader : public STFBufferedReader<Indexed, ItemType, FilterType, ReaderType, STFReader> {
         private:
             const bool only_user_mode_ = false; /**< skips non-user-mode instructions if true */
             bool skipping_enabled_ = false; /**< Marks all items read as skipped while true */
@@ -22,7 +22,7 @@ namespace stf {
              * \typedef BufferedReader
              * Parent STFBufferedReader type
              */
-            using BufferedReader = STFBufferedReader<ItemType, FilterType, ReaderType, STFReader>;
+            using BufferedReader = STFBufferedReader<Indexed, ItemType, FilterType, ReaderType, STFReader>;
             /// \cond DOXYGEN_IGNORED
             friend BufferedReader;
             /// \endcond

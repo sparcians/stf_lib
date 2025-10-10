@@ -9,7 +9,8 @@
 #include "stf_transaction_writer.hpp"
 
 namespace stf {
-    class STFTransactionReader;
+    template<bool Indexed>
+    class STFTransactionReaderBase;
 
     namespace delegates {
         class STFTransactionDelegate;
@@ -17,7 +18,7 @@ namespace stf {
 
     /**
      * \class STFTransaction
-     * Convenient wrapper class for transaction and dependency records. Returned from STFTransactionReader iterator.
+     * Convenient wrapper class for transaction and dependency records. Returned from STFTransactionReaderBase iterator.
      */
     class STFTransaction : public STFItem {
         public:
@@ -285,7 +286,8 @@ namespace stf {
                     transaction.appendDependency_(urec);
                 }
 
-                friend class stf::STFTransactionReader;
+                template<bool Indexed>
+                friend class stf::STFTransactionReaderBase;
         };
     } // end namespace delegates
 } // end namespace stf

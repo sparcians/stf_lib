@@ -4,10 +4,10 @@
 #include <cstdint>
 
 namespace stf {
-    template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered>
+    template<bool Indexed, typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered>
     class STFBufferedReader;
 
-    template<typename ItemType, typename FilterType, typename ReaderType>
+    template<bool Indexed, typename ItemType, typename FilterType, typename ReaderType>
     class STFUserModeSkippingReader;
 
     namespace delegates {
@@ -129,7 +129,7 @@ namespace stf {
                     item.setIndex_(index);
                 }
 
-                template<typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered>
+                template<bool Indexed, typename ItemType, typename FilterType, typename ReaderType, typename BaseReaderType, bool assume_filtered>
                 friend class stf::STFBufferedReader;
         };
 
@@ -163,7 +163,7 @@ namespace stf {
                     item.setIndex_(index, unskipped_index);
                 }
 
-                template<typename ItemType, typename FilterType, typename ReaderType>
+                template<bool Indexed, typename ItemType, typename FilterType, typename ReaderType>
                 friend class stf::STFUserModeSkippingReader;
         };
     } // end namespace delegates

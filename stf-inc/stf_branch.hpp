@@ -9,7 +9,8 @@
 #include "stf_reg_def.hpp"
 
 namespace stf {
-    class STFBranchReader;
+    template<bool Indexed>
+    class STFBranchReaderBase;
     class STFBranchDecoder;
 
     namespace delegates {
@@ -18,7 +19,7 @@ namespace stf {
 
     /**
      * \class STFBranch
-     * \brief Branch information returned by the STFBranchReader
+     * \brief Branch information returned by the STFBranchReaderBase
      */
     class STFBranch : public STFSkippableItem {
         public:
@@ -149,7 +150,7 @@ namespace stf {
             }
 
             /**
-             * Resets branch info to initial state (used by STFBranchReader)
+             * Resets branch info to initial state (used by STFBranchReaderBase)
              */
             __attribute__((always_inline))
             // cppcheck-suppress duplInheritedMember
@@ -200,7 +201,7 @@ namespace stf {
             }
 
             /**
-             * Sets branch info (used by STFBranchReader)
+             * Sets branch info (used by STFBranchReaderBase)
              * \param pc Branch PC
              * \param target Branch target PC
              * \param opcode Branch opcode
@@ -497,7 +498,7 @@ namespace stf {
         class STFBranchDelegate : public STFSkippableItemDelegate {
             private:
                 /**
-                 * Sets branch info (used by STFBranchReader)
+                 * Sets branch info (used by STFBranchReaderBase)
                  * \param pc Branch PC
                  * \param target Branch target PC
                  * \param opcode Branch opcode
@@ -616,7 +617,8 @@ namespace stf {
                     branch.setIndex_(index, unskipped_index, inst_index, unskipped_inst_index);
                 }
 
-                friend class stf::STFBranchReader;
+                template<bool Indexed>
+                friend class stf::STFBranchReaderBase;
                 friend class stf::STFBranchDecoder;
         };
     } // end namespace delegates

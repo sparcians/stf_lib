@@ -3108,6 +3108,8 @@ namespace stf {
             const Metadata& getMetadata() const {
                 return metadata_;
             }
+
+            bool isMarkerRecord() const override final { return true; }
     };
 
     /**

@@ -79,6 +79,13 @@ namespace stf {
                     }
 
                     /**
+                     * Sets the start PC of the chunk
+                     */
+                    void setStartPC(const uint64_t start_pc) {
+                        start_pc_ = start_pc;
+                    }
+
+                    /**
                      * Sets the uncompressed size of the chunk
                      */
                     void setUncompressedChunkSize(const size_t uncompressed_chunk_size) {

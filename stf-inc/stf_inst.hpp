@@ -27,7 +27,7 @@
 #include "util.hpp"
 
 namespace stf {
-    template<typename FilterType>
+    template<bool Indexed, typename FilterType>
     class STFInstReaderBase;
 
     namespace delegates {
@@ -1140,11 +1140,51 @@ namespace stf {
                 }
             }
 
+            inline void dumpRecordPairs_(std::vector<std::string>& records,
+                                         const descriptors::internal::Descriptor first_desc,
+                                         const RecordMap::SmallVector& first_record_vec,
+                                         const descriptors::internal::Descriptor second_desc) const {
+                const auto& second_vec = orig_records_.at(second_desc);
+                const bool is_event = first_desc == descriptors::internal::Descriptor::STF_EVENT;
+                stf_assert(is_event || (second_vec.size() == first_record_vec.size()),
+                           "There must be a 1-1 correspondence between " << first_desc << " and " << second_desc << " records");
+                std::ostringstream ss;
+                auto second_it = second_vec.begin();
+                for(const auto& record: first_record_vec) {
+                    record->format(ss);
+                    records.emplace_back(ss.str());
+                    ss.str("");
+                    // Mode change events don't have PC targets
+                    if(STF_EXPECT_TRUE(!(is_event && record->as<EventRecord>().isModeChange()))) {
+                        (*second_it)->format(ss);
+                        records.emplace_back(ss.str());
+                        ss.str("");
+                        ++second_it;
+                    }
+                }
+            }
+
             /**
              * \brief Add original record to the instruction
              */
             inline auto appendOrigRecord_(STFRecord::UniqueHandle&& urec) {
                 return orig_records_.emplace(std::move(urec));
+            }
+
+            inline void removeOrigRecord_(const RecordMap::Index& index) {
+                orig_records_.remove(index);
+            }
+
+            inline void removeOrigRecord_(const STFRecord* rec) {
+                orig_records_.remove(rec);
+            }
+
+            inline STFRecord::UniqueHandle extractOrigRecord_(const RecordMap::Index& index) {
+                return orig_records_.extract(index);
+            }
+
+            inline STFRecord::UniqueHandle extractOrigRecord_(const STFRecord* rec) {
+                return orig_records_.extract(rec);
             }
 
             /**
@@ -1474,6 +1514,35 @@ namespace stf {
                         }
                     }
                 }
+            }
+
+            /**
+             * \brief Dumps all of the records attached to this instruction as a vector of strings
+             */
+            std::vector<std::string> dumpRecords() const {
+                std::vector<std::string> records;
+                std::ostringstream ss;
+
+                for (const auto& vec_pair: orig_records_.sorted()) {
+                    if(const auto pair_it = PAIRED_RECORDS_.find(vec_pair.first); STF_EXPECT_FALSE(pair_it != PAIRED_RECORDS_.end())) {
+                        dumpRecordPairs_(records,
+                                         vec_pair.first,
+                                         vec_pair.second,
+                                         pair_it->second);
+                    }
+                    else if(STF_EXPECT_FALSE(SKIPPED_PAIRED_RECORDS_.count(vec_pair.first) != 0)) {
+                        continue;
+                    }
+                    else {
+                        for(const auto& record: vec_pair.second) {
+                            record->format(ss);
+                            records.emplace_back(ss.str());
+                            ss.str("");
+                        }
+                    }
+                }
+
+                return records;
             }
 
             /**
@@ -1851,33 +1920,40 @@ namespace stf {
             inline bool valid() const { return inst_flags_ & INST_VALID; };
 
             /**
-             * Get the string representation of the opcode width
+             * \brief Get the string representation of the opcode width
              */
             inline const char* getOpcodeWidthStr() const {
                 return isOpcode16() ? "INST16" : "INST32";
             }
 
             /**
-             * Gets whether the instruction is a branch
+             * \brief Gets whether the instruction is a branch
              */
             inline bool isBranch() const {
                 return inst_flags_ & INST_IS_BRANCH;
             }
 
             /**
-             * Gets whether address translation is enabled for this instruction
+             * \brief Gets whether address translation is enabled for this instruction
              */
             inline bool addressTranslationEnabled() const {
                 return pte_reader_;
             }
 
             /**
-             * Translates the given virtual address to a physical
+             * \brief Translates the given virtual address to a physical
              * address using the translation information visible to
              * this instruction
              */
             inline uint64_t getPA(const uint64_t va) const {
                 return getPA_(va, unskippedIndex());
+            }
+
+            /**
+             * \brief Gets the index of the given record in this instruction's record map
+             */
+            RecordMap::Index getRecordIndex(const STFRecord* rec) const {
+                return orig_records_.getIndex(rec);
             }
     };
 
@@ -2018,6 +2094,26 @@ namespace stf {
                     return inst.appendOrigRecord_(std::move(urec));
                 }
 
+                __attribute__((always_inline))
+                static inline void removeOrigRecord_(STFInst& inst, const RecordMap::Index& index) {
+                    inst.removeOrigRecord_(index);
+                }
+
+                __attribute__((always_inline))
+                static inline void removeOrigRecord_(STFInst& inst, const STFRecord* rec) {
+                    inst.removeOrigRecord_(rec);
+                }
+
+                __attribute__((always_inline))
+                static inline STFRecord::UniqueHandle extractOrigRecord_(STFInst& inst, const RecordMap::Index& index) {
+                    return inst.extractOrigRecord_(index);
+                }
+
+                __attribute__((always_inline))
+                static inline STFRecord::UniqueHandle extractOrigRecord_(STFInst& inst, const STFRecord* rec) {
+                    return inst.extractOrigRecord_(rec);
+                }
+
                 /**
                  * Finalizes an instruction
                  * \param inst STFInst to modify
@@ -2087,7 +2183,7 @@ namespace stf {
                 /**
                  * \brief Only STFInstReader can modify the content of STFInst
                  */
-                template<typename FilterType>
+                template<bool Indexed, typename FilterType>
                 friend class stf::STFInstReaderBase;
         };
     } // end namespace delegates

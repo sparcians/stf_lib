@@ -2,6 +2,7 @@
 #define __STF_COMPRESSED_IFSTREAM_BASE_HPP__
 
 #include <future>
+#include <iterator>
 
 #include "stf_compression_buffer.hpp"
 #include "stf_compressed_chunked_base.hpp"
@@ -20,7 +21,7 @@ namespace stf {
             STFCompressionBuffer in_buf_; /**< Input data buffer - holds compressed data read from the file */
             STFCompressionBuffer out_buf_; /**< Output data pointer */
             std::future<void> decompress_result_; /**< Future used to indicate when the next chunk has been decompressed */
-            std::vector<ChunkOffset>::iterator next_chunk_index_it_ = chunk_indices_.end(); /**< Iterator to next chunk offset */
+            std::vector<ChunkOffset>::const_iterator next_chunk_index_it_ = chunk_indices_.end(); /**< Iterator to next chunk offset */
             off_t last_read_pos_ = 0; /**< File offset of last read */
             off_t end_of_last_chunk_; /**< File offset of the end of the last compressed chunk - needed so we can know when to stop reading */
             bool successful_read_ = false; /**< Indicates whether the last read succeeded - needed so we can know if we still have valid data in our buffers */
@@ -51,7 +52,7 @@ namespace stf {
              * Returns true if we have read all compresssed chunks from the file, there is no pending data
              * in the decompressor buffers, and there is not a pending valid read
              */
-            inline bool feof_() const final {
+            inline bool feof_() const override final {
                 return allInputConsumed_() && !successful_read_;
             }
 
@@ -181,7 +182,7 @@ namespace stf {
              * \param uncompressed_chunk_size Size of the decompressed chunk
              * \param out_buf Buffer to store decompressed chunk in
              */
-            void readChunk_(const std::vector<ChunkOffset>::iterator& chunk_it,
+            void readChunk_(const std::vector<ChunkOffset>::const_iterator& chunk_it,
                             const size_t uncompressed_chunk_size,
                             STFCompressionBuffer& out_buf) {
                 // Calculate the number of bytes to read from the file
@@ -270,7 +271,7 @@ namespace stf {
              *
              * \param data Buffer to read data into
              */
-            inline size_t fread_u8_(void* data) final {
+            inline size_t fread_u8_(void* data) override final {
                 return fread_single_<uint8_t>(data);
             }
 
@@ -279,7 +280,7 @@ namespace stf {
              *
              * \param data Buffer to read data into
              */
-            inline size_t fread_u16_(void* data) final {
+            inline size_t fread_u16_(void* data) override final {
                 return fread_single_<uint16_t>(data);
             }
 
@@ -289,7 +290,7 @@ namespace stf {
              * \param data Buffer to read data into
              * \param num Number of elements to read
              */
-            inline size_t fread_u16_(void* data, const size_t num) final {
+            inline size_t fread_u16_(void* data, const size_t num) override final {
                 return fread_multiple_<uint16_t>(data, num);
             }
 
@@ -298,7 +299,7 @@ namespace stf {
              *
              * \param data Buffer to read data into
              */
-            inline size_t fread_u32_(void* data) final {
+            inline size_t fread_u32_(void* data) override final {
                 return fread_single_<uint32_t>(data);
             }
 
@@ -308,7 +309,7 @@ namespace stf {
              * \param data Buffer to read data into
              * \param num Number of elements to read
              */
-            inline size_t fread_u32_(void* data, const size_t num) final {
+            inline size_t fread_u32_(void* data, const size_t num) override final {
                 return fread_multiple_<uint32_t>(data, num);
             }
 
@@ -317,7 +318,7 @@ namespace stf {
              *
              * \param data Buffer to read data into
              */
-            inline size_t fread_u64_(void* data) final {
+            inline size_t fread_u64_(void* data) override final {
                 return fread_single_<uint64_t>(data);
             }
 
@@ -327,7 +328,7 @@ namespace stf {
              * \param data Buffer to read data into
              * \param num Number of elements to read
              */
-            inline size_t fread_u64_(void* data, const size_t num) final {
+            inline size_t fread_u64_(void* data, const size_t num) override final {
                 return fread_multiple_<uint64_t>(data, num);
             }
 
@@ -339,7 +340,7 @@ namespace stf {
              * \param data PackedContainerView to read data into
              * \param size Size of the PackedContainer pointed to by data
              */
-            inline size_t freadPackedContainer_(PackedContainerViewBase& data, const size_t size) final {
+            inline size_t freadPackedContainer_(PackedContainerViewBase& data, const size_t size) override final {
                 if(STF_EXPECT_FALSE(!checkIfReadIsPossible_())) {
                     return 0;
                 }
@@ -358,7 +359,7 @@ namespace stf {
              * \param size Size of an element
              * \param num Number of elements to read
              */
-            inline size_t fread_(void* data, const size_t size, const size_t num) final {
+            inline size_t fread_(void* data, const size_t size, const size_t num) override final {
                 return fread_multiple_<uint8_t>(data, size * num);
             }
 
@@ -368,6 +369,31 @@ namespace stf {
             inline void endChunk_() {
                 decompressor_.reset();
             }
+
+            inline virtual void seekToChunk_(const size_t chunk_idx) {
+                next_chunk_index_it_ = std::next(chunk_indices_.begin(), static_cast<ssize_t>(chunk_idx));
+                num_marker_records_ = chunk_idx * marker_record_chunk_size_;
+                next_chunk_end_ = num_marker_records_ + marker_record_chunk_size_;
+
+                fseek(stream_, next_chunk_index_it_->getOffset(), SEEK_SET);
+                last_read_pos_ = next_chunk_index_it_->getOffset();
+
+                const auto force_pc = next_chunk_index_it_->getStartPC();
+
+                pc_tracker_.forcePC(force_pc);
+                const auto current_chunk_size = next_chunk_index_it_->getUncompressedChunkSize();
+                if(STF_EXPECT_TRUE(next_chunk_index_it_ != chunk_indices_.end())) {
+                    ++next_chunk_index_it_;
+                }
+
+                readChunk_(next_chunk_index_it_, current_chunk_size, out_buf_);
+
+                if(chunk_idx == 0) {
+                    out_buf_.setReadPtr(trace_start_);
+                }
+            }
+
+            virtual void cancelCurrentChunks_() = 0;
 
         public:
             STFCompressedIFstreamBase() = default;
@@ -427,12 +453,63 @@ namespace stf {
             }
 
             /**
+             * Seeks by the specified number of marker records
+             * \param num_markers Number of marker records to seek by
+             */
+            inline void seek(size_t num_markers) override final {
+                // If the seek point comes before the next chunk boundary, just seek normally within the chunk
+                if(num_marker_records_ + num_markers >= next_chunk_end_) {
+                    // Throw away what's currently in the buffer since we're moving to a new chunk
+                    cancelCurrentChunks_();
+
+                    const auto chunk_idx = (num_marker_records_ + num_markers) / marker_record_chunk_size_;
+                    if(STF_EXPECT_FALSE(chunk_idx >= chunk_indices_.size())) {
+                        stf_throw("Attempted to seek past the end of the trace");
+                    }
+
+                    num_markers = (num_marker_records_ + num_markers) % marker_record_chunk_size_;
+                    seekToChunk_(chunk_idx);
+                }
+
+                STFIFstream::seek(num_markers);
+            }
+
+            inline void rewind() override final {
+                // Throw away what's currently in the buffer since we're moving to a new chunk
+                cancelCurrentChunks_();
+                seekToChunk_(0);
+            }
+
+            size_t tell() const override final {
+                return static_cast<size_t>(last_read_pos_);
+            }
+
+            void seekFromOffset(const size_t, const size_t num_markers_at_offset, const size_t num_markers_to_seek) override final {
+                // Throw away what's currently in the buffer since we're moving to a new chunk
+                cancelCurrentChunks_();
+                seekToChunk_(num_markers_at_offset / marker_record_chunk_size_);
+
+                const auto remaining_markers_to_seek = (num_markers_at_offset - num_marker_records_) + num_markers_to_seek;
+                if(remaining_markers_to_seek) {
+                    seek(remaining_markers_to_seek);
+                }
+            }
+
+            /**
              * Gets whether the stream is still valid
              */
-            explicit inline operator bool() const final {
+            explicit inline operator bool() const override final {
                 return !feof_() && STFFstream::operator bool();
             }
 
+            void setTraceStart() override final {
+                trace_start_ = out_buf_.getReadPos();
+            }
+
+            void setInitialPC(const uint64_t initial_pc) override final {
+                STFIFstream::setInitialPC(initial_pc);
+                chunk_indices_.front().setStartPC(initial_pc_);
+            }
     };
 } // end namespace stf
 

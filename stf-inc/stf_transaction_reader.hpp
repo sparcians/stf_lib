@@ -11,9 +11,10 @@ namespace stf {
      * \class STFTransactionReader
      * Buffered transaction record reader. Returns STFTransaction objects.
      */
-    class STFTransactionReader final : public STFBufferedReader<STFTransaction, DummyFilter, STFTransactionReader, STFTransactionRecordReader> {
+    template<bool Indexed>
+    class STFTransactionReaderBase final : public STFBufferedReader<Indexed, STFTransaction, DummyFilter, STFTransactionReaderBase<Indexed>, STFTransactionRecordReader> {
         private:
-            using ParentReader = STFBufferedReader<STFTransaction, DummyFilter, STFTransactionReader, STFTransactionRecordReader>;
+            using ParentReader = STFBufferedReader<Indexed, STFTransaction, DummyFilter, STFTransactionReaderBase<Indexed>, STFTransactionRecordReader>;
             friend ParentReader;
             using IntDescriptor = typename ParentReader::IntDescriptor;
 
@@ -27,12 +28,12 @@ namespace stf {
             inline void readNext_(STFTransaction& transaction) {
                 delegates::STFTransactionDelegate::reset_(transaction);
                 while(true) {
-                    const auto rec = readRecord_(transaction);
+                    const auto rec = ParentReader::readRecord_(transaction);
                     const auto id = rec->getId();
 
                     if(STF_EXPECT_TRUE(id == IntDescriptor::STF_TRANSACTION)) {
                         delegates::STFTransactionDelegate::setTransactionInfo_(transaction, rec);
-                        initItemIndex_(transaction);
+                        ParentReader::initItemIndex_(transaction);
                         break;
                     }
                     else if(STF_EXPECT_TRUE(id == IntDescriptor::STF_TRANSACTION_DEPENDENCY)) {
@@ -105,7 +106,7 @@ namespace stf {
                      * \param sir Parent STFInstReaderBase
                      * \param end If true, this is an end iterator
                      */
-                    explicit iterator(STFTransactionReader *sir, const bool end = false) :
+                    explicit iterator(STFTransactionReaderBase *sir, const bool end = false) :
                         ParentReader::base_iterator(sir, end)
                     {
                     }
@@ -119,21 +120,21 @@ namespace stf {
             };
 
             /**
-             * Constructs an STFTransactionReader
+             * Constructs an STFTransactionReaderBase
              * \param filename Trace file to open
              * \param expected_protocol Protocol ID the trace is expected to contain
              * \param buffer_size Number of transactions that will be buffered
              * \param force_single_threaded_stream If true, use a single threaded reader
              */
             template<typename StrType>
-            explicit STFTransactionReader(const StrType& filename,
-                                          const protocols::ProtocolId expected_protocol = protocols::ProtocolId::__RESERVED_END,
-                                          const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
-                                          const bool force_single_threaded_stream = false) :
+            explicit STFTransactionReaderBase(const StrType& filename,
+                                              const protocols::ProtocolId expected_protocol = protocols::ProtocolId::__RESERVED_END,
+                                              const size_t buffer_size = ParentReader::DEFAULT_BUFFER_SIZE_,
+                                              const bool force_single_threaded_stream = false) :
                 ParentReader(buffer_size)
             {
-                setExpectedProtocol(expected_protocol);
-                open(filename, force_single_threaded_stream);
+                ParentReader::setExpectedProtocol(expected_protocol);
+                ParentReader::open(filename, force_single_threaded_stream);
             }
 
             /**
@@ -144,6 +145,8 @@ namespace stf {
                 return STFTransactionRecordReader::numTransactionsRead();
             }
     };
+
+    using STFTransactionReader = STFTransactionReaderBase<false>;
 } // end namespace stf
 
 #endif

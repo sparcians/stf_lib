@@ -38,9 +38,10 @@ namespace stf {
      * \class STFBranchReader
      * \brief The STF branch reader provides an iterator to the branches in the instruction stream
      */
-    class STFBranchReader final : public STFUserModeSkippingReader<STFBranch, DummyFilter, STFBranchReader> {
+    template<bool Indexed>
+    class STFBranchReaderBase final : public STFUserModeSkippingReader<Indexed, STFBranch, DummyFilter, STFBranchReaderBase<Indexed>> {
         private:
-            using ParentReader = STFUserModeSkippingReader<STFBranch, DummyFilter, STFBranchReader>;
+            using ParentReader = STFUserModeSkippingReader<Indexed, STFBranch, DummyFilter, STFBranchReaderBase<Indexed>>;
             friend ParentReader;
             /// \cond DOXYGEN_IGNORED
             friend typename ParentReader::BufferedReader;
@@ -96,10 +97,10 @@ namespace stf {
 
             __attribute__((always_inline))
             inline void initItemIndex_(STFBranch& item) const {
-                const auto unskipped_index = rawNumItemsRead_();
+                const auto unskipped_index = ParentReader::rawNumItemsRead_();
                 const auto num_insts = STFReader::numInstsRead();
                 delegates::STFBranchDelegate::setIndex_(item,
-                                                        unskipped_index - numItemsSkipped_(),
+                                                        unskipped_index - ParentReader::numItemsSkipped_(),
                                                         unskipped_index,
                                                         num_insts - num_skipped_insts_,
                                                         num_insts);
@@ -147,7 +148,7 @@ namespace stf {
                 ++num_branches_read_;
                 initItemIndex_(branch);
                 delegates::STFBranchDelegate::setSkipped_(branch, skip_item);
-                countSkipped_(branch.skipped());
+                ParentReader::countSkipped_(branch.skipped());
 
                 if(branch.isTaken()) {
                     last_branch_ = &branch;
@@ -173,7 +174,7 @@ namespace stf {
                 bool not_a_branch = false;
 
                 while(true) {
-                    const auto rec = readRecord_(branch);
+                    const auto rec = ParentReader::readRecord_(branch);
 
                     if(!rec) {
                         continue;
@@ -259,10 +260,10 @@ namespace stf {
              * \param force_single_threaded_stream If true, forces single threaded mode in reader
              */
             template<typename StrType>
-            explicit STFBranchReader(const StrType& filename,
-                                     const bool only_user_mode = false,
-                                     const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
-                                     const bool force_single_threaded_stream = false) :
+            explicit STFBranchReaderBase(const StrType& filename,
+                                         const bool only_user_mode = false,
+                                         const size_t buffer_size = DEFAULT_BUFFER_SIZE_,
+                                         const bool force_single_threaded_stream = false) :
                 ParentReader(only_user_mode, buffer_size)
             {
                 open(filename, force_single_threaded_stream);
@@ -284,10 +285,10 @@ namespace stf {
 
                     /**
                      * Iterator constructor
-                     * \param sbr Parent STFBranchReader
+                     * \param sbr Parent STFBranchReaderBase
                      * \param end If true, this is an end iterator
                      */
-                    explicit iterator(STFBranchReader *sbr, const bool end = false) :
+                    explicit iterator(STFBranchReaderBase *sbr, const bool end = false) :
                         ParentReader::base_iterator(sbr, end)
                     {
                     }
@@ -318,6 +319,8 @@ namespace stf {
                 return ParentReader::numItemsRead_();
             }
     };
+
+    using STFBranchReader = STFBranchReaderBase<false>;
 } //end namespace stf
 
 // __STF_INST_READER_HPP__

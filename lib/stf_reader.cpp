@@ -18,6 +18,7 @@ namespace stf {
         stf_assert(initial_iem_, "IEM record is missing from header");
         stf_assert(initial_pc_, "FORCE_PC record is missing from header");
         STFReaderBase::validateHeader_();
+        stream_->setInitialPC(getInitialPC());
     }
 
     void STFReader::readHeader_() {
