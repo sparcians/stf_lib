@@ -188,6 +188,11 @@ namespace stf {
             {
             }
 
+            explicit SerializableVector(std::initializer_list<T> rhs) :
+                SerializableContainer<std::vector<T>, SerializedSizeT>(std::vector<T>(rhs))
+            {
+            }
+
             using SerializableContainer<std::vector<T>, SerializedSizeT>::operator=;
 
             /**
