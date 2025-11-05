@@ -1138,7 +1138,7 @@ namespace stf {
              * \param event event number
              * \param content_data Event content data
              */
-            explicit EventRecord(const TYPE event, const std::vector<uint64_t>& content_data) :
+            EventRecord(const TYPE event, const std::vector<uint64_t>& content_data) :
                 EventRecord(event, SerializableVector<uint64_t, uint8_t>(content_data))
             {
             }
@@ -1148,7 +1148,7 @@ namespace stf {
              * \param event event number
              * \param content_data Event content data
              */
-            explicit EventRecord(const TYPE event, const SerializableVector<uint64_t, uint8_t>& content_data) :
+            EventRecord(const TYPE event, const SerializableVector<uint64_t, uint8_t>& content_data) :
                 event_(event),
                 content_(content_data)
             {
@@ -1164,14 +1164,34 @@ namespace stf {
              * \param event event number
              * \param content_data Event content data
              */
+            EventRecord(const TYPE event, std::initializer_list<uint32_t> content_data) :
+                EventRecord(event, std::vector<uint64_t>(content_data.begin(), content_data.end()))
+            {
+            }
+
+            /**
+             * Constructs an EventRecord
+             * \param event event number
+             * \param content_data Event content data
+             */
+            EventRecord(const TYPE event, std::initializer_list<uint64_t> content_data) :
+                EventRecord(event, SerializableVector<uint64_t, uint8_t>(content_data))
+            {
+            }
+
+            /**
+             * Constructs an EventRecord
+             * \param event event number
+             * \param content_data Event content data
+             */
             template<typename ... T>
             explicit EventRecord(const TYPE event, const T... content_data) :
                 EventRecord(event, {content_data...})
             {
                 static_assert(sizeof...(content_data) > 0,
                               "Must specify at least one content data element");
-                static_assert(type_utils::are_same_v<uint64_t, T...>,
-                              "Variadic EventRecord constructor is only valid for uint64_t");
+                static_assert(std::disjunction_v<type_utils::are_same<uint64_t, T...>, type_utils::are_same<uint32_t, T...>>,
+                              "Variadic EventRecord constructor is only valid for uint64_t and uint32_t");
             }
 
             /**
