@@ -1140,6 +1140,9 @@ namespace stf {
                 }
             }
 
+            /**
+             * Dumps all of the records for this inst into a vector of strings, following the same logic as writeRecordPairs_
+             */
             inline void dumpRecordPairs_(std::vector<std::string>& records,
                                          const descriptors::internal::Descriptor first_desc,
                                          const RecordMap::SmallVector& first_record_vec,
@@ -1171,18 +1174,30 @@ namespace stf {
                 return orig_records_.emplace(std::move(urec));
             }
 
+            /**
+             * \brief Remove original record from the instruction
+             */
             inline void removeOrigRecord_(const RecordMap::Index& index) {
                 orig_records_.remove(index);
             }
 
+            /**
+             * \brief Remove original record from the instruction
+             */
             inline void removeOrigRecord_(const STFRecord* rec) {
                 orig_records_.remove(rec);
             }
 
+            /**
+             * \brief Extract original record from the instruction and return it
+             */
             inline STFRecord::UniqueHandle extractOrigRecord_(const RecordMap::Index& index) {
                 return orig_records_.extract(index);
             }
 
+            /**
+             * \brief Extract original record from the instruction and return it
+             */
             inline STFRecord::UniqueHandle extractOrigRecord_(const STFRecord* rec) {
                 return orig_records_.extract(rec);
             }

@@ -35,7 +35,7 @@
 namespace stf {
 
     /**
-     * \class STFBranchReader
+     * \class STFBranchReaderBase
      * \brief The STF branch reader provides an iterator to the branches in the instruction stream
      */
     template<bool Indexed>
@@ -320,6 +320,10 @@ namespace stf {
             }
     };
 
+    /**
+     * \typedef STFBranchReader
+     * \brief The STF branch reader provides an iterator to the branches in the instruction stream
+     */
     using STFBranchReader = STFBranchReaderBase<false>;
 } //end namespace stf
 

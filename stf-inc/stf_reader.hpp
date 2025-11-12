@@ -51,9 +51,6 @@ namespace stf {
              */
             void validateHeader_() const final;
 
-        protected:
-            void rewind_() override final { stream_->rewind(); }
-
         public:
             STFReader() = default;
 

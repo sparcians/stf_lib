@@ -48,11 +48,21 @@ namespace stf {
                     const size_t index_;
 
                 public:
+                    /**
+                     * Constructs an Index from a descriptor and a sub-array index
+                     * \param desc Descriptor value
+                     * \param index Sub-array index
+                     */
                     Index(const descriptors::internal::Descriptor desc, const size_t index) :
                         Index(static_cast<key_type>(desc), index)
                     {
                     }
 
+                    /**
+                     * Constructs an Index from a key and a sub-array index
+                     * \param key Key
+                     * \param index Sub-array index
+                     */
                     Index(const key_type key, const size_t index) :
                         key_(key),
                         index_(index)

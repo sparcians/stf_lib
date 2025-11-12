@@ -14,6 +14,10 @@
 #include "stf_valid_value.hpp"
 
 namespace stf {
+    /**
+     * \class STFIndexer
+     * \brief Generates an index of a trace for the given reader type to provide random-access seeking
+     */
     template<typename ReaderType, size_t granularity = 1024>
     class STFIndexer {
         static_assert(std::is_base_of_v<STFReaderBase, ReaderType>,
@@ -23,6 +27,10 @@ namespace stf {
             using IndexMap = std::map<size_t, size_t>;
 
         public:
+            /**
+             * \typedef const_iterator
+             * \brief Iterator type
+             */
             using const_iterator = IndexMap::const_iterator;
 
         private:
@@ -88,6 +96,10 @@ namespace stf {
         public:
             STFIndexer() = default;
 
+            /**
+             * Constructs an STFIndexer
+             * \param trace Trace to open and index
+             */
             explicit STFIndexer(const std::string_view trace) {
                 open(trace);
             }

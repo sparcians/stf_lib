@@ -188,6 +188,9 @@ namespace stf {
             {
             }
 
+            /**
+             * Constructs a SerializableVector from an initializer list
+             */
             explicit SerializableVector(std::initializer_list<T> rhs) :
                 SerializableContainer<std::vector<T>, SerializedSizeT>(std::vector<T>(rhs))
             {

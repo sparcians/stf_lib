@@ -8,7 +8,7 @@
 
 namespace stf {
     /**
-     * \class STFTransactionReader
+     * \class STFTransactionReaderBase
      * Buffered transaction record reader. Returns STFTransaction objects.
      */
     template<bool Indexed>
@@ -146,6 +146,10 @@ namespace stf {
             }
     };
 
+    /**
+     * \typedef STFTransactionReader
+     * Buffered transaction record reader. Returns STFTransaction objects.
+     */
     using STFTransactionReader = STFTransactionReaderBase<false>;
 } // end namespace stf
 
