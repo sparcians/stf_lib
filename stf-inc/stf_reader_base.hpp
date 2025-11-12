@@ -61,7 +61,10 @@ namespace stf {
              */
             void initSimpleStreamAndOpenProcess_(std::string_view cmd, std::string_view filename);
 
-            virtual void rewind_() { stream_->rewind(); }
+            /**
+             * Rewinds the underlying stream to the beginning
+             */
+            void rewind_() { stream_->rewind(); }
 
         public:
             STFReaderBase() = default;

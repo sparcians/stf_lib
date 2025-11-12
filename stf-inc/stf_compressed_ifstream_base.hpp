@@ -370,6 +370,10 @@ namespace stf {
                 decompressor_.reset();
             }
 
+            /**
+             * Seeks to the given chunk index
+             * \param chunk_idx Chunk index to seek
+             */
             inline virtual void seekToChunk_(const size_t chunk_idx) {
                 next_chunk_index_it_ = std::next(chunk_indices_.begin(), static_cast<ssize_t>(chunk_idx));
                 num_marker_records_ = chunk_idx * marker_record_chunk_size_;
@@ -393,6 +397,9 @@ namespace stf {
                 }
             }
 
+            /**
+             * Cancels any in-progress decompression and resets internal state to read another chunk
+             */
             virtual void cancelCurrentChunks_() = 0;
 
         public:
@@ -474,16 +481,27 @@ namespace stf {
                 STFIFstream::seek(num_markers);
             }
 
+            /**
+             * Rewinds the trace to the beginning
+             */
             inline void rewind() override final {
                 // Throw away what's currently in the buffer since we're moving to a new chunk
                 cancelCurrentChunks_();
                 seekToChunk_(0);
             }
 
+            /**
+             * Gets the current offset within the trace
+             */
             size_t tell() const override final {
                 return static_cast<size_t>(last_read_pos_);
             }
 
+            /**
+             * Seeks forward from an offset by the given number of marker records
+             * \param num_markers_at_offset Number of marker records present in the trace up to offset
+             * \param num_markers_to_seek Number of marker records to skip
+             */
             void seekFromOffset(const size_t, const size_t num_markers_at_offset, const size_t num_markers_to_seek) override final {
                 // Throw away what's currently in the buffer since we're moving to a new chunk
                 cancelCurrentChunks_();
@@ -502,10 +520,16 @@ namespace stf {
                 return !feof_() && STFFstream::operator bool();
             }
 
+            /**
+             * Sets the position of the first marker record in the trace to the current offset
+             */
             void setTraceStart() override final {
                 trace_start_ = out_buf_.getReadPos();
             }
 
+            /**
+             * Sets the initial PC in the trace
+             */
             void setInitialPC(const uint64_t initial_pc) override final {
                 STFIFstream::setInitialPC(initial_pc);
                 chunk_indices_.front().setStartPC(initial_pc_);

@@ -76,8 +76,12 @@ namespace stf {
 
             struct NoIndexer {};
 
+            /**
+             * \typedef IndexerType
+             * \brief If Indexed is true, this is an STFIndexer<BaseReaderType>. Otherwise it is an empty struct.
+             */
             using IndexerType = std::conditional_t<Indexed, STFIndexer<BaseReaderType>, NoIndexer>;
-            IndexerType indexer_;
+            IndexerType indexer_; /**< Indexer object. Only usable if Indexed is true */
 
             /**
              * Default skipped_ method

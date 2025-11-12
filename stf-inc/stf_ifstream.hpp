@@ -25,8 +25,8 @@ namespace stf {
      */
     class STFIFstream : public STFFstream {
         protected:
-            size_t trace_start_ = 0;
-            uint64_t initial_pc_ = 0;
+            size_t trace_start_ = 0; /**< Trace file offset pointing to the first record */
+            uint64_t initial_pc_ = 0; /**< Initial PC in the trace */
 
             /**
              * Virtual method that reads arbitrary buffers from a file

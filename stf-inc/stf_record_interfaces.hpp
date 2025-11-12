@@ -322,6 +322,9 @@ namespace stf {
                 return sizeof(OpcodeT);
             }
 
+            /**
+             * Returns whether this is a marker record
+             */
             bool isMarkerRecord() const override final { return true; }
     };
 
