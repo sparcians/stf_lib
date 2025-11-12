@@ -1,4 +1,10 @@
+function(setup_stf_compiler)
+  add_compile_definitions(BOOST_PP_LIMIT_TUPLE=128)
+endfunction()
+
 function(setup_stf_linker set_compiler_options)
+  setup_stf_compiler()
+
   if (STF_LINK_SETUP_DONE AND STF_COMPILER_SETUP_DONE)
     message("-- ${PROJECT_NAME} link-time optimization and compiler flags handled by parent project")
   else()

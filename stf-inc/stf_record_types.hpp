@@ -1076,11 +1076,56 @@ namespace stf {
                 STF_ENUM_VAL(MACHINE_ECALL,               0xb), /**< Machine-mode syscall */
                 STF_ENUM_VAL(INST_PAGE_FAULT,             0xc), /**< Instruction page fault */
                 STF_ENUM_VAL(LOAD_PAGE_FAULT,             0xd), /**< Load page fault */
+                STF_ENUM_VAL(RESERVED_14,                 0xe), /**< Reserved */
                 STF_ENUM_VAL(STORE_PAGE_FAULT,            0xf), /**< Store page fault */
+                STF_ENUM_VAL(DOUBLE_TRAP_FAULT,           0x10), /**< Double trap fault */
+                STF_ENUM_VAL(RESERVED_17,                 0x11), /**< Reserved */
+                STF_ENUM_VAL(SOFTWARE_CHECK_FAULT,        0x12), /**< Software check fault */
+                STF_ENUM_VAL(HARDWARE_ERROR_FAULT,        0x13), /**< Hardware error fault */
                 STF_ENUM_VAL(GUEST_INST_PAGE_FAULT,       0x14), /**< Instruction guest-page fault */
                 STF_ENUM_VAL(GUEST_LOAD_PAGE_FAULT,       0x15), /**< Load guest-page fault */
                 STF_ENUM_VAL(VIRTUAL_INST,                0x16), /**< Virtual instruction */
                 STF_ENUM_VAL(GUEST_STORE_PAGE_FAULT,      0x17), /**< Store/AMO guest-page fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_24,             0x18), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_25,             0x19), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_26,             0x1a), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_27,             0x1b), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_28,             0x1c), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_29,             0x1d), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_30,             0x1e), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_31,             0x1f), /**< Custom fault */
+                STF_ENUM_VAL(RESERVED_32,                 0x20), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_33,                 0x21), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_34,                 0x22), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_35,                 0x23), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_36,                 0x24), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_37,                 0x25), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_38,                 0x26), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_39,                 0x27), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_40,                 0x28), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_41,                 0x29), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_42,                 0x2a), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_43,                 0x2b), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_44,                 0x2c), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_45,                 0x2d), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_46,                 0x2e), /**< Reserved */
+                STF_ENUM_VAL(RESERVED_47,                 0x2f), /**< Reserved */
+                STF_ENUM_VAL(CUSTOM_FAULT_48,             0x30), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_49,             0x31), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_50,             0x32), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_51,             0x33), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_52,             0x34), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_53,             0x35), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_54,             0x36), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_55,             0x37), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_56,             0x38), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_57,             0x39), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_58,             0x3a), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_59,             0x3b), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_60,             0x3c), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_61,             0x3d), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_62,             0x3e), /**< Custom fault */
+                STF_ENUM_VAL(CUSTOM_FAULT_63,             0x3f), /**< Custom fault */
 
                 // Interrupts/Asynchronous Exceptions
                 STF_ENUM_VAL(INT_USER_SOFTWARE,           0x0 | INTERRUPT_MASK), /**< User-mode software interrupt */
@@ -1096,7 +1141,10 @@ namespace stf {
                 STF_ENUM_VAL(INT_HYPERVISOR_EXT,          0xa | INTERRUPT_MASK), /**< Hypervisor-mode external interrupt */
                 STF_ENUM_VAL(INT_MACHINE_EXT,             0xb | INTERRUPT_MASK), /**< Machine-mode external interrupt */
                 STF_ENUM_VAL(INT_COPROCESSOR,             0xc | INTERRUPT_MASK), /**< Coprocessor interrupt */
-                STF_ENUM_VAL(INT_HOST,                    0xd | INTERRUPT_MASK), /**< Host interrupt */
+                STF_ENUM_VAL(INT_COUNTER_OVERFLOW,        0xd | INTERRUPT_MASK), /**< Counter overflow interrupt */
+                STF_ENUM_VAL(INT_RESERVED_14,             0xe | INTERRUPT_MASK), /**< Reserved */
+                STF_ENUM_VAL(INT_RESERVED_15,             0xf | INTERRUPT_MASK), /**< Reserved */
+                STF_ENUM_VAL(INT_PLATFORM_0,             0x10 | INTERRUPT_MASK), /**< Platform interrupt 0 */
 
                 // Special Events
                 STF_ENUM_VAL(MODE_CHANGE,                 0x0 | SPECIAL_MASK),   /**< Instruction causes an execution mode change */
@@ -1120,6 +1168,21 @@ namespace stf {
             static inline TYPE convertFrom32BitEvent_(const uint32_t event32) {
                 return static_cast<TYPE>((event32 & ~EVENT32_TOP_BITS_) |
                                          (static_cast<uint64_t>(event32 & EVENT32_TOP_BITS_) << 32));
+            }
+
+            template<bool IncludeInterrupt0>
+            inline bool isPlatformInterrupt_() const {
+                // If IncludeInterrupt0 is true, we want to compare >= TYPE::INT_PLATFORM_0
+                // Otherwise, we want to compare > TYPE::INT_PLATFORM_0
+                using Compare = std::conditional_t<IncludeInterrupt0, std::greater_equal<uint64_t>, std::greater<uint64_t>>;
+                static constexpr Compare comp;
+
+                const auto event_num = static_cast<uint64_t>(event_);
+                return comp(event_num, static_cast<uint64_t>(TYPE::INT_PLATFORM_0)) && event_num < static_cast<uint64_t>(TYPE::MODE_CHANGE);
+            }
+
+            inline bool isUndefinedPlatformInterrupt_() const {
+                return isPlatformInterrupt_<false>();
             }
 
         public:
@@ -1241,6 +1304,21 @@ namespace stf {
             inline bool isInterrupt() const { return static_cast<uint64_t>(event_) & INTERRUPT_MASK; }
 
             /**
+             * Gets whether the event is a platform-specific interrupt
+             */
+            inline bool isPlatformInterrupt() const {
+                return isPlatformInterrupt_<true>();
+            }
+
+            /**
+             * Gets the platform-specific interrupt number
+             */
+            inline uint64_t getPlatformInterruptNumber() const {
+                stf_assert(isPlatformInterrupt());
+                return static_cast<uint64_t>(event_) - static_cast<uint64_t>(TYPE::INT_PLATFORM_0);
+            }
+
+            /**
              * Gets whether the event is a fault
              */
             inline bool isFault() const { return !isModeChange() && !isInterrupt() && !isSyscall(); }
@@ -1268,7 +1346,14 @@ namespace stf {
 
     // Have to define this after declaring the EventRecord::TYPE ostream operator
     inline void EventRecord::format_impl(std::ostream& os) const {
-        os << event_ << ' ' << content_;
+        if(STF_EXPECT_FALSE(isUndefinedPlatformInterrupt_())) {
+            os << "INT_PLATFORM_" << getPlatformInterruptNumber();
+        }
+        else {
+            os << event_;
+        }
+
+        os << ' ' << content_;
     }
 
     /**
@@ -3129,6 +3214,9 @@ namespace stf {
                 return metadata_;
             }
 
+            /**
+             * Returns whether this is a marker record
+             */
             bool isMarkerRecord() const override final { return true; }
     };
 
