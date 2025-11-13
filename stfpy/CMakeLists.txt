@@ -26,6 +26,7 @@ endif()
 
 get_directory_property(include_dirs INCLUDE_DIRECTORIES)
 get_directory_property(compile_opts COMPILE_OPTIONS)
+get_directory_property(compile_defs COMPILE_DEFINITIONS)
 get_directory_property(link_opts LINK_OPTIONS)
 
 string(JOIN " " stfpy_link_opts $ENV{LDFLAGS} ${link_opts})
@@ -33,6 +34,8 @@ string(JOIN " " stfpy_link_opts $ENV{LDFLAGS} ${link_opts})
 set(extra_lib_dirs $<TARGET_FILE_DIR:stf>)
 string(REPLACE ";" ":" include_dirs "${include_dirs}")
 string(REPLACE ";" ":" extra_lib_dirs "${extra_lib_dirs}")
+string(REPLACE ";" ";-D" compile_defs ";${compile_defs}")
+set(compile_opts ${compile_opts} ${compile_defs})
 
 # Get thread library name without -l
 set(thread_lib ${CMAKE_THREAD_LIBS_INIT})
