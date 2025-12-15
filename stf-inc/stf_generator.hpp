@@ -29,6 +29,7 @@ namespace stf {
         STF_ENUM_STR(STF_GEN_ATHENA, "Athena"),                                     /**< Athena */
         STF_ENUM_STR(STF_GEN_STF_MORPH, "stf_morph"),                               /**< stf_morph */
         STF_ENUM_STR(STF_GEN_DROMAJO, "Dromajo"),                                   /**< Dromajo */
+        STF_ENUM_STR(STF_GEN_PEGASUS, "Pegasus"),                                   /**< Pegasus */
         STF_ENUM_STR(STF_GEN_STF_TRANSACTION_EXTRACT, "stf_transaction_extract"),   /**< stf_transaction_extract */
         // 0x40 is the beginning of example tools
         STF_ENUM_VAL(STF_TRANSACTION_EXAMPLE, 0x40, "stf_transaction_example"),
