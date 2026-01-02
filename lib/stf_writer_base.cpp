@@ -11,6 +11,8 @@ namespace stf {
         open(filename, compression_level, chunk_size);
     }
 
+    STFWriterBase::~STFWriterBase() = default;
+
     void STFWriterBase::initSimpleStreamAndOpen_(const std::string_view filename) {
         stream_ = std::make_unique<STFOFstream>();
         stream_->open(filename);

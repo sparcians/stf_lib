@@ -53,6 +53,18 @@ namespace stf {
         public:
             STFWriterBase() = default;
 
+            ~STFWriterBase();
+
+            /**
+             * Move constructor
+             */
+            STFWriterBase(STFWriterBase&& rhs) = default;
+
+            /**
+             * Move-assignment operator
+             */
+            STFWriterBase& operator=(STFWriterBase&& rhs) = default;
+
             /**
              * Constructor
              *
