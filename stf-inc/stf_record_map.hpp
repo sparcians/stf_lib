@@ -638,14 +638,14 @@ namespace stf {
                     /**
                      * Equality operator
                      */
-                    constexpr bool operator==(const sorted_const_iterator& rhs) {
+                    constexpr bool operator==(const sorted_const_iterator& rhs) const {
                         return key_it_ == rhs.key_it_;
                     }
 
                     /**
                      * Inequality operator
                      */
-                    constexpr bool operator!=(const sorted_const_iterator& rhs) {
+                    constexpr bool operator!=(const sorted_const_iterator& rhs) const {
                         return key_it_ != rhs.key_it_;
                     }
 
