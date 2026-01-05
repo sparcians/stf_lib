@@ -428,42 +428,42 @@ namespace stf {
                     /**
                      * Equality operator
                      */
-                    constexpr bool operator==(const sorted_internal_iterator& rhs) {
+                    constexpr bool operator==(const sorted_internal_iterator& rhs) const {
                         return it_ == rhs.it_;
                     }
 
                     /**
                      * Inequality operator
                      */
-                    constexpr bool operator!=(const sorted_internal_iterator& rhs) {
+                    constexpr bool operator!=(const sorted_internal_iterator& rhs) const {
                         return it_ != rhs.it_;
                     }
 
                     /**
                      * Less-than operator
                      */
-                    constexpr bool operator<(const sorted_internal_iterator& rhs) {
+                    constexpr bool operator<(const sorted_internal_iterator& rhs) const {
                         return it_ < rhs.it_;
                     }
 
                     /**
                      * Less-than-or-equal operator
                      */
-                    constexpr bool operator<=(const sorted_internal_iterator& rhs) {
+                    constexpr bool operator<=(const sorted_internal_iterator& rhs) const {
                         return it_ <= rhs.it_;
                     }
 
                     /**
                      * Greater-than operator
                      */
-                    constexpr bool operator>(const sorted_internal_iterator& rhs) {
+                    constexpr bool operator>(const sorted_internal_iterator& rhs) const {
                         return it_ > rhs.it_;
                     }
 
                     /**
                      * Greater-than-or-equal operator
                      */
-                    constexpr bool operator>=(const sorted_internal_iterator& rhs) {
+                    constexpr bool operator>=(const sorted_internal_iterator& rhs) const {
                         return it_ >= rhs.it_;
                     }
             };
