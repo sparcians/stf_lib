@@ -1086,46 +1086,9 @@ namespace stf {
                 STF_ENUM_VAL(GUEST_LOAD_PAGE_FAULT,       0x15), /**< Load guest-page fault */
                 STF_ENUM_VAL(VIRTUAL_INST,                0x16), /**< Virtual instruction */
                 STF_ENUM_VAL(GUEST_STORE_PAGE_FAULT,      0x17), /**< Store/AMO guest-page fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_24,             0x18), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_25,             0x19), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_26,             0x1a), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_27,             0x1b), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_28,             0x1c), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_29,             0x1d), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_30,             0x1e), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_31,             0x1f), /**< Custom fault */
-                STF_ENUM_VAL(RESERVED_32,                 0x20), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_33,                 0x21), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_34,                 0x22), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_35,                 0x23), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_36,                 0x24), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_37,                 0x25), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_38,                 0x26), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_39,                 0x27), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_40,                 0x28), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_41,                 0x29), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_42,                 0x2a), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_43,                 0x2b), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_44,                 0x2c), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_45,                 0x2d), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_46,                 0x2e), /**< Reserved */
-                STF_ENUM_VAL(RESERVED_47,                 0x2f), /**< Reserved */
-                STF_ENUM_VAL(CUSTOM_FAULT_48,             0x30), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_49,             0x31), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_50,             0x32), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_51,             0x33), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_52,             0x34), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_53,             0x35), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_54,             0x36), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_55,             0x37), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_56,             0x38), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_57,             0x39), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_58,             0x3a), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_59,             0x3b), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_60,             0x3c), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_61,             0x3d), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_62,             0x3e), /**< Custom fault */
-                STF_ENUM_VAL(CUSTOM_FAULT_63,             0x3f), /**< Custom fault */
+                STF_ENUM_AUTO_INCREMENT(CUSTOM_FAULT_,    24, 31), /**< Custom fault codes 0x18 - 0x1f */
+                STF_ENUM_AUTO_INCREMENT(RESERVED_,        32, 47), /**< Reserved fault codes 0x20 - 0x2f */
+                STF_ENUM_AUTO_INCREMENT(CUSTOM_FAULT_,    48, 63), /**< Custom fault codes 0x30 - 0x3f */
 
                 // Interrupts/Asynchronous Exceptions
                 STF_ENUM_VAL(INT_USER_SOFTWARE,           0x0 | INTERRUPT_MASK), /**< User-mode software interrupt */
