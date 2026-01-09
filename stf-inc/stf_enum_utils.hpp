@@ -6,10 +6,18 @@
 #include <cstddef>
 #include <type_traits>
 
+#include <boost/preprocessor/arithmetic/add.hpp>
+#include <boost/preprocessor/arithmetic/inc.hpp>
+#include <boost/preprocessor/arithmetic/sub.hpp>
 #include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/comparison/greater_equal.hpp>
+#include <boost/preprocessor/comparison/equal.hpp>
 #include <boost/preprocessor/comparison/less.hpp>
+#include <boost/preprocessor/control/expr_iif.hpp>
+#include <boost/preprocessor/debug/assert.hpp>
 #include <boost/preprocessor/facilities/identity.hpp>
 #include <boost/preprocessor/repetition/enum.hpp>
+#include <boost/preprocessor/repetition/repeat.hpp>
 #include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/seq/filter.hpp>
 #include <boost/preprocessor/seq/fold_left.hpp>
@@ -30,14 +38,20 @@
 #include "stf_macro_utils.hpp"
 #include "type_utils.hpp"
 
+// Index of the STF_ENUM type
+#define _STF_ENUM_TYPE_IDX 0
+
+// Type value for a "normal" STF_ENUM
+#define _STF_ENUM_TYPE_NORMAL 0
+
 // Index of the name in an STF_ENUM entry tuple
-#define _STF_ENUM_NAME_IDX 0
+#define _STF_ENUM_NAME_IDX 1
 // Index of the string representation in an STF_ENUM entry tuple
-#define _STF_ENUM_STR_IDX 1
+#define _STF_ENUM_STR_IDX 2
 // Index of the enum value in an STF_ENUM entry tuple
-#define _STF_ENUM_VAL_IDX 2
+#define _STF_ENUM_VAL_IDX 3
 // Index of the print enable bit in an STF_ENUM entry tuple
-#define _STF_ENUM_ENABLE_PRINT_IDX 3
+#define _STF_ENUM_ENABLE_PRINT_IDX 4
 
 /**
  * \def STF_ENUM_NO_PRINT
@@ -45,6 +59,18 @@
  * Useful for enum values that alias other enum values
  */
 #define STF_ENUM_NO_PRINT 0
+
+// Type value for an auto-incrementing STF_ENUM (STF_ENUM_AUTO_INCREMENT)
+#define _STF_ENUM_TYPE_AUTO_INC 1
+
+// Index of the base name in an STF_ENUM_AUTO_INCREMENT entry tuple
+#define _STF_ENUM_AUTO_INC_BASE_NAME_IDX 1
+// Index of the start index in an STF_ENUM_AUTO_INCREMENT entry tuple
+#define _STF_ENUM_AUTO_INC_START_IDX 2
+// Index of the stop index in an STF_ENUM_AUTO_INCREMENT entry tuple
+#define _STF_ENUM_AUTO_INC_STOP_IDX 3
+// Index of the start value in an STF_ENUM_AUTO_INCREMENT entry tuple
+#define _STF_ENUM_AUTO_INC_START_VAL_IDX 4
 
 #define _GET_STF_ENUM_ENABLE_PRINT(elem_tuple)  \
     BOOST_PP_IIF(                               \
@@ -56,6 +82,9 @@
         BOOST_PP_IDENTITY_N(1, 2)               \
     )(_STF_ENUM_ENABLE_PRINT_IDX, elem_tuple)
 
+// Gets the type from an STF_ENUM entry tuple
+#define _GET_STF_ENUM_TYPE(elem_tuple) BOOST_PP_TUPLE_ELEM(_STF_ENUM_TYPE_IDX, elem_tuple)
+
 // Gets the name from an STF_ENUM entry tuple
 #define _GET_STF_ENUM_NAME(elem_tuple) BOOST_PP_TUPLE_ELEM(_STF_ENUM_NAME_IDX, elem_tuple)
 
@@ -63,7 +92,7 @@
 #define _GET_STF_ENUM_STR(elem_tuple) BOOST_PP_TUPLE_ELEM(_STF_ENUM_STR_IDX, elem_tuple)
 
 // Defines an STF_ENUM entry tuple with name, string representation, value, and print-enable bit
-#define _STF_ENUM_VAL_3(name, val, str, enable_print) (name, str, val, enable_print)
+#define _STF_ENUM_VAL_3(name, val, str, enable_print) (_STF_ENUM_TYPE_NORMAL, name, str, val, enable_print)
 
 // Defines an STF_ENUM entry tuple with name, string representation, and value.
 // Print-enable is automatically set to 1
@@ -72,6 +101,21 @@
 // Defines an STF_ENUM entry tuple with name and value
 // String representation is auto-generated from the name and print-enable is automatically set to 1.
 #define _STF_ENUM_VAL_1(name, val) _STF_ENUM_VAL_2(name, val, BOOST_PP_STRINGIZE(name))
+
+// Gets whether an STF_ENUM entry is an auto increment type
+#define _IS_STF_ENUM_AUTO_INC_TYPE(elem_tuple) BOOST_PP_EQUAL(_GET_STF_ENUM_TYPE(elem_tuple), _STF_ENUM_TYPE_AUTO_INC)
+
+// Gets the base name from an STF_ENUM_AUTO_INCREMENT tuple
+#define _GET_STF_ENUM_AUTO_INC_BASE_NAME(elem_tuple) BOOST_PP_TUPLE_ELEM(_STF_ENUM_AUTO_INC_BASE_NAME_IDX, elem_tuple)
+
+// Gets the start index from an STF_ENUM_AUTO_INCREMENT tuple
+#define _GET_STF_ENUM_AUTO_INC_START(elem_tuple) BOOST_PP_TUPLE_ELEM(_STF_ENUM_AUTO_INC_START_IDX, elem_tuple)
+
+// Gets the stop index from an STF_ENUM_AUTO_INCREMENT tuple
+#define _GET_STF_ENUM_AUTO_INC_STOP(elem_tuple) BOOST_PP_TUPLE_ELEM(_STF_ENUM_AUTO_INC_STOP_IDX, elem_tuple)
+
+// Gets the start value from an STF_ENUM_AUTO_INCREMENT tuple
+#define _GET_STF_ENUM_AUTO_INC_START_VAL(elem_tuple) BOOST_PP_TUPLE_ELEM(_STF_ENUM_AUTO_INC_START_VAL_IDX, elem_tuple)
 
 /**
  * \def STF_ENUM_VAL
@@ -110,13 +154,95 @@
 #ifdef DOXYGEN
 #define STF_ENUM_STR(name, str) name
 #else
-#define STF_ENUM_STR(name, str) (name, str)
+#define STF_ENUM_STR(name, str) (_STF_ENUM_TYPE_NORMAL, name, str)
 #endif
 
 // Defines an STF_ENUM entry tuple from a name only. Allows users to use bare names in an STF_ENUM just as
 // they would with a normal enum class. String representation and value are auto-generated and print-enable
 // is set to 1.
 #define _DEFAULT_STF_ENUM_VAL(name) STF_ENUM_STR(name, BOOST_PP_STRINGIZE(name))
+
+// Helper macro for cases where the val argument needs to be ignored
+#define _STF_ENUM_NIL_VAL(name, val) _DEFAULT_STF_ENUM_VAL(name)
+
+// Gets the element from the given tuple index and adds val to it
+#define _STF_TUPLE_ADD_ELEMENT(tuple, i, val) BOOST_PP_ADD(BOOST_PP_TUPLE_ELEM(i, tuple), val)
+
+// Gets whether the STF_ENUM_AUTO_INCREMENT entry has a value defined
+#define _STF_ENUM_AUTO_INCREMENT_HAS_VALUE(elem)    \
+    BOOST_PP_LESS(                                  \
+        _STF_ENUM_AUTO_INC_START_VAL_IDX,           \
+        BOOST_PP_TUPLE_SIZE(elem)                   \
+    )
+
+// Generates the name at index n for an STF_ENUM_AUTO_INCREMENT entry
+#define _STF_ENUM_AUTO_INCREMENT_GEN_NAME(n, elem)                      \
+    BOOST_PP_CAT(                                                       \
+        _GET_STF_ENUM_AUTO_INC_BASE_NAME(elem),                         \
+        _STF_TUPLE_ADD_ELEMENT(elem, _STF_ENUM_AUTO_INC_START_IDX, n)   \
+    )
+
+// Generates the value at index n for an STF_ENUM_AUTO_INCREMENT entry
+// If the entry doesn't have a value, returns BOOST_PP_NIL
+#define _STF_ENUM_AUTO_INCREMENT_GEN_VALUE(n, elem) \
+    BOOST_PP_IIF(                                   \
+        _STF_ENUM_AUTO_INCREMENT_HAS_VALUE(elem),   \
+        _STF_TUPLE_ADD_ELEMENT,                     \
+        BOOST_PP_IDENTITY_N(BOOST_PP_NIL, 3)        \
+    )(elem, _STF_ENUM_AUTO_INC_START_VAL_IDX, n)
+
+// Generates the STF_ENUM element for an STF_ENUM_AUTO_INCREMENT at index n
+#define _STF_ENUM_AUTO_INCREMENT_GEN_ELEM(r, n, data)   \
+    (                                                   \
+        BOOST_PP_IIF(                                   \
+            _STF_ENUM_AUTO_INCREMENT_HAS_VALUE(data),   \
+            STF_ENUM_VAL,                               \
+            _STF_ENUM_NIL_VAL                           \
+        )(                                              \
+            _STF_ENUM_AUTO_INCREMENT_GEN_NAME(n, data), \
+            _STF_ENUM_AUTO_INCREMENT_GEN_VALUE(n, data) \
+        )                                               \
+    )
+
+// Expands an STF_ENUM_AUTO_INCREMENT into normal STF_ENUM elements
+#define _EXPAND_STF_ENUM_AUTO_INCREMENT(elem_tuple)         \
+    BOOST_PP_REPEAT(                                        \
+        BOOST_PP_INC(                                       \
+            BOOST_PP_SUB(                                   \
+                _GET_STF_ENUM_AUTO_INC_STOP(elem_tuple),    \
+                _GET_STF_ENUM_AUTO_INC_START(elem_tuple)    \
+            )                                               \
+        ),                                                  \
+        _STF_ENUM_AUTO_INCREMENT_GEN_ELEM,                  \
+        elem_tuple                                          \
+    )
+
+// Generates a preprocessor error if start_idx > stop_idx
+#define _STF_ENUM_AUTO_INCREMENT_ASSERT(start_idx, stop_idx, ...)   \
+    BOOST_PP_ASSERT_MSG(                                            \
+        BOOST_PP_GREATER_EQUAL(stop_idx, start_idx),                \
+        "STF_ENUM_AUTO_INCREMENT stop index must be >= start index" \
+    )
+
+/**
+ * \def STF_ENUM_AUTO_INCREMENT
+ * Defines an STF_ENUM_AUTO_INCREMENT entry tuple
+ * Allowed usage:
+ *   STF_ENUM_AUTO_INCREMENT(base_name, start_idx, stop_idx)
+ *     Defines an STF_ENUM_AUTO_INCREMENT entry with the given base name, start index, and stop index.
+ *     Will auto-generate ordinary enum entries named base_name##start_idx, ..., base_name##stop_idx
+ *   STF_ENUM_AUTO_INCREMENT(base_name, start_idx, stop_idx, start_value)
+ *     Defines an STF_ENUM_AUTO_INCREMENT entry with the given base name, start index, and stop index, and start value.
+ *     Will auto-generate STF_ENUM_VAL entries
+ *     STF_ENUM_VAL(base_name##start_idx, start_value), ..., STF_ENUM_VAL(base_name##stop_idx, start_value + (stop_index - start_index))
+ */
+#ifdef DOXYGEN
+#define STF_ENUM_AUTO_INCREMENT(base_name, start_idx, ...) base_name##start_idx
+#else
+#define STF_ENUM_AUTO_INCREMENT(base_name, start_idx, ...) \
+    _STF_ENUM_AUTO_INCREMENT_ASSERT(start_idx, __VA_ARGS__) \
+    (_STF_ENUM_TYPE_AUTO_INC, base_name, start_idx, __VA_ARGS__)
+#endif
 
 // STF_ENUM config flags that can be supplied with STF_ENUM_CONFIG when defining an STF_ENUM
 /**
@@ -197,6 +323,14 @@
         = BOOST_PP_TUPLE_ELEM,                          \
         BOOST_PP_TUPLE_EAT()                            \
     )(_STF_ENUM_VAL_IDX, elem_tuple)
+
+// Expands STF_ENUM_AUTO_INCREMENT entries into their auto-generated enum entries.
+// Normal STF_ENUM entries are passed through without changes
+#define _EXPAND_STF_ENUM_SEQ_ENTRY(r, data, elem_tuple) \
+    BOOST_PP_EXPR_IIF(                                  \
+        _IS_STF_ENUM_AUTO_INC_TYPE(elem_tuple),         \
+        _EXPAND_STF_ENUM_AUTO_INCREMENT                 \
+    )(elem_tuple)
 
 // Expands to a case statement that prints a single STF_ENUM element to an std::ostream
 // Used in the BOOST_PP_SEQ_FOR_EACH invocation in _AUTO_PRINT
@@ -335,19 +469,23 @@
 // The __VA_ARGS__ are the enum elements, which can be either bare names or tuples generated with
 // STF_ENUM_VAL/STF_ENUM_STR/STF_ENUM_ALIAS directives. These args are all processed and normalized into
 // element tuples with BOOST_PP_SEQ_TRANSFORM before being passed to _ADD_RESERVED_ENTRIES.
-#define __STF_ENUM_CONFIG(config, name, type, ...)      \
-    _DEFINE_STF_ENUM(                                   \
-        config,                                         \
-        name,                                           \
-        type,                                           \
-        _ADD_RESERVED_ENTRIES(                          \
-            config,                                     \
-            BOOST_PP_SEQ_TRANSFORM(                     \
-                _PROCESS_STF_ENUM_ELEM,                 \
-                _,                                      \
-                BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
-            )                                           \
-        )                                               \
+#define __STF_ENUM_CONFIG(config, name, type, ...)          \
+    _DEFINE_STF_ENUM(                                       \
+        config,                                             \
+        name,                                               \
+        type,                                               \
+        _ADD_RESERVED_ENTRIES(                              \
+            config,                                         \
+            BOOST_PP_SEQ_FOR_EACH(                          \
+                _EXPAND_STF_ENUM_SEQ_ENTRY,                 \
+                _,                                          \
+                BOOST_PP_SEQ_TRANSFORM(                     \
+                    _PROCESS_STF_ENUM_ELEM,                 \
+                    _,                                      \
+                    BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
+                )                                           \
+            )                                               \
+        )                                                   \
     )
 
 // Defines an STF_ENUM with the given config, name, and underlying type.
