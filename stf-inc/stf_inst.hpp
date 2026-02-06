@@ -882,7 +882,7 @@ namespace stf {
                                 const auto pos = it_ - cur_vec_->begin();
                                 const auto cur_vec_size = cur_vec_->size();
                                 if(n > 0) {
-                                    if(pos + n > cur_vec_size) {
+                                    if(static_cast<decltype(cur_vec_size)>(pos + n) > cur_vec_size) {
                                         stf_assert(cur_vec_ == parent_->vec1_,
                                                    "Tried to seek past the end of the vector");
                                         skipToVec2_();

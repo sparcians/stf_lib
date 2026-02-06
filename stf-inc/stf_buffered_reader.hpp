@@ -88,7 +88,7 @@ namespace stf {
              * \param item Item to check for skipping
              */
             __attribute__((always_inline))
-            static inline bool skipped_(const ItemType& item) {
+            static inline bool skipped_(const ItemType&) {
                 return false;
             }
 
@@ -115,7 +115,7 @@ namespace stf {
              * \param item The item that was skipped
              */
             __attribute__((always_inline))
-            inline void skippedCleanup_(const ItemType& item) {
+            inline void skippedCleanup_(const ItemType&) {
             }
 
             /**
@@ -132,7 +132,7 @@ namespace stf {
              * \param item The first non-skipped item after the skipped portion
              */
             __attribute__((always_inline))
-            inline void skippingDone_(ItemType& item) {
+            inline void skippingDone_(ItemType&) {
             }
 
             /**
@@ -240,7 +240,7 @@ namespace stf {
              * \param loc Item buffer location
              */
             __attribute__((always_inline))
-            inline bool readerSkipCallback_(uint64_t& index, size_t& loc) const {
+            inline bool readerSkipCallback_(uint64_t&, size_t&) const {
                 return false;
             }
 

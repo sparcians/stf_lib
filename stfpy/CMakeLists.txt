@@ -4,34 +4,50 @@ find_package(Python3 COMPONENTS Interpreter Development)
 find_package(PkgConfig)
 pkg_check_modules(zstd REQUIRED libzstd)
 
-include_directories(${STF_BASE}/stf-inc)
+#include_directories(${STF_BASE}/stf-inc)
 
-add_compile_options(-Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-implicit-int-conversion -Wno-missing-field-initializers)
+set(stfpy_compile_opts -Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-implicit-int-conversion -Wno-missing-field-initializers)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wno-ignored-optimization-argument -Wno-unknown-warning-option -Wno-gnu-anonymous-struct -Wno-nested-anon-types)
-    add_link_options(-Wno-unused-command-line-argument -Wno-ignored-optimization-argument)
+    set(stfpy_compile_opts ${stfpy_compile_opts} -Wno-ignored-optimization-argument -Wno-unknown-warning-option -Wno-gnu-anonymous-struct -Wno-nested-anon-types)
+    set(stfpy_link_opts -Wno-unused-command-line-argument -Wno-ignored-optimization-argument)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES GNU)
     # Some of the Python headers generate warnings in newer GCC compilers
     # because they're actually C code
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14)
-        add_compile_options(-Wno-pedantic -Wno-conversion)
+        set(stfpy_compile_opts ${stfpy_compile_opts} -Wno-pedantic -Wno-conversion)
     endif()
 endif()
 
 # Disable _FORTIFY_SOURCE unless we're in Release mode
 if (NOT CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
-    add_compile_options(-U_FORTIFY_SOURCE -Wp,-U_FORTIFY_SOURCE)
+    set(stfpy_compile_opts ${stfpy_compile_opts} -U_FORTIFY_SOURCE -Wp,-U_FORTIFY_SOURCE)
 endif()
 
-get_directory_property(include_dirs INCLUDE_DIRECTORIES)
-get_directory_property(compile_opts COMPILE_OPTIONS)
-get_directory_property(link_opts LINK_OPTIONS)
+#get_directory_property(include_dirs INCLUDE_DIRECTORIES)
+#get_directory_property(compile_opts COMPILE_OPTIONS)
+#get_directory_property(link_opts LINK_OPTIONS)
 
-string(JOIN " " stfpy_link_opts $ENV{LDFLAGS} ${link_opts})
+get_target_property(stf_include_dirs stf INCLUDE_DIRECTORIES)
+get_target_property(stf_compile_opts stf COMPILE_OPTIONS)
+get_target_property(stf_link_opts stf LINK_OPTIONS)
+get_target_property(stf_ipo stf INTERPROCEDURAL_OPTIMIZATION)
+
+set(stfpy_include_dirs ${stf_include_dirs})
+#string(JOIN ";" stfpy_include_dirs ${stf_include_dirs} ${include_dirs})
+set(stfpy_compile_opts ${stf_compile_opts} ${stfpy_compile_opts})
+#string(JOIN " " stfpy_compile_opts ${stfpy_compile_opts} ${compile_opts})
+set(stfpy_link_opts $ENV{LDFLAGS} ${stf_link_opts} ${stfpy_link_opts})
+#string(JOIN " " stfpy_link_opts "${stf_link_opts}" "${link_opts}")
+#string(JOIN " " stfpy_link_opts $ENV{LDFLAGS} ${stfpy_link_opts})
+
+if(stf_ipo OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(stfpy_compile_opts ${stfpy_compile_opts} -flto)
+    set(stfpy_link_opts ${stfpy_link_opts} -flto)
+endif()
 
 set(extra_lib_dirs $<TARGET_FILE_DIR:stf>)
-string(REPLACE ";" ":" include_dirs "${include_dirs}")
+string(REPLACE ";" ":" stfpy_include_dirs "${stfpy_include_dirs}")
 string(REPLACE ";" ":" extra_lib_dirs "${extra_lib_dirs}")
 
 # Get thread library name without -l
@@ -58,13 +74,13 @@ add_custom_command(
                                   --unset=CXXFLAGS
                                   CC="${CMAKE_C_COMPILER}"
                                   CXX="${CMAKE_CXX_COMPILER}"
-                                  LD="${CMAKE_CXX_COMPILER}"
-                                  CPPFLAGS="${compile_opts}"
-                                  LDFLAGS=${stfpy_link_opts}
+                                  LD="${CMAKE_CXX_LINK_EXECUTABLE}"
+                                  CPPFLAGS="${stfpy_compile_opts}"
+                                  LDFLAGS="${stfpy_link_opts}"
                                   STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
                                   ${Python3_EXECUTABLE} setup.py build_ext -f
                                                                            ${CYTHON_PARALLEL_FLAG}
-                                                                           --include-dirs "${include_dirs}"
+                                                                           --include-dirs "${stfpy_include_dirs}"
                                                                            --libraries "${stf_libraries}"
                                                                            --library-dirs "${extra_lib_dirs}:${zstd_LIBRARY_DIRS}"
   COMMAND ${CMAKE_COMMAND} -E env STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
