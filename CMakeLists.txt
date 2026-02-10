@@ -14,7 +14,7 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 # Boost
-find_package (Boost 1.75.0 REQUIRED COMPONENTS container)
+find_package (Boost 1.75.0 REQUIRED)
 
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
