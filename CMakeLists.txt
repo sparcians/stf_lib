@@ -1,6 +1,21 @@
 cmake_minimum_required(VERSION 3.17)
 project (stf_lib CXX)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.4.0)
+    message(FATAL_ERROR "Provided gcc version (${CMAKE_CXX_COMPILER_VERSION}) is older than required version (7.4.0)")
+endif()
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+# zstd
+find_package(PkgConfig)
+pkg_check_modules(zstd REQUIRED libzstd)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
+# Boost
+find_package (Boost 1.75.0 REQUIRED)
+
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -11,12 +26,6 @@ if(hasParent)
     set (STF_BASE ${STF_BASE} PARENT_SCOPE)
 endif()
 
-# Boost
-find_package (Boost 1.49.0)
-include_directories (SYSTEM ${Boost_INCLUDE_DIRS})
-
-include (${STF_BASE}/cmake/stf-config.cmake)
-
 add_subdirectory(lib)
 
 if(BUILD_STF_PYTHON_LIB)
@@ -26,4 +35,30 @@ endif()
 if(NOT DISABLE_STF_TESTS)
     enable_testing()
     add_subdirectory (tests)
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
+    if(NOT DISABLE_STF_DOXYGEN)
+        option(BUILD_DOC "Build documentation" ON)
+
+        find_package(Doxygen)
+        if (DOXYGEN_FOUND)
+            # set input and output files
+            set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+            set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+            # request to configure the file
+            configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+            message("Doxygen build started")
+
+            # note the option ALL which allows to build the docs together with the application
+            add_custom_target( doc_doxygen ALL
+                COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                COMMENT "Generating API documentation with Doxygen"
+                VERBATIM )
+        else (DOXYGEN_FOUND)
+          message("Doxygen need to be installed to generate the doxygen documentation")
+        endif (DOXYGEN_FOUND)
+    endif()
 endif()

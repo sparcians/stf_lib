@@ -33,6 +33,14 @@ make
 ```
 ## Quick Start on the API
 
+### CMake Config
+
+Add the following to your project's CMakeLists.txt:
+```
+add_subdirectory(stf_lib)
+target_link_libraries(my_project stf)
+```
+
 ### Reading a Trace
 
 API documentation: `doc_doxygen/html/classstf_1_1STFInstReaderBase.html`
