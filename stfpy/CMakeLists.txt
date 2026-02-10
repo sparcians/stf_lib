@@ -4,8 +4,6 @@ find_package(Python3 COMPONENTS Interpreter Development)
 find_package(PkgConfig)
 pkg_check_modules(zstd REQUIRED libzstd)
 
-#include_directories(${STF_BASE}/stf-inc)
-
 set(stfpy_compile_opts -Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-implicit-int-conversion -Wno-missing-field-initializers)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -24,22 +22,14 @@ if (NOT CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
     set(stfpy_compile_opts ${stfpy_compile_opts} -U_FORTIFY_SOURCE -Wp,-U_FORTIFY_SOURCE)
 endif()
 
-#get_directory_property(include_dirs INCLUDE_DIRECTORIES)
-#get_directory_property(compile_opts COMPILE_OPTIONS)
-#get_directory_property(link_opts LINK_OPTIONS)
-
 get_target_property(stf_include_dirs stf INCLUDE_DIRECTORIES)
 get_target_property(stf_compile_opts stf COMPILE_OPTIONS)
 get_target_property(stf_link_opts stf LINK_OPTIONS)
 get_target_property(stf_ipo stf INTERPROCEDURAL_OPTIMIZATION)
 
 set(stfpy_include_dirs ${stf_include_dirs})
-#string(JOIN ";" stfpy_include_dirs ${stf_include_dirs} ${include_dirs})
 set(stfpy_compile_opts ${stf_compile_opts} ${stfpy_compile_opts})
-#string(JOIN " " stfpy_compile_opts ${stfpy_compile_opts} ${compile_opts})
 set(stfpy_link_opts $ENV{LDFLAGS} ${stf_link_opts} ${stfpy_link_opts})
-#string(JOIN " " stfpy_link_opts "${stf_link_opts}" "${link_opts}")
-#string(JOIN " " stfpy_link_opts $ENV{LDFLAGS} ${stfpy_link_opts})
 
 if(stf_ipo OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(stfpy_compile_opts ${stfpy_compile_opts} -flto)

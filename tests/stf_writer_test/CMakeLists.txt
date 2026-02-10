@@ -36,7 +36,6 @@ add_compile_options(
 )
 
 add_compile_options($<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-ffast-math>)
-#add_link_options($<$<CONFIG:Release>:-flto>)
 
 set(SOURCES
     main.cpp
