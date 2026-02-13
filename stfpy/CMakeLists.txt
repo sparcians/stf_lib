@@ -4,7 +4,7 @@ find_package(Python3 COMPONENTS Interpreter Development)
 find_package(PkgConfig)
 pkg_check_modules(zstd REQUIRED libzstd)
 
-set(stfpy_compile_opts -Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-implicit-int-conversion -Wno-missing-field-initializers)
+set(stfpy_compile_opts -std=gnu++${CMAKE_CXX_STANDARD} -Wno-sign-conversion -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-implicit-int-conversion -Wno-missing-field-initializers)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(stfpy_compile_opts ${stfpy_compile_opts} -Wno-ignored-optimization-argument -Wno-unknown-warning-option -Wno-gnu-anonymous-struct -Wno-nested-anon-types)
