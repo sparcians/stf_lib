@@ -29,7 +29,8 @@ get_target_property(stf_ipo stf INTERPROCEDURAL_OPTIMIZATION)
 
 set(stfpy_include_dirs ${stf_include_dirs})
 set(stfpy_compile_opts ${stf_compile_opts} ${stfpy_compile_opts})
-set(stfpy_link_opts $ENV{LDFLAGS} ${stf_link_opts} ${stfpy_link_opts})
+string(REPLACE " " ";" env_link_opts $ENV{LDFLAGS})
+set(stfpy_link_opts ${env_link_opts} ${stf_link_opts} ${stfpy_link_opts})
 
 if(stf_ipo OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(stfpy_compile_opts ${stfpy_compile_opts} -flto)
@@ -64,7 +65,7 @@ add_custom_command(
                                   --unset=CXXFLAGS
                                   CC="${CMAKE_C_COMPILER}"
                                   CXX="${CMAKE_CXX_COMPILER}"
-                                  LD="${CMAKE_CXX_LINK_EXECUTABLE}"
+                                  LD="${CMAKE_CXX_COMPILER_LINKER}"
                                   CPPFLAGS="${stfpy_compile_opts}"
                                   LDFLAGS="${stfpy_link_opts}"
                                   STFPY_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}"
