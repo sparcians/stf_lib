@@ -29,7 +29,11 @@ get_target_property(stf_ipo stf INTERPROCEDURAL_OPTIMIZATION)
 
 set(stfpy_include_dirs ${stf_include_dirs})
 set(stfpy_compile_opts ${stf_compile_opts} ${stfpy_compile_opts})
-string(REPLACE " " ";" env_link_opts $ENV{LDFLAGS})
+
+if(DEFINED ENV{LDFLAGS})
+    string(REPLACE " " ";" env_link_opts $ENV{LDFLAGS})
+endif()
+
 set(stfpy_link_opts ${env_link_opts} ${stf_link_opts} ${stfpy_link_opts})
 
 if(stf_ipo OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
