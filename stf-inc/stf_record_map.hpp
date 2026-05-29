@@ -215,6 +215,14 @@ namespace stf {
                         return data_.cend();
                     }
 
+                    const STFRecord::UniqueHandle& front() const {
+                        return *begin();
+                    }
+
+                    STFRecord::UniqueHandle& front() {
+                        return *begin();
+                    }
+
                     /**
                      * Clears the vector
                      */
