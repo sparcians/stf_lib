@@ -1127,15 +1127,39 @@ namespace stf {
                                           const descriptors::internal::Descriptor second_desc) const {
                 const auto& second_vec = orig_records_.at(second_desc);
                 const bool is_event = first_desc == descriptors::internal::Descriptor::STF_EVENT;
-                stf_assert(is_event || (second_vec.size() == first_record_vec.size()),
-                           "There must be a 1-1 correspondence between " << first_desc << " and " << second_desc << " records");
-                auto second_it = second_vec.begin();
-                for(const auto& record: first_record_vec) {
-                    stf_writer << *record;
-                    // Mode change events don't have PC targets
-                    if(STF_EXPECT_TRUE(!(is_event && record->as<EventRecord>().isModeChange()))) {
-                        stf_writer << **second_it;
-                        ++second_it;
+
+                // Check for a standalone mode change event record
+                const bool standalone_mode_change_record = is_event &&
+                                                           (first_record_vec.size() == 1) &&
+                                                           first_record_vec.front()->as<EventRecord>().isModeChange();
+
+                // Special case for mode change records that appear by themselves
+                // These may have a PC target
+                if(STF_EXPECT_FALSE(standalone_mode_change_record))
+                {
+                    stf_writer << *first_record_vec.front();
+
+                    if(!second_vec.empty())
+                    {
+                        stf_assert(second_vec.size() == 1,
+                                   "A standalone MODE_CHANGE EVENT_RECORD must have at most one EVENT_PC_TARGET record");
+
+                        stf_writer << *second_vec.front();
+                    }
+                }
+                else
+                {
+                    stf_assert(is_event || (second_vec.size() == first_record_vec.size()),
+                               "There must be a 1-1 correspondence between " << first_desc << " and " << second_desc << " records");
+                    auto second_it = second_vec.begin();
+
+                    for(const auto& record: first_record_vec) {
+                        stf_writer << *record;
+                        // Mode change events don't have PC targets unless they're the only event record (handled above)
+                        if(STF_EXPECT_TRUE(!(is_event && record->as<EventRecord>().isModeChange()))) {
+                            stf_writer << **second_it;
+                            ++second_it;
+                        }
                     }
                 }
             }
