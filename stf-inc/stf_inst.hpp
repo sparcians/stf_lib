@@ -2170,6 +2170,8 @@ namespace stf {
 #ifdef STF_INST_HAS_IEM
                                                 const bool iem_changed,
 #endif
+                                                const bool has_zcmp,
+                                                const bool has_zcmt,
                                                 const uint32_t hw_thread_id,
                                                 const uint32_t pid,
                                                 const uint32_t tid,
@@ -2184,7 +2186,7 @@ namespace stf {
                     inst.iem_changed_ = iem_changed;
 #endif
                     inst.setSkipped_(is_skipped);
-                    inst.setInstFlag_(math_utils::conditionalValue(STFBranchDecoder::isBranch(iem, rec), STFInst::INST_IS_BRANCH,
+                    inst.setInstFlag_(math_utils::conditionalValue(STFBranchDecoder::isBranch(iem, rec, has_zcmp, has_zcmt), STFInst::INST_IS_BRANCH,
                                                                    is_compressed, STFInst::INST_OPCODE16));
                     inst.hw_thread_id_ = hw_thread_id;
                     inst.pid_ = pid;

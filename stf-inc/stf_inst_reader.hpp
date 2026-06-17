@@ -308,6 +308,8 @@ namespace stf {
 #ifdef STF_INST_HAS_IEM
                                                          iem_changed_,
 #endif
+                                                         ParentReader::hasZcmp(),
+                                                         ParentReader::hasZcmt(),
                                                          hw_thread_id_,
                                                          pid_,
                                                          tid_,
