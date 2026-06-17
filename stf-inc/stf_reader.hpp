@@ -40,6 +40,8 @@ namespace stf {
             STFRecord::ConstHandle<ProcessIDExtRecord> initial_process_id_;
             STFRecord::ConstHandle<VLenConfigRecord> vlen_config_;
             STFRecord::ConstHandle<ISAExtendedRecord> isa_extended_;
+            bool has_zcmp_ = false;
+            bool has_zcmt_ = false;
 
             /**
              * Reads the STF header
@@ -132,6 +134,20 @@ namespace stf {
              */
             inline vlen_t getVLen() const {
                 return stream_->getVLen();
+            }
+
+            /**
+             * Gets whether the RISC-V Zcmp extension is enabled in this trace
+             */
+            inline bool hasZcmp() const {
+                return has_zcmp_;
+            }
+
+            /**
+             * Gets whether the RISC-V Zcmt extension is enabled in this trace
+             */
+            inline bool hasZcmt() const {
+                return has_zcmt_;
             }
     };
 } // end namespace stf

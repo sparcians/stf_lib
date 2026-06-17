@@ -65,6 +65,8 @@ namespace stf {
              * \param[in] iem Instruction encoding mode
              * \param[in] pc Instruction PC
              * \param[in] opcode Instruction opcode
+             * \param[in] has_zcmp If true, enable Zcmp extension
+             * \param[in] has_zcmt If true, enable Zcmt extension
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
@@ -84,6 +86,8 @@ namespace stf {
             static constexpr bool decodeBranch16_(const INST_IEM iem,
                                                   const uint64_t pc,
                                                   const uint16_t opcode,
+                                                  const bool has_zcmp,
+                                                  const bool has_zcmt,
                                                   uint64_t& target,
                                                   Registers::STF_REG& rs1,
                                                   Registers::STF_REG& rs2,
@@ -175,13 +179,35 @@ namespace stf {
                         break;
                     }
                     case 0b101:
-                        // popret/popretz
+                        // cm.popret/cm.popretz/cm.jt/cm.jalt
                         if(STF_EXPECT_FALSE(opcode_bottom == 0b10)) {
+                            if(!has_zcmp && !has_zcmt) {
+                                return false;
+                            }
+
                             const auto funct = byte_utils::getBitRange<12, 8, 4>(opcode);
 
                             if(funct != 0b11100 && funct != 0b11110) {
-                                return false;
+                                if(!has_zcmt) {
+                                    return false;
+                                }
+
+                                if(funct >> 2 != 0b000) {
+                                    return false;
+                                }
+
+                                // cm.jalt if true, otherwise cm.jt
+                                is_call = byte_utils::getBitRange<9, 2, 7>(opcode) >= 32;
+
+                                if(is_call) {
+                                    rd = Registers::STF_REG::STF_REG_X1;
+                                }
+
+                                is_indirect = true;
+                                return true;
                             }
+
+                            // cm.popret/cm.popretz
                             is_indirect = true;
                             is_return = true;
 
@@ -324,6 +350,8 @@ namespace stf {
              * Decodes a compressed RISCV instruction record, returning true if it is a branch.
              * \param[in] iem Instruction encoding mode
              * \param[in] rec Instruction record
+             * \param[in] has_zcmp If true, enable Zcmp extension
+             * \param[in] has_zcmt If true, enable Zcmt extension
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
@@ -343,6 +371,8 @@ namespace stf {
             __attribute__((hot, always_inline))
             static inline bool decodeBranch_(const INST_IEM iem,
                                              const InstOpcode16Record& rec,
+                                             const bool has_zcmp,
+                                             const bool has_zcmt,
                                              uint64_t& target,
                                              Registers::STF_REG& rs1,
                                              Registers::STF_REG& rs2,
@@ -363,6 +393,8 @@ namespace stf {
                 return decodeBranch16_(iem,
                                        rec.getPC(),
                                        rec.getOpcode(),
+                                       has_zcmp,
+                                       has_zcmt,
                                        target,
                                        rs1,
                                        rs2,
@@ -384,6 +416,8 @@ namespace stf {
              * Decodes a regular RISCV instruction record, returning true if it is a branch.
              * \param[in] iem Instruction encoding mode
              * \param[in] rec Instruction record
+             * \param[in] (ignored)
+             * \param[in] (ignored)
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
@@ -403,6 +437,8 @@ namespace stf {
             __attribute__((hot, always_inline))
             static inline bool decodeBranch_(const INST_IEM,
                                              const InstOpcode32Record& rec,
+                                             const bool,
+                                             const bool,
                                              uint64_t& target,
                                              Registers::STF_REG& rs1,
                                              Registers::STF_REG& rs2,
@@ -444,6 +480,8 @@ namespace stf {
              * Decodes a RISCV instruction record, returning true if it is a branch.
              * \param[in] iem Instruction encoding mode
              * \param[in] rec Instruction record
+             * \param[in] has_zcmp If true, enable Zcmp extension
+             * \param[in] has_zcmt If true, enable Zcmt extension
              * \param[out] target Branch target PC (only set for non-indirect branches)
              * \param[out] rs1 Number of first source register (if any)
              * \param[out] rs2 Number of second source register (if any)
@@ -465,6 +503,8 @@ namespace stf {
             __attribute__((hot, always_inline))
             static inline bool decode(const INST_IEM iem,
                                       const RecordType& rec,
+                                      const bool has_zcmp,
+                                      const bool has_zcmt,
                                       uint64_t& target,
                                       Registers::STF_REG& rs1,
                                       Registers::STF_REG& rs2,
@@ -483,6 +523,8 @@ namespace stf {
                                       bool& compare_unsigned) {
                 return decodeBranch_(iem,
                                      rec,
+                                     has_zcmp,
+                                     has_zcmt,
                                      target,
                                      rs1,
                                      rs2,
@@ -506,12 +548,16 @@ namespace stf {
              * This variant is used by STFBranchReader to initialize STFBranch objects.
              * \param[in] iem Instruction encoding mode
              * \param[in] rec Instruction record
+             * \param[in] has_zcmp If true, enable Zcmp extension
+             * \param[in] has_zcmt If true, enable Zcmt extension
              * \param[out] branch STFBranch object to be initialized if the instruction is a branch
              */
             template<typename RecordType>
             __attribute__((hot, always_inline))
             static inline bool decode(const INST_IEM iem,
                                       const RecordType& rec,
+                                      const bool has_zcmp,
+                                      const bool has_zcmt,
                                       STFBranch& branch) {
                 uint64_t target = 0;
                 Registers::STF_REG rs1;
@@ -532,6 +578,8 @@ namespace stf {
 
                 const bool is_branch = decode(iem,
                                               rec,
+                                              has_zcmp,
+                                              has_zcmt,
                                               target,
                                               rs1,
                                               rs2,
@@ -579,10 +627,15 @@ namespace stf {
              * Returns whether the specified instruction record is a branch.
              * \param iem Instruction encoding mode
              * \param rec Instruction record
+             * \param has_zcmp If true, enable Zcmp extension
+             * \param has_zcmt If true, enable Zcmt extension
              */
             template<typename RecordType>
             __attribute__((hot, always_inline))
-            static inline bool isBranch(const INST_IEM iem, const RecordType& rec) {
+            static inline bool isBranch(const INST_IEM iem,
+                                        const RecordType& rec,
+                                        const bool has_zcmp,
+                                        const bool has_zcmt) {
                 uint64_t target = 0;
                 Registers::STF_REG rs1 = Registers::STF_REG::STF_REG_INVALID;
                 Registers::STF_REG rs2 = Registers::STF_REG::STF_REG_INVALID;
@@ -602,6 +655,8 @@ namespace stf {
 
                 return decode(iem,
                               rec,
+                              has_zcmp,
+                              has_zcmt,
                               target,
                               rs1,
                               rs2,

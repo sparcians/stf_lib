@@ -7,6 +7,7 @@
 #include "stf_record_types.hpp"
 #include "stf_writer.hpp"
 #include "stf_isa_defaults.hpp"
+#include "stf_isa_utils.hpp"
 
 namespace stf {
     STFReader::STFReader(const std::string_view filename, const bool force_single_threaded_stream) {
@@ -118,6 +119,15 @@ namespace stf {
         }
         stf_assert(complete_header, "STF ended with an incomplete header!");
         validateHeader_();
+
+        if(getISA() == ISA::RISCV) {
+            const std::string& isa_string = getISAExtendedInfo();
+            // Zcmp and Zcmt are automatically enabled if Zce is present
+            const bool has_zce = RISCVISAStringParser::hasExtension(isa_string, "zce");
+            // Otherwise, check if Zcmp and Zcmt are explicitly present
+            has_zcmp_ = has_zce || RISCVISAStringParser::hasExtension(isa_string, "zcmp");
+            has_zcmt_ = has_zce || RISCVISAStringParser::hasExtension(isa_string, "zcmt");
+        }
     }
 
     // cppcheck-suppress unusedFunction
@@ -160,6 +170,8 @@ namespace stf {
         initial_process_id_.reset();
         vlen_config_.reset();
         isa_extended_.reset();
+        has_zcmp_ = false;
+        has_zcmt_ = false;
 
         return STFReaderBase::close();
     }

@@ -126,7 +126,7 @@ namespace stf {
                 const bool skip_item = skippingEnabled_();
                 countSkippedInst_(skip_item);
 
-                if(STF_EXPECT_TRUE(!STFBranchDecoder::decode(getInitialIEM(), inst_rec, branch))) {
+                if(STF_EXPECT_TRUE(!STFBranchDecoder::decode(getInitialIEM(), inst_rec, ParentReader::hasZcmp(), ParentReader::hasZcmt(), branch))) {
                     stf_assert(!branch.isTaken(), "Branch was marked taken but also didn't decode as a branch");
                     delegates::STFBranchDelegate::reset_(branch);
                     resetOperandMaps_();
