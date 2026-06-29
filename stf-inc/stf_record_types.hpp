@@ -1665,7 +1665,7 @@ namespace stf {
                 // If it's a vector record, pack the rest of the data
                 if(STF_EXPECT_FALSE(isVector())) {
                     vlen_ = writer.getVLen();
-                    stf_assert(vlen_, "Attempted to read vector register without setting vlen first");
+                    stf_assert(vlen_, "Attempted to write vector register without setting vlen first");
                     const auto vector_len = calcVectorLen_();
                     stf_assert(vector_len == data_.size(),
                                "Vector register record length ("

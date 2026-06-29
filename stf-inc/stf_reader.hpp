@@ -94,6 +94,11 @@ namespace stf {
             uint32_t getInitialTID() const;
 
             /**
+             * Gets whether there is an extended ISA record
+             */
+            bool hasISAExtendedInfoRecord() const { return !!isa_extended_; }
+
+            /**
              * Gets extended ISA info
              */
             const std::string& getISAExtendedInfo() const;
