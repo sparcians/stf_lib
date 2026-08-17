@@ -12,9 +12,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 elseif (CMAKE_CXX_COMPILER_ID MATCHES GNU)
     # Some of the Python headers generate warnings in newer GCC compilers
     # because they're actually C code
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14)
-        set(stfpy_compile_opts ${stfpy_compile_opts} -Wno-pedantic -Wno-conversion)
-    endif()
+    set(stfpy_compile_opts ${stfpy_compile_opts} -Wno-pedantic -Wno-conversion)
 endif()
 
 # Disable _FORTIFY_SOURCE unless we're in Release mode
