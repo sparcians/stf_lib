@@ -38,8 +38,18 @@ jobs:
 
     steps:
     - name: Get number of CPU cores
-      uses: SimenB/github-actions-cpu-cores@v2
-      id: cpu-cores
+      run: |
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          CORES=$(nproc)
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          CORES=$(sysctl -n hw.ncpu)
+        elif [[ "$RUNNER_OS" == "Windows" ]]; then
+          CORES=$NUMBER_OF_PROCESSORS
+        else
+          CORES=2 # Fallback
+        fi
+        echo "CPU_CORES=$CORES" >> $GITHUB_ENV
+        echo "Detected $CORES CPU cores"
 
     - uses: actions/checkout@v4
 
@@ -62,8 +72,8 @@ jobs:
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ steps.cpu-cores.outputs.count }}
+      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ env.CPU_CORES }}
 
     - name: Regress
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ steps.cpu-cores.outputs.count }} --target regress
+      run: cmake --build . --config ${{ matrix.build_type }} -j ${{ env.CPU_CORES }} --target regress
