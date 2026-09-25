@@ -106,6 +106,9 @@ namespace stf {
             if (event.dataValid()) {
                 bool first_line = true;
                 for(const auto& d: event.getData()) {
+                    if(STF_EXPECT_TRUE(!first_line)) {
+                        os << std::endl;
+                    }
                     if (format_utils::showPhys()) {
                         format_utils::formatSpaces(os, format_utils::PA_WIDTH + 1);
                     }

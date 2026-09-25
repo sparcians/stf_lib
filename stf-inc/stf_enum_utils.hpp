@@ -265,7 +265,7 @@
 #define OVERRIDE_START          2
 
 /**
- * \def OVERRIDE_START
+ * \def OVERRIDE_END
  * If specified, the automatic __RESERVED_END element will become an alias of the last enum element
  */
 #define OVERRIDE_END            3
