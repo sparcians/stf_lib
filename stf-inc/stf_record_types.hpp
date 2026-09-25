@@ -1090,6 +1090,9 @@ namespace stf {
                 STF_ENUM_AUTO_INCREMENT(RESERVED_,        32, 47), /**< Reserved fault codes 0x20 - 0x2f */
                 STF_ENUM_AUTO_INCREMENT(CUSTOM_FAULT_,    48, 63), /**< Custom fault codes 0x30 - 0x3f */
 
+                // Special Events
+                STF_ENUM_VAL(MODE_CHANGE,                 0x0 | SPECIAL_MASK),   /**< Instruction causes an execution mode change */
+
                 // Interrupts/Asynchronous Exceptions
                 STF_ENUM_VAL(INT_USER_SOFTWARE,           0x0 | INTERRUPT_MASK), /**< User-mode software interrupt */
                 STF_ENUM_VAL(INT_SUPERVISOR_SOFTWARE,     0x1 | INTERRUPT_MASK), /**< Supervisor-mode software interrupt */
@@ -1109,9 +1112,7 @@ namespace stf {
                 STF_ENUM_VAL(INT_RESERVED_15,             0xf | INTERRUPT_MASK), /**< Reserved */
                 STF_ENUM_VAL(INT_PLATFORM_0,             0x10 | INTERRUPT_MASK), /**< Platform interrupt 0 */
 
-                // Special Events
-                STF_ENUM_VAL(MODE_CHANGE,                 0x0 | SPECIAL_MASK),   /**< Instruction causes an execution mode change */
-                __INVALID_TYPE
+                STF_ENUM_VAL(__INVALID_TYPE,              std::numeric_limits<uint64_t>::max())
             );
 
         private:
@@ -1141,7 +1142,7 @@ namespace stf {
                 static constexpr Compare comp;
 
                 const auto event_num = static_cast<uint64_t>(event_);
-                return comp(event_num, static_cast<uint64_t>(TYPE::INT_PLATFORM_0)) && event_num < static_cast<uint64_t>(TYPE::MODE_CHANGE);
+                return comp(event_num, static_cast<uint64_t>(TYPE::INT_PLATFORM_0)) && event_num < static_cast<uint64_t>(TYPE::__INVALID_TYPE);
             }
 
             inline bool isUndefinedPlatformInterrupt_() const {

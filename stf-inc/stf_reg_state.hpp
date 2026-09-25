@@ -94,7 +94,7 @@ namespace stf {
             }
 
             /**
-             * Applies the givel field value with the correct shift and mask bits into the parent register value
+             * Applies the given field value with the correct shift and mask bits into the parent register value
              * \param parent_reg_val Current value of the parent register
              * \param field_val Field value to apply
              */
