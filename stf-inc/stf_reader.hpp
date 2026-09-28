@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -40,6 +41,7 @@ namespace stf {
             STFRecord::ConstHandle<ProcessIDExtRecord> initial_process_id_;
             STFRecord::ConstHandle<VLenConfigRecord> vlen_config_;
             STFRecord::ConstHandle<ISAExtendedRecord> isa_extended_;
+            std::optional<std::string> isa_extended_override_;
             bool has_zcmp_ = false;
             bool has_zcmt_ = false;
 
@@ -52,6 +54,11 @@ namespace stf {
              * Returns whether the header was valid
              */
             void validateHeader_() const final;
+
+            /**
+             * Updates ISA-specific flags
+             */
+            void updateISAFlags_();
 
         public:
             STFReader() = default;
@@ -102,6 +109,11 @@ namespace stf {
              * Gets extended ISA info
              */
             const std::string& getISAExtendedInfo() const;
+
+            /**
+             * Override the extended ISA info
+             */
+            void overrideISAExtendedInfo(const std::string& isa_string);
 
             /**
              * Closes the file
