@@ -121,13 +121,17 @@ namespace stf {
         validateHeader_();
 
         if(getISA() == ISA::RISCV) {
-            const std::string& isa_string = getISAExtendedInfo();
-            // Zcmp and Zcmt are automatically enabled if Zce is present
-            const bool has_zce = RISCVISAStringParser::hasExtension(isa_string, "zce");
-            // Otherwise, check if Zcmp and Zcmt are explicitly present
-            has_zcmp_ = has_zce || RISCVISAStringParser::hasExtension(isa_string, "zcmp");
-            has_zcmt_ = has_zce || RISCVISAStringParser::hasExtension(isa_string, "zcmt");
+            updateISAFlags_();
         }
+    }
+
+    void STFReader::updateISAFlags_() {
+        const std::string& isa_string = getISAExtendedInfo();
+        // Zcmp and Zcmt are automatically enabled if Zce is present
+        const bool has_zce = RISCVISAStringParser::hasExtension(isa_string, "zce");
+        // Otherwise, check if Zcmp and Zcmt are explicitly present
+        has_zcmp_ = has_zce || RISCVISAStringParser::hasExtension(isa_string, "zcmp");
+        has_zcmt_ = has_zce || RISCVISAStringParser::hasExtension(isa_string, "zcmt");
     }
 
     // cppcheck-suppress unusedFunction
@@ -160,7 +164,20 @@ namespace stf {
     }
 
     const std::string& STFReader::getISAExtendedInfo() const {
-        return isa_extended_ ? isa_extended_->getData() : ISADefaults::getISAExtendedInfo(getISA(), getInitialIEM());
+        if(isa_extended_override_.has_value()) {
+            return isa_extended_override_.value();
+        }
+
+        if(isa_extended_) {
+            return isa_extended_->getData();
+        }
+
+        return ISADefaults::getISAExtendedInfo(getISA(), getInitialIEM());
+    }
+
+    void STFReader::overrideISAExtendedInfo(const std::string& isa_string) {
+        isa_extended_override_.emplace(isa_string);
+        updateISAFlags_();
     }
 
     int STFReader::close() {
